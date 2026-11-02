@@ -1599,6 +1599,17 @@ static size_t build_trampoline(uint32_t *prog, uint64_t arg, uint64_t gtop,
     prog[n++] = a64_stp_frame_push();
     prog[n++] = a64_stp_gstack_push();
     prog[n++] = a64_stp_imgbase_push();
+    /* X21 is callee-saved, and this trampoline is entered from C, so clobbering it
+     * without saving is an AAPCS violation whether or not the caller happens to be
+     * holding anything there. It was clobbered from the moment the call table landed:
+     * the three STP helpers cover X29/X30, X14/X15 and X19/X20, and X21 is in none of
+     * them. Nothing caught it because the generated code is called through a function
+     * pointer in a child process that keeps nothing live across the call - which is
+     * luck, not a guarantee, and the same luck has already been mistaken for
+     * correctness once in this file. One register, so STR/LDR rather than a pair;
+     * LDP with Rt == Rt2 is CONSTRAINED UNPREDICTABLE and this suite has already paid
+     * for that once. */
+    prog[n++] = a64_str_pre(21u, 31u, -16);
     n = append_const(prog, n, 0u, arg);
     n = append_const(prog, n, 14u, gtop);
     /* Guest RBP gets the same value as guest RSP: the state a real callee sees on
@@ -1614,6 +1625,7 @@ static size_t build_trampoline(uint32_t *prog, uint64_t arg, uint64_t gtop,
     n = append_const(prog, n, 21u, test_calltab);
     bl = n;
     prog[n++] = 0u;                          /* BL, patched once the body is placed */
+    prog[n++] = a64_ldr_post(21u, 31u, 16);  /* exact reverse of the push order */
     prog[n++] = a64_ldp_imgbase_pop();
     prog[n++] = a64_ldp_gstack_pop();
     prog[n++] = a64_ldp_frame_pop();
@@ -3770,6 +3782,28 @@ static void test_guest_to_guest_call(void)
          * known. That ordering is the point: the caller's words were produced before
          * the callee's address existed. */
         n = build_trampoline(prog, 0u, a.top, 0u, fc.words, fc.n);
+
+        /* X21 is callee-saved and this trampoline is entered from C, so the call-table
+         * pointer has to be pushed and popped around the body. Pinned as literals and
+         * counted rather than indexed, because the pop's position moves with the number
+         * of constant words and a fixed index would fail for a reason that is not a bug.
+         * Nothing else can catch this drifting: the pair is only load-bearing on a host
+         * whose C caller is holding something in X21 across the call, and no test here
+         * can arrange that. */
+        {
+            size_t k, pushes = 0, pops = 0;
+            for (k = 0; k < n; k++) {
+                if (prog[k] == 0xF81F0FF5u) pushes++;   /* STR X21,[SP,#-16]! */
+                if (prog[k] == 0xF84107F5u) pops++;     /* LDR X21,[SP],#16   */
+            }
+            CHECK(pushes == 1 && pops == 1,
+                  "the trampoline must save and restore X21 exactly once each, found "
+                  "%zu push(es) and %zu pop(s): an unpaired one corrupts SP", pushes, pops);
+            CHECK(n >= 4u && prog[3] == 0xF81F0FF5u,
+                  "the X21 push must come after the three STP records or the pops "
+                  "unpair, word 3 is 0x%08X", n >= 4u ? prog[3] : 0u);
+        }
+
         callee_at = n;
         if (callee_at + fg.n > TRAMP_MAX) {
             CHECK(0, "the two bodies do not fit the trampoline window");

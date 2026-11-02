@@ -59,11 +59,12 @@ typedef struct {
     uint32_t page_size;
     uint32_t n_modules;
     uint32_t n_records;
-    uint32_t pad0;
+    uint32_t n_calltab;
     uint64_t created_unix;
     uint64_t module_off, module_len, module_crc;
     uint64_t record_off, record_len, record_crc;
     uint64_t code_off,   code_len,   code_crc;
+    uint64_t calltab_off, calltab_len, calltab_crc;
     uint32_t header_crc;                            /* over this struct, zeroed */
     uint32_t pad1;
 } __attribute__((packed)) ptc_hdr;
@@ -90,7 +91,25 @@ typedef struct {
 
 #define REC_CRC_LEN (offsetof(ptc_rec_disk, rec_crc))
 
+/* One call-table slot on disk. There is no slot field: the slot IS the index of this
+ * record within the section, which is what keeps the numbering dense and makes
+ * reordering impossible by construction rather than by discipline. */
+typedef struct {
+    uint64_t module_id;
+    uint64_t guest_va;
+    uint32_t flags;                                  /* bit 0: dead, see ptc.h */
+    uint32_t ct_crc;                                 /* over the 20 bytes above */
+} __attribute__((packed)) ptc_ct_disk;
+
+#define CT_FLAG_DEAD 1u
+#define CT_CRC_LEN (offsetof(ptc_ct_disk, ct_crc))
+
 /* ------------------------------------------------------------------- memory */
+
+typedef struct {
+    uint64_t module_id, guest_va;
+    int      dead;           /* the module was invalidated; the slot number is kept */
+} ptc_ct;
 
 typedef struct {
     uint64_t module_id, guest_pc, src_hash;
@@ -105,6 +124,7 @@ struct ptc_cache {
     ptc_module *mods;  size_t n_mods,  cap_mods;
     ptc_rec    *recs;  size_t n_recs,  cap_recs;
     uint8_t    *code;  size_t code_len, code_cap;
+    ptc_ct     *ct;    size_t n_ct,    cap_ct;      /* slot == index, never renumbered */
 
     uint32_t   *idx;   size_t idx_cap;              /* open addressing, rec#+1 */
     uint64_t hits, misses;
@@ -132,6 +152,16 @@ static void grow_code(ptc_cache *c, size_t extra)
 
 /* module_id is derived from the module's full identity, so a byte change in the
  * file yields a different id and old blocks stop matching on their own. */
+static void grow_ct(ptc_cache *c, size_t want)
+{
+    if (want <= c->cap_ct)
+        return;
+    size_t nc = c->cap_ct ? c->cap_ct : 64;
+    while (nc < want) nc *= 2;
+    c->ct = xrealloc(c->ct, nc * sizeof *c->ct);
+    c->cap_ct = nc;
+}
+
 static uint64_t module_identity(const char *name, uint64_t size, uint64_t mtime,
                                 uint64_t content_hash)
 {
@@ -195,6 +225,7 @@ void ptc_free(ptc_cache *c)
     free(c->mods);
     free(c->recs);
     free(c->code);
+    free(c->ct);
     free(c->idx);
     free(c);
 }
@@ -254,10 +285,66 @@ size_t ptc_validate_modules(ptc_cache *c, ptc_module_probe probe, void *user)
         for (size_t r = 0; r < c->n_recs; r++)
             if (c->recs[r].module_id == m->module_id)
                 c->recs[r].dead = 1;
+        /* Call-table slots are marked, never removed. Removing them would renumber
+         * every later slot, and slot byte offsets are baked into machine code that
+         * survives in this same file - so compacting here would silently retarget
+         * every call in every surviving translation. See ptc.h. */
+        for (size_t k = 0; k < c->n_ct; k++)
+            if (c->ct[k].module_id == m->module_id)
+                c->ct[k].dead = 1;
     }
     if (invalidated)
         idx_rebuild(c);
     return invalidated;
+}
+
+/* ------------------------------------------------------------- call table */
+
+uint64_t ptc_calltab_assign(ptc_cache *c, uint64_t module_id, uint64_t guest_va)
+{
+    if (!c)
+        return PTC_CALLTAB_NONE;
+    for (size_t i = 0; i < c->n_ct; i++) {
+        if (c->ct[i].module_id != module_id || c->ct[i].guest_va != guest_va)
+            continue;
+        /* Revived rather than given a second slot. module_id already encodes content
+         * identity, so the same id at the same guest address is the same callee; a
+         * duplicate slot would leave two numbers for one target and only one of them
+         * would ever be filled. A linear scan matches what ptc_insert already does
+         * for replacement and is fine at the sizes a sweep produces. */
+        c->ct[i].dead = 0;
+        return (uint64_t)i;
+    }
+    grow_ct(c, c->n_ct + 1);
+    ptc_ct *e = &c->ct[c->n_ct];
+    e->module_id = module_id;
+    e->guest_va = guest_va;
+    e->dead = 0;
+    return (uint64_t)c->n_ct++;
+}
+
+uint64_t ptc_calltab_find(const ptc_cache *c, uint64_t module_id, uint64_t guest_va)
+{
+    if (!c)
+        return PTC_CALLTAB_NONE;
+    for (size_t i = 0; i < c->n_ct; i++)
+        if (!c->ct[i].dead &&
+            c->ct[i].module_id == module_id && c->ct[i].guest_va == guest_va)
+            return (uint64_t)i;
+    return PTC_CALLTAB_NONE;
+}
+
+size_t ptc_calltab_count(const ptc_cache *c) { return c ? c->n_ct : 0; }
+
+int ptc_calltab_at(const ptc_cache *c, size_t i, uint64_t *out_module_id,
+                   uint64_t *out_guest_va, int *out_dead)
+{
+    if (!c || i >= c->n_ct)
+        return 0;
+    if (out_module_id) *out_module_id = c->ct[i].module_id;
+    if (out_guest_va)  *out_guest_va  = c->ct[i].guest_va;
+    if (out_dead)      *out_dead      = c->ct[i].dead;
+    return 1;
 }
 
 /* ------------------------------------------------------------------- blocks */
@@ -370,8 +457,13 @@ int ptc_save(ptc_cache *c, const char *path)
     for (size_t i = 0; i < c->n_mods; i++)
         mod_len += sizeof(ptc_mod_disk) + strlen(c->mods[i].name);
     size_t rec_len = live * sizeof(ptc_rec_disk);
+    /* Written in full, dead entries included, and NOT compacted the way records are.
+     * Compacting this section would renumber the slots after the removed ones, and
+     * slot byte offsets are already baked into the machine code in the section above
+     * - so a compacted call table silently retargets every surviving call. */
+    size_t ct_len = c->n_ct * sizeof(ptc_ct_disk);
 
-    size_t total = sizeof(ptc_hdr) + mod_len + rec_len + code_len;
+    size_t total = sizeof(ptc_hdr) + mod_len + rec_len + code_len + ct_len;
     uint8_t *img = calloc(1, total);
     if (!img) { free(code); free(remap); return -1; }
 
@@ -384,6 +476,7 @@ int ptc_save(ptc_cache *c, const char *path)
     h.page_size = c->page_size;
     h.n_modules = (uint32_t)c->n_mods;
     h.n_records = (uint32_t)live;
+    h.n_calltab = (uint32_t)c->n_ct;
     h.created_unix = c->created_unix;
     h.module_off = sizeof(ptc_hdr);
     h.module_len = mod_len;
@@ -391,6 +484,8 @@ int ptc_save(ptc_cache *c, const char *path)
     h.record_len = rec_len;
     h.code_off = h.record_off + rec_len;
     h.code_len = code_len;
+    h.calltab_off = h.code_off + code_len;
+    h.calltab_len = ct_len;
     size_t p = h.module_off;
     for (size_t i = 0; i < c->n_mods; i++) {
         ptc_mod_disk md;
@@ -429,6 +524,19 @@ int ptc_save(ptc_cache *c, const char *path)
     if (code_len)
         memcpy(img + h.code_off, code, code_len);
     h.code_crc = ptc_crc32(0, img + h.code_off, code_len);
+
+    p = h.calltab_off;
+    for (size_t i = 0; i < c->n_ct; i++) {
+        ptc_ct_disk cd;
+        memset(&cd, 0, sizeof cd);
+        cd.module_id = c->ct[i].module_id;
+        cd.guest_va  = c->ct[i].guest_va;
+        cd.flags     = c->ct[i].dead ? CT_FLAG_DEAD : 0u;
+        cd.ct_crc    = ptc_crc32(0, &cd, CT_CRC_LEN);
+        memcpy(img + p, &cd, sizeof cd);
+        p += sizeof cd;
+    }
+    h.calltab_crc = ptc_crc32(0, img + h.calltab_off, ct_len);
 
     h.header_crc = ptc_crc32(0, &h, offsetof(ptc_hdr, header_crc));
     memcpy(img, &h, sizeof h);
@@ -507,10 +615,12 @@ ptc_cache *ptc_open(const char *path, uint32_t host_isa, uint32_t guest_isa,
     if (want != h.header_crc) { free(img); r = PTC_OPEN_CORRUPT; goto done; }
     if (h.module_off + h.module_len > (uint64_t)fsz ||
         h.record_off + h.record_len > (uint64_t)fsz ||
-        h.code_off + h.code_len > (uint64_t)fsz) { free(img); r = PTC_OPEN_TRUNCATED; goto done; }
+        h.code_off + h.code_len > (uint64_t)fsz ||
+        h.calltab_off + h.calltab_len > (uint64_t)fsz) { free(img); r = PTC_OPEN_TRUNCATED; goto done; }
     if (ptc_crc32(0, img + h.module_off, h.module_len) != h.module_crc ||
         ptc_crc32(0, img + h.record_off, h.record_len) != h.record_crc ||
-        ptc_crc32(0, img + h.code_off, h.code_len) != h.code_crc) {
+        ptc_crc32(0, img + h.code_off, h.code_len) != h.code_crc ||
+        ptc_crc32(0, img + h.calltab_off, h.calltab_len) != h.calltab_crc) {
         free(img); r = PTC_OPEN_CORRUPT; goto done;
     }
 
@@ -570,6 +680,25 @@ ptc_cache *ptc_open(const char *path, uint32_t host_isa, uint32_t guest_isa,
     c->code_cap = h.code_len;
     c->code = h.code_len ? xrealloc(NULL, h.code_len) : NULL;
     if (h.code_len) memcpy(c->code, img + h.code_off, h.code_len);
+
+    /* Slot order is the file order, which is what makes an offset baked into cached
+     * machine code mean the same callee here as it did in the process that wrote it. */
+    if (h.n_calltab && h.calltab_len != (uint64_t)h.n_calltab * sizeof(ptc_ct_disk))
+        goto corrupt;
+    p = h.calltab_off;
+    for (uint32_t i = 0; i < h.n_calltab; i++) {
+        ptc_ct_disk cd;
+        if (p + sizeof cd > h.calltab_off + h.calltab_len) goto corrupt;
+        memcpy(&cd, img + p, sizeof cd);
+        p += sizeof cd;
+        if (ptc_crc32(0, &cd, CT_CRC_LEN) != cd.ct_crc) goto corrupt;
+        grow_ct(c, c->n_ct + 1);
+        ptc_ct *e = &c->ct[c->n_ct++];
+        e->module_id = cd.module_id;
+        e->guest_va = cd.guest_va;
+        e->dead = (cd.flags & CT_FLAG_DEAD) ? 1 : 0;
+    }
+
     free(img);
     idx_rebuild(c);
 done:

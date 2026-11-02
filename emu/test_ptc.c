@@ -326,6 +326,95 @@ static void test_many_blocks(void)
     unlink(TMP);
 }
 
+/* --------------------------------------------------------- the call table */
+
+/* A slot number is baked into persisted machine code as a byte offset from the table
+ * base, so the numbering is part of the file format and not an implementation detail.
+ * These tests are about that property, not about the array working. */
+static void test_call_table(void)
+{
+    printf("call-table slots are dense, persisted, and never renumbered\n");
+    unlink(TMP);
+    ptc_cache *c = ptc_create(PTC_ISA_AARCH64, PTC_ISA_X86_64, 4096);
+    uint64_t a = 0, b = 0;
+    ptc_add_module(c, "caller.dll", 100, 7, hash_str("A"), &a);
+    ptc_add_module(c, "callee.dll", 200, 9, hash_str("B"), &b);
+
+    CHECK(ptc_calltab_count(c) == 0, "a fresh cache has no slots");
+    CHECK(ptc_calltab_find(c, a, 0x1000) == PTC_CALLTAB_NONE,
+          "find must create nothing: an unassigned target has no slot");
+
+    uint64_t s0 = ptc_calltab_assign(c, a, 0x1000);
+    uint64_t s1 = ptc_calltab_assign(c, b, 0x2000);
+    uint64_t s2 = ptc_calltab_assign(c, b, 0x2080);
+    CHECK(s0 == 0 && s1 == 1 && s2 == 2,
+          "slots must be dense and in insertion order, got %llu %llu %llu",
+          (unsigned long long)s0, (unsigned long long)s1, (unsigned long long)s2);
+    CHECK(ptc_calltab_assign(c, b, 0x2000) == s1,
+          "assigning a target that already has a slot must return that slot: a second "
+          "number for one callee would leave one of them permanently unfilled");
+    CHECK(ptc_calltab_find(c, b, 0x2000) == s1, "find must agree with assign");
+    CHECK(ptc_calltab_count(c) == 3, "three slots, not four");
+
+    /* Invalidation is the case that would silently break every cached call. Dropping
+     * a module's slots shifts the numbers after it, and the machine code still holds
+     * the old offsets - so it would call the wrong function with no error anywhere. */
+    unsigned char guest[4] = {1, 2, 3, 4}, host[4] = {9, 9, 9, 9};
+    ptc_insert(c, a, 0x1000, guest, 4, host, 4, 0);
+    ptc_insert(c, b, 0x2000, guest, 4, host, 4, 0);
+    fakeset fs = { {
+        { "caller.dll", 100, 7, hash_str("CHANGED"), 1 },
+        { "callee.dll", 200, 9, hash_str("B"),       1 },
+    }, 2 };
+    CHECK(ptc_validate_modules(c, probe_fn, &fs) == 1, "exactly one module invalidated");
+
+    CHECK(ptc_calltab_count(c) == 3,
+          "a dead slot must keep its number: removing it would renumber the two after "
+          "it and retarget every call in the surviving machine code");
+    int dead = -1;
+    uint64_t mid = 0, va = 0;
+    CHECK(ptc_calltab_at(c, 0, &mid, &va, &dead) && dead == 1 && mid == a,
+          "the invalidated module's slot is marked dead, not erased");
+    CHECK(ptc_calltab_at(c, 1, &mid, &va, &dead) && dead == 0 && mid == b && va == 0x2000,
+          "slot 1 is still the same callee after another module died");
+    CHECK(ptc_calltab_at(c, 2, &mid, &va, &dead) && dead == 0 && va == 0x2080,
+          "slot 2 is still the same callee after another module died");
+    CHECK(ptc_calltab_find(c, a, 0x1000) == PTC_CALLTAB_NONE,
+          "a dead slot must not answer find: the runtime has no code to put there");
+    CHECK(ptc_calltab_at(c, 3, &mid, &va, &dead) == 0, "out of range reads as absent");
+
+    /* Revival keeps the number, because module_id already encodes content identity. */
+    CHECK(ptc_calltab_assign(c, a, 0x1000) == s0,
+          "re-assigning a dead slot must return its original number");
+    CHECK(ptc_calltab_at(c, 0, &mid, &va, &dead) && dead == 0, "and be alive again");
+    CHECK(ptc_calltab_count(c) == 3, "revival adds no slot");
+
+    CHECK(ptc_save(c, TMP) == 0, "save with a call table failed");
+    ptc_free(c);
+    ptc_open_result why;
+    c = ptc_open(TMP, PTC_ISA_AARCH64, PTC_ISA_X86_64, &why);
+    CHECK(c != NULL && why == PTC_OPEN_OK, "reopen failed: %d", (int)why);
+    if (c) {
+        /* The whole point: a different process must read the same offset as the same
+         * callee, or the persisted code is calling whoever happens to be there. */
+        CHECK(ptc_calltab_count(c) == 3, "all three slots persist, got %zu",
+              ptc_calltab_count(c));
+        CHECK(ptc_calltab_find(c, a, 0x1000) == 0, "slot 0 survives the round trip");
+        CHECK(ptc_calltab_find(c, b, 0x2000) == 1, "slot 1 survives the round trip");
+        CHECK(ptc_calltab_find(c, b, 0x2080) == 2, "slot 2 survives the round trip");
+        CHECK(ptc_calltab_find(c, b, 0x9999) == PTC_CALLTAB_NONE,
+              "a target that was never assigned must not gain a slot by reloading");
+        /* A second save must be byte-stable, or the numbering drifts between runs. */
+        CHECK(ptc_save(c, TMP) == 0, "re-save failed");
+        ptc_free(c);
+        c = ptc_open(TMP, PTC_ISA_AARCH64, PTC_ISA_X86_64, &why);
+        CHECK(c != NULL && ptc_calltab_find(c, b, 0x2080) == 2,
+              "slot numbering is stable across a second save");
+        ptc_free(c);
+    }
+    unlink(TMP);
+}
+
 int main(void)
 {
     printf("=== persistent translation cache ===\n");
@@ -337,6 +426,7 @@ int main(void)
     test_isa_and_corruption_guards();
     test_replace_and_stable_save();
     test_many_blocks();
+    test_call_table();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

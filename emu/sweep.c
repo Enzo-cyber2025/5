@@ -413,6 +413,79 @@ void sweep_set_resolver(tr_resolve_fn resolve, void *user)
     sweep_resolve      = resolve;
     sweep_resolve_user = user;
 }
+/* The resolver every translation in this sweep actually gets. It composes two kinds
+ * of answer, because the translator asks one callback about two different things and
+ * only the value passed distinguishes them:
+ *
+ *   An IAT slot's VA - answered by whatever the caller installed with
+ *   sweep_set_resolver, which for a Win32 binary is shim_resolve. It goes first.
+ *
+ *   A call target's VA, from `call rel32` - answered here, by the sweep, because the
+ *   sweep is the only thing that knows which modules are being translated and where
+ *   their executable sections are. It gets a call-table slot.
+ *
+ * No host address is returned for a guest call: the slot's BYTE OFFSET is, tagged
+ * TR_GUEST_CALL, so the emitted words stay valid in any process that loads the same
+ * cache. The table itself is persisted with the cache, and its slot numbering never
+ * changes - see ptc.h, where a renumbered slot would silently retarget every call in
+ * code that is already written to disk.
+ *
+ * Returns 0 when neither can answer, which leaves the refusal exactly as it was
+ * before this existed. A sweep with no cache has nowhere to put a table, so it
+ * declines every guest call rather than inventing one. */
+static uint64_t sweep_resolve_any(uint64_t va, void *user)
+{
+    sweep_job *j = (sweep_job *)user;
+    uint64_t   ans;
+    size_t     i;
+
+    if (sweep_resolve) {
+        ans = sweep_resolve(va, sweep_resolve_user);
+        if (ans)
+            return ans;
+    }
+    if (!j || !j->cache)
+        return 0;
+
+    for (i = 0; i < j->nmods; i++) {
+        const smod *m = &j->mods[i];
+        const pe_section *sec;
+        uint32_t within = 0, rva;
+        uint64_t slot;
+
+        if (!in_span(m, va))
+            continue;
+        rva = (uint32_t)(va - m->base);
+        sec = find_exec(m->pe, rva, &within);
+        /* A call into a non-executable section is not a call to a function, and
+         * giving it a slot would put a trap stub where the caller expects code.
+         * Refusing it keeps the reason honest: the target is not code. */
+        if (!sec)
+            continue;
+
+        slot = ptc_calltab_find(j->cache, m->module_id, va);
+        if (slot != PTC_CALLTAB_NONE)
+            return slot * 8u | TR_GUEST_CALL;
+
+        slot = ptc_calltab_assign(j->cache, m->module_id, va);
+        if (slot == PTC_CALLTAB_NONE)
+            return 0;
+        /* The callee has to be translated as well, or its slot stays empty and every
+         * call to it lands on a trap. Queued at the moment the call is discovered;
+         * sweep_run's translate loop re-reads the entry count each iteration, so a
+         * function found while translating another one is translated in the same run.
+         *
+         * Only queued when the slot is new. entry_push does not deduplicate, and a
+         * callee called from twenty places would otherwise be attempted twenty times
+         * - twenty refusals in the histogram for one function, which is exactly the
+         * kind of inflated count that sends the next change at the wrong thing. */
+        if (!entry_push(j, (uint32_t)i, va))
+            return 0;
+        return slot * 8u | TR_GUEST_CALL;
+    }
+    return 0;
+}
+
 static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
 {
     smod    *m = &j->mods[mi];
@@ -451,7 +524,7 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
     st = tr_translate_function_img(m->image + sec->raw_ptr, (size_t)sec->raw_size,
                                    m->base + sec->virtual_addr, within,
                                    m->base, m->pe ? m->pe->size_of_image : 0u,
-                                   sweep_resolve, sweep_resolve_user, &f);
+                                   sweep_resolve_any, j, &f);
     if (st != TR_OK) {
         tr_reason r = (f.reason < TRR_COUNT) ? f.reason : TRR_INTERNAL;
         j->reason_hist[r]++;

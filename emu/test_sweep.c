@@ -70,7 +70,13 @@ static const uint8_t CODE[] = {
     /* 1018 */ 0xC3,                                      /* ret  <- export B */
     /* 1019 */ 0x90, 0x90, 0x90,                          /* unreachable pad */
     /* 101C */ 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00,        /* jmp [rip+0] <- C */
-    /* 1022 */ 0xC3                                       /* unreachable ret */
+    /* 1022 */ 0xC3,                                      /* unreachable ret */
+    /* Appended for g_call_entry. Nothing above jumps here, so with the knob off
+     * these bytes are unreachable and every existing expectation still holds. The
+     * section's virtual_size is 0x30, and this ends at 0x102A. */
+    /* 1023 */ 0xE8, 0x01, 0x00, 0x00, 0x00,              /* call 1029       */
+    /* 1028 */ 0xC3,                                      /* ret             */
+    /* 1029 */ 0xC3                                       /* ret <- callee   */
 };
 
 /* Test-only knob: make the export directory claim far more entries than its
@@ -78,6 +84,15 @@ static const uint8_t CODE[] = {
  * instead of the section fabricates exports out of whatever data follows, and how
  * a sweep then queues entry points that are not code. */
 static int g_big_exports;
+
+/* Test-only knob: move the entry point to the caller/callee pair appended at the end
+ * of CODE, so a sweep reaches a `call rel32` without any export machinery. The
+ * callee is deliberately NOT an entry point - being found by the call is the thing
+ * under test. */
+static int g_call_entry;
+
+#define VA_CALLER  (IMAGE_BASE + 0x1023u)   /* call VA_CALLEE; ret */
+#define VA_CALLEE  (IMAGE_BASE + 0x1029u)   /* ret - reached only by that call */
 
 #define VA_ENTRY   (IMAGE_BASE + 0x1000u)   /* a whole function, with a loop */
 #define VA_LOOP    (IMAGE_BASE + 0x100Au)   /* its backward branch target */
@@ -175,7 +190,7 @@ static buf build_guest(int with_exports)
     bu16(&out, PE_MAGIC_PE32PLUS);
     bu8(&out, 14); bu8(&out, 0);
     bu32(&out, 0x200); bu32(&out, (uint32_t)rd.len); bu32(&out, 0);
-    bu32(&out, TEXT_VA);                           /* AddressOfEntryPoint */
+    bu32(&out, g_call_entry ? 0x1023u : TEXT_VA);   /* AddressOfEntryPoint */
     bu32(&out, TEXT_VA);                           /* BaseOfCode */
     bu64(&out, IMAGE_BASE);
     bu32(&out, 0x1000u); bu32(&out, 0x200u);       /* section / file alignment */
@@ -687,6 +702,76 @@ static void test_refusals(void)
     rig_teardown(&r);
 }
 
+/* A `call rel32` is 46% of what a real binary refuses, and translating it is only
+ * half of the work: the callee has to end up translated too, and the caller's code
+ * has to reach it through a slot whose number survives being written to disk. */
+static void test_guest_call_gets_a_slot(void)
+{
+    rig r;
+    sweep_progress p;
+    size_t slot, slots, found_caller = 0, found_callee = 0;
+    int saw_table_call = 0;
+
+    printf("a call rel32 gets a call-table slot and drags its callee along\n");
+    g_call_entry = 1;
+    rig_setup(&r, 0, "with a guest-to-guest call");
+    CHECK(sweep_add_module(r.job, "test.exe", r.module_id, r.img.b, r.img.len,
+                           &r.pe) == 1,
+          "the module offers exactly one entry point, the caller");
+    CHECK(sweep_run(r.job, NULL, NULL) == 1, "the sweep should finish uninterrupted");
+    sweep_get_progress(r.job, &p);
+
+    CHECK(p.entry_points == 1, "the callee is not an entry point: got %u", p.entry_points);
+    CHECK(ptc_calltab_count(r.cache) == 1,
+          "exactly one call target should have been given a slot, got %zu",
+          ptc_calltab_count(r.cache));
+    CHECK(ptc_calltab_find(r.cache, r.module_id, VA_CALLEE) == 0,
+          "and that slot must be the callee's");
+    CHECK(ptc_calltab_find(r.cache, r.module_id, VA_CALLER) == PTC_CALLTAB_NONE,
+          "a caller is not a call target and must not consume a slot");
+    CHECK(p.functions_attempted == 2,
+          "the callee must be attempted in the same run, not left for a later one: "
+          "attempted %u", p.functions_attempted);
+    CHECK(p.functions_translated == 2,
+          "caller and callee both translate, got %u translated of %u attempted",
+          p.functions_translated, p.functions_attempted);
+
+    /* Both functions must be in the cache, and the caller's words must consult the
+     * table. The four-word sequence is what P_CALL_TABLE emits for slot 0:
+     * MOVZ X17,#0; ADD X17,X21,X17; LDUR X16,[X17]; BLR X16. Asserting it is what
+     * distinguishes "the call was resolved" from "the call was resolved to an address
+     * baked into the code", which is the thing the whole call table exists to avoid. */
+    slots = ptc_record_slots(r.cache);
+    for (slot = 0; slot < slots; slot++) {
+        uint64_t mid = 0, gpc = 0;
+        const void *code = NULL;
+        const uint32_t *ws;
+        uint32_t clen = 0, nw, w;
+        if (!ptc_record_at(r.cache, slot, &mid, &gpc, &code, &clen)) continue;
+        if (mid != r.module_id) continue;
+        if (gpc == VA_CALLEE) { found_callee = 1; continue; }
+        if (gpc != VA_CALLER) continue;
+        found_caller = 1;
+        ws = (const uint32_t *)code;
+        nw = clen / 4u;
+        for (w = 0; w + 4u <= nw; w++) {
+            if (ws[w] == 0xD2800011u && ws[w + 1u] == 0x8B1102B1u &&
+                ws[w + 2u] == 0xF8400230u && ws[w + 3u] == 0xD63F0200u)
+                saw_table_call = 1;
+        }
+    }
+    CHECK(found_caller, "the caller is in the cache");
+    CHECK(found_callee, "the callee is in the cache: a slot pointing at nothing would "
+                        "make every call to it a trap");
+    CHECK(saw_table_call,
+          "the caller's words must load the target out of the call table "
+          "(MOVZ X17,#0 / ADD X17,X21,X17 / LDUR X16,[X17] / BLR X16), not embed an "
+          "address that will be wrong in the next process");
+
+    rig_teardown(&r);
+    g_call_entry = 0;
+}
+
 int main(int argc, char **argv)
 {
     /* Writes a guest image to disk so prewarm can be run over a real file. The
@@ -721,6 +806,7 @@ int main(int argc, char **argv)
     test_progress_and_eta();
     test_exports_past_section();
     test_refusals();
+    test_guest_call_gets_a_slot();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

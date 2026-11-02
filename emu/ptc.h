@@ -33,7 +33,11 @@
 #include <stdint.h>
 
 #define PTC_MAGIC "PTC1"
-#define PTC_FORMAT_VERSION 1u
+#define PTC_FORMAT_VERSION 2u   /* 2 adds the persisted call table */
+
+/* Returned by the call-table lookups when there is no slot. Not 0: slot 0 is a real
+ * slot, the first one ever assigned. */
+#define PTC_CALLTAB_NONE ((uint64_t)-1)
 
 /* Host/guest ISA stamps. Any stable enumeration works; what matters is that a
  * mismatch is detected rather than silently loading foreign machine code. */
@@ -132,6 +136,48 @@ const ptc_module *ptc_module_at(const ptc_cache *c, size_t i);
  *
  * The host code pointer stays valid until the next insert or free, same contract
  * as ptc_lookup. */
+/* ---- the call table ----
+ *
+ * A translated function that calls another translated function cannot have the
+ * callee's host address in its code: the code is persisted, and the callee is not
+ * at that address in the next process. So the caller is emitted with a BYTE OFFSET
+ * into a call table - `ADD X17,X21,X17; LDUR X16,[X17]; BLR X16` - and the table is
+ * filled at load time. The offset is a property of the slot, not of any address, so
+ * it stays valid across processes and across cache reloads.
+ *
+ * That makes the slot numbering part of the persisted format. Two consequences, both
+ * enforced here:
+ *
+ *   Slots are DENSE and assigned in insertion order, and the order is written to the
+ *   file, so a later process reconstructs the same numbering and therefore reads the
+ *   same offset as the same callee. An entry's slot is its index in the section.
+ *
+ *   Slots are NEVER renumbered. Invalidating a module drops its translation records
+ *   and compacts them, but its call-table entries are only marked dead and stay
+ *   where they are. Removing them would shift every later slot and silently turn
+ *   every baked offset in the surviving machine code into a call to the wrong
+ *   function - the failure mode this whole module exists to prevent. A dead slot is
+ *   left pointing at a trap stub at run time, so calling it stops controllably.
+ */
+
+/* Assigns the next free slot to (module_id, guest_va), or returns the slot it
+ * already has. A dead entry is revived rather than duplicated, because module_id
+ * already encodes content identity: the same id and the same guest address are the
+ * same callee. Returns the slot index, or PTC_CALLTAB_NONE on allocation failure. */
+uint64_t ptc_calltab_assign(ptc_cache *c, uint64_t module_id, uint64_t guest_va);
+
+/* The slot already assigned, or PTC_CALLTAB_NONE. Creates nothing. */
+uint64_t ptc_calltab_find(const ptc_cache *c, uint64_t module_id, uint64_t guest_va);
+
+/* Every slot including dead ones, because a dead slot still occupies its number. */
+size_t   ptc_calltab_count(const ptc_cache *c);
+
+/* Reads slot i. *out_dead is 1 when the slot's module was invalidated, so the
+ * runtime must point it at a trap stub instead of at code. Returns 0 when i is out
+ * of range. */
+int      ptc_calltab_at(const ptc_cache *c, size_t i, uint64_t *out_module_id,
+                        uint64_t *out_guest_va, int *out_dead);
+
 size_t ptc_record_slots(const ptc_cache *c);
 int    ptc_record_at(const ptc_cache *c, size_t slot, uint64_t *module_id,
                      uint64_t *guest_pc, const void **host_code,
