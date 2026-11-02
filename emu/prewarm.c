@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <ucontext.h>
 #include <time.h>
 
 #define MAX_IMAGE (256u * 1024u * 1024u)
@@ -377,6 +378,59 @@ static const char *outcome_name(exec_outcome o)
     return "?";
 }
 
+/* What a faulting child reports back. Two hypotheses about the SIGSEGVs have already
+ * been falsified by changing one thing and watching the count not move, which is what
+ * happens when the measurement is coarser than the bug. The signal number alone cannot
+ * separate a null dereference from a guest pointer into unmapped host memory from the
+ * emitted code branching somewhere wrong, and those three have three different fixes.
+ * So the handler reports the address the CPU faulted on and the instruction that
+ * faulted, and the parent says where each of them is. */
+#define FAULT_MAGIC 0x31544C46u   /* "FLT1", little-endian */
+
+/* Set in the child only, after fork, so the handler knows which pipe to write to. A
+ * file-scope variable rather than a parameter because a sigaction handler takes none. */
+static int fault_pipe_fd = -1;
+
+typedef struct {
+    uint32_t magic;
+    int32_t  signo;
+    int32_t  si_code;
+    uint32_t pad;
+    uint64_t addr;      /* si_addr: what the faulting instruction tried to reach */
+    uint64_t pc;        /* the faulting instruction itself */
+} fault_msg;
+
+/* Written from a signal handler, so only async-signal-safe calls: write and _exit.
+ * SA_RESETHAND means a fault inside here restores the default action and kills the
+ * child the way it did before this handler existed, so the parent's existing
+ * signal classification stays as the fallback rather than being replaced. */
+static void fault_handler(int signo, siginfo_t *si, void *uc)
+{
+    fault_msg m;
+    (void)uc;   /* unused when the syntax gate forces __aarch64__ onto x86 headers */
+    int       fd = fault_pipe_fd;
+    m.magic = FAULT_MAGIC;
+    m.signo = signo;
+    m.si_code = si ? si->si_code : 0;
+    m.pad = 0;
+    m.addr = (si && si->si_addr) ? (uint64_t)(uintptr_t)si->si_addr : 0u;
+    m.pc = 0;
+    /* Guarded on __x86_64__ being absent as well, and that is not redundancy. The
+     * build's syntax gate compiles this file with -D__aarch64__ forced on an x86-64
+     * compiler to check the aarch64-only code paths, so __aarch64__ alone is true
+     * there while the real headers are still x86-64 and mcontext_t has no pc member.
+     * A compiler defining __aarch64__ genuinely never defines __x86_64__, so the pair
+     * separates "the aarch64 code path" from "an aarch64 toolchain". */
+#if defined(__aarch64__) && !defined(__x86_64__)
+    if (uc) m.pc = (uint64_t)((ucontext_t *)uc)->uc_mcontext.pc;
+#endif
+    if (fd >= 0) {
+        ssize_t w = write(fd, &m, sizeof m);
+        (void)w;
+    }
+    _exit(3);
+}
+
 /* Runs one placed translated function in a forked child with an alarm.
  *
  * The body already lives in its own executable page, because a guest-to-guest call
@@ -393,16 +447,17 @@ static const char *outcome_name(exec_outcome o)
  * different bugs. */
 static exec_outcome exec_one(void *body, uint32_t body_len, void *imgbase,
                              uint64_t gtop, const uint64_t *calltab,
-                             exec_tally *t, uint64_t *out_val)
+                             exec_tally *t, uint64_t *out_val, fault_msg *out_fault)
 {
     uint32_t  prog[64];
     size_t    n = 0, plen = 0;
     void     *page;
-    int       fds[2];
+    int       fds[2], ffds[2];
     pid_t     pid;
     int       status = 0;
 
     (void)body_len;
+    if (out_fault) memset(out_fault, 0, sizeof *out_fault);
     t->ran++;
     if (!body) {
         t->could_not_run++;
@@ -444,15 +499,38 @@ static exec_outcome exec_one(void *body, uint32_t body_len, void *imgbase,
     if (!page) { t->could_not_run++; return EXC_COULD_NOT_RUN; }
 
     if (pipe(fds) != 0) { munmap(page, plen); t->could_not_run++; return EXC_COULD_NOT_RUN; }
+    if (pipe(ffds) != 0) {
+        close(fds[0]); close(fds[1]); munmap(page, plen);
+        t->could_not_run++;
+        return EXC_COULD_NOT_RUN;
+    }
     pid = fork();
     if (pid < 0) {
-        close(fds[0]); close(fds[1]); munmap(page, plen);
+        close(fds[0]); close(fds[1]); close(ffds[0]); close(ffds[1]); munmap(page, plen);
         t->could_not_run++;
         return EXC_COULD_NOT_RUN;
     }
     if (pid == 0) {
         uint64_t r;
         close(fds[0]);
+        close(ffds[0]);
+        /* Installed before the call and only for the signals that mean the code went
+         * wrong. SIGALRM is deliberately left alone: its default action kills the
+         * child, which is the only thing that stops a translated loop that never
+         * ends, and catching it here would turn every timeout into a report of a
+         * fault that was really a hang. */
+        fault_pipe_fd = ffds[1];
+        {
+            static const int caught[] = { SIGSEGV, SIGTRAP, SIGBUS, SIGILL, SIGFPE };
+            struct sigaction sa;
+            size_t k;
+            memset(&sa, 0, sizeof sa);
+            sa.sa_sigaction = fault_handler;
+            sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
+            sigfillset(&sa.sa_mask);
+            for (k = 0; k < sizeof caught / sizeof caught[0]; k++)
+                sigaction(caught[k], &sa, NULL);
+        }
         /* Armed before the call, not after. The default SIGALRM action kills the
          * child, which is the only thing that stops a translated loop that never
          * ends - and an alarm set on the way out would leave that loop running
@@ -461,15 +539,25 @@ static exec_outcome exec_one(void *body, uint32_t body_len, void *imgbase,
         r = ((uint64_t (*)(void))page)();
         if (write(fds[1], &r, sizeof r) != (ssize_t)sizeof r) _exit(2);
         close(fds[1]);
+        close(ffds[1]);
         _exit(0);
     }
     close(fds[1]);
+    close(ffds[1]);   /* the write end belongs to the child now */
     alarm(8);                       /* the parent's own escape if waitpid blocks */
     {
         ssize_t got = read(fds[0], out_val, sizeof *out_val);
         if (got != (ssize_t)sizeof *out_val) *out_val = 0;
     }
     close(fds[0]);
+    {   /* Both writes are far under PIPE_BUF, so each arrives in one read and the
+         * fault message cannot be interleaved with the return value. */
+        fault_msg fm;
+        ssize_t got = read(ffds[0], &fm, sizeof fm);
+        if (got == (ssize_t)sizeof fm && fm.magic == FAULT_MAGIC && out_fault)
+            *out_fault = fm;
+    }
+    close(ffds[0]);
     if (waitpid(pid, &status, 0) < 0) status = 0;
     alarm(0);
     munmap(page, plen);
@@ -478,10 +566,26 @@ static exec_outcome exec_one(void *body, uint32_t body_len, void *imgbase,
         t->returned++;
         return EXC_RETURNED;
     }
+    /* Counted from the message rather than from the wait status, and into exactly the
+     * same fields the signal path used. The child now exits 3 instead of dying, so
+     * without this a fault would arrive as "exited non-zero" and the tally's
+     * trapped + crashed == faulted invariant - which the CI assertion checks - would
+     * silently stop holding. */
+    if (out_fault && out_fault->magic == FAULT_MAGIC) {
+        int sg = out_fault->signo;
+        t->faulted++;
+        t->last_signal = sg;
+        if (sg == SIGTRAP) t->trapped++;
+        else               t->crashed++;
+        if (sg >= 0 && sg < 32) t->sig_hist[sg]++;
+        return EXC_FAULTED;
+    }
     if (WIFSIGNALED(status) && WTERMSIG(status) == SIGALRM) {
         t->timed_out++;
         return EXC_TIMED_OUT;
     }
+    /* Reached only when the handler did not report: SA_RESETHAND restored the default
+     * action after a second fault, or the signal was one nobody installed for. */
     t->faulted++;
     t->last_signal = WIFSIGNALED(status) ? WTERMSIG(status) : -1;
     if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTRAP) t->trapped++;
@@ -493,6 +597,39 @@ static exec_outcome exec_one(void *body, uint32_t body_len, void *imgbase,
         t->exit_nonzero++;
     }
     return EXC_FAULTED;
+}
+
+/* Which region a faulting address is in. Split this finely because the regions have
+ * different fixes and the coarse version already cost two falsified hypotheses: the
+ * signal number said SIGSEGV and nothing said where.
+ *
+ * The arena's guard pages are their own category rather than being lumped with the
+ * usable stack. A fault inside the usable region means something is wrong with the
+ * arena itself; a fault on a guard means the guest walked off the end of it, which is
+ * a frame larger than the arena or a stack that never stops growing - containment
+ * working, and a different problem entirely. */
+typedef enum {
+    FC_NULLISH = 0,     /* below 64 KiB: an uninitialised or truncated guest pointer */
+    FC_IN_IMAGE,        /* inside a mapped module: a bounds check should have caught it */
+    FC_IN_STACK,        /* inside the arena's usable pages */
+    FC_IN_GUARD,        /* the arena's PROT_NONE guard: walked off the guest stack */
+    FC_IN_CODE,         /* inside emitted code: a branch or a load went to the wrong place */
+    FC_ELSEWHERE,       /* none of the above: the emitted words invented this pointer */
+    FC_COUNT
+} fault_class;
+
+static const char *fault_class_name(fault_class c)
+{
+    switch (c) {
+    case FC_NULLISH:   return "null-ish";
+    case FC_IN_IMAGE:  return "inside a mapped guest image";
+    case FC_IN_STACK:  return "inside the guest stack";
+    case FC_IN_GUARD:  return "on the guest stack's guard page";
+    case FC_IN_CODE:   return "inside emitted code";
+    case FC_ELSEWHERE: return "nowhere this process mapped for the guest";
+    case FC_COUNT:     break;
+    }
+    return "unknown";
 }
 
 /* A translated function sitting in executable memory, and the guest address it is the
@@ -510,6 +647,37 @@ typedef struct {
  * execution cap would leave slots unfilled for callees that no test entry point
  * reaches, which is most of them. */
 #define PLACE_MAX_RECORDS 4000u
+
+static fault_class classify_addr(uint64_t addr, void *const *bases,
+                                 const size_t *bsizes, int nmods,
+                                 const gs_arena *a,
+                                 const placed_fn *pf, size_t nplaced)
+{
+    int    i;
+    size_t q;
+
+    if (addr < 0x10000u)
+        return FC_NULLISH;
+    for (i = 0; i < nmods; i++) {
+        uint64_t b;
+        if (!bases[i]) continue;
+        b = (uint64_t)(uintptr_t)bases[i];
+        if (addr >= b && addr < b + bsizes[i]) return FC_IN_IMAGE;
+    }
+    if (gs_contains(a, addr))
+        return FC_IN_STACK;
+    if (a->map_base &&
+        addr >= (uint64_t)(uintptr_t)a->map_base &&
+        addr <  (uint64_t)(uintptr_t)a->map_base + a->map_size)
+        return FC_IN_GUARD;
+    /* Every placed body, not just the one that was called: a guest-to-guest call means
+     * the fault can be in a different function's code than the entry point's. */
+    for (q = 0; q < nplaced; q++) {
+        uint64_t b = (uint64_t)(uintptr_t)pf[q].page;
+        if (addr >= b && addr < b + pf[q].page_len) return FC_IN_CODE;
+    }
+    return FC_ELSEWHERE;
+}
 
 /* Walks every live cache record, puts each one in executable memory, fills the call
  * table so a guest function can call another one, and then runs them.
@@ -531,9 +699,11 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     size_t      trap_len = 0, ct_n = 0, ct_filled = 0;
     size_t      slots, slot, mapped = 0, unmatched = 0, capped = 0;
     size_t      nplaced = 0, not_placed = 0, i, q;
+    size_t      fc_hist[FC_COUNT];
     int         arena_ok = 0;
 
     memset(&t, 0, sizeof t);
+    memset(fc_hist, 0, sizeof fc_hist);
     printf("\n--- executing what was translated ---\n");
 
     /* 8 MiB, not the 64 KiB this used to be. Each translated function is called in
@@ -652,10 +822,12 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         if (!bases[i]) continue;
         for (q = 0; q < nplaced; q++) {
             uint64_t      val = 0;
+            fault_msg     fm;
             exec_outcome  oc;
             if (pf[q].module_id != mids[i]) continue;
             if (t.ran >= EXEC_MAX_RECORDS) { capped++; continue; }
-            oc = exec_one(pf[q].page, pf[q].code_len, bases[i], a.top, ct, &t, &val);
+            memset(&fm, 0, sizeof fm);
+            oc = exec_one(pf[q].page, pf[q].code_len, bases[i], a.top, ct, &t, &val, &fm);
             /* The returned value is printed because it is the only evidence that
              * the code did something rather than merely not crashing. It is NOT
              * checked against anything: the argument is arbitrary and the function
@@ -664,6 +836,39 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                    (unsigned long long)pf[q].guest_pc, pf[q].code_len, outcome_name(oc),
                    oc == EXC_RETURNED ? "value 0x" : "",
                    (unsigned long long)(oc == EXC_RETURNED ? val : 0u));
+
+            /* Printed per record rather than only in aggregate, because the aggregate
+             * is what two hypotheses were falsified against and the per-record line is
+             * what says which pointer was wrong. Worded to avoid every substring the
+             * CI assertion greps for, which takes the LAST match of each pattern. */
+            if (fm.magic == FAULT_MAGIC) {
+                fault_class fc = classify_addr(fm.addr, bases, bsizes, nmods, &a,
+                                               pf, nplaced);
+                fc_hist[fc]++;
+                printf("      fault at %016llX (%s), sig %d code %d",
+                       (unsigned long long)fm.addr, fault_class_name(fc),
+                       fm.signo, fm.si_code);
+                if (fm.pc) {
+                    size_t w;
+                    int    located = 0;
+                    for (w = 0; w < nplaced; w++) {
+                        uint64_t b = (uint64_t)(uintptr_t)pf[w].page;
+                        if (fm.pc < b || fm.pc >= b + pf[w].page_len) continue;
+                        printf(", pc word %llu of the body at guest_pc=%08llX\n",
+                               (unsigned long long)((fm.pc - b) / 4u),
+                               (unsigned long long)pf[w].guest_pc);
+                        located = 1;
+                        break;
+                    }
+                    /* The informative case: control was somewhere that is not
+                     * translated code at all, so the fault is not in a body. */
+                    if (!located)
+                        printf(", pc %016llX is outside every placed body\n",
+                               (unsigned long long)fm.pc);
+                } else {
+                    printf(", pc unavailable\n");
+                }
+            }
         }
     }
 
@@ -714,6 +919,16 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
             printf("  exited non-zero without a signal: %u record(s)\n",
                    t.exit_nonzero);
         printf("  last fault signal: %d\n", t.last_signal);
+    }
+    /* Every region that faulted, with counts. This is the line that turns "N records
+     * died of SIGSEGV" into a work queue: a guard-page count says frames are bigger
+     * than the arena, a null-ish count says a guest register was never initialised,
+     * and a count in the last category says the emitted words produced a pointer that
+     * corresponds to nothing in this process. */
+    for (i = 0; i < FC_COUNT; i++) {
+        if (!fc_hist[i]) continue;
+        printf("  fault address region: %-42s %zu record(s)\n",
+               fault_class_name((fault_class)i), fc_hist[i]);
     }
     if (unmatched) printf("  records belonging to no offered module: %zu\n", unmatched);
     if (capped)    printf("  records skipped by the %u cap: %zu\n", EXEC_MAX_RECORDS, capped);
