@@ -3728,11 +3728,26 @@ static void test_guest_to_guest_call(void)
 
     /* With no resolver at all the refusal has to be exactly what it always was. A
      * feature that quietly starts accepting calls it cannot honour is worse than no
-     * feature. */
-    st = tr_translate_function(caller, sizeof(caller), IMAGE_BASE, NULL, NULL, &fc);
-    CHECK(st == TR_UNSUPPORTED,
-          "call rel32 translated with no resolver: a target nobody resolved must stay "
-          "refused, not be guessed at");
+     * feature.
+     *
+     * Into its OWN tr_func, and that is not tidiness. An out parameter is cleared
+     * before it is filled, so a refusal leaves n at 0 and words empty. Translating
+     * this control into fc - as the first version did - destroyed the caller's body,
+     * and the execution block below then appended zero words for it, which put the
+     * callee exactly where the trampoline's BL aims. The chain "returned the callee's
+     * value instead of the caller's" because the callee was the only thing there and
+     * the caller had never been placed. A negative control that writes to the same
+     * state the positive case is about to use does not test anything; it corrupts it. */
+    {
+        tr_func fu;
+        st = tr_translate_function(caller, sizeof(caller), IMAGE_BASE, NULL, NULL, &fu);
+        CHECK(st == TR_UNSUPPORTED,
+              "call rel32 translated with no resolver: a target nobody resolved must "
+              "stay refused, not be guessed at");
+    }
+    /* Guarding the thing the failure above hid. A body of zero words is never a
+     * function, and appending one silently places whatever comes next at the entry. */
+    CHECK(fc.n > 0, "the caller's body is empty, so there is nothing to execute");
 
 #if defined(__aarch64__)
     {
@@ -3776,20 +3791,6 @@ static void test_guest_to_guest_call(void)
             CHECK(ok && !to && sig == 0,
                   "the guest-to-guest call did not run cleanly (ok=%d to=%d sig=%d)",
                   ok, to, sig);
-            /* UNRESOLVED, and left failing on purpose. On a real aarch64 runner this
-             * returns 7 - the callee's value - instead of 8, so the caller's
-             * `add eax,1` after the call did not execute. The emitted words were
-             * hand-decoded and are correct: STP frame, MOVZ X17,#0, ADD X17,X21,X17,
-             * LDUR X16,[X17], BLR X16, ADD W0,W0,#1, LDP frame, RET. The callee
-             * returning its own value proves the slot was filled and the BLR reached
-             * it; 7 rather than 8 means the callee's RET did not land on the caller's
-             * next instruction, i.e. X30 at that RET was the trampoline's return
-             * address and not the one the caller's BLR set. What puts it there is not
-             * established.
-             *
-             * Not weakened to 7 and not deleted: a call that reaches a callee and does
-             * not come back to the caller is not a working call, and this is the
-             * feature 46% of a real binary's refusals depend on. */
             CHECK(r == 8u,
                   "the call chain returned %llu, expected 8 (the callee's 7 plus the "
                   "caller's 1): the callee was reached, so the slot and the BLR are "
