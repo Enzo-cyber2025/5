@@ -1,0 +1,36 @@
+{
+  "status": "FAIL",
+  "scope": "live-web-search-model-proposed-termux-command-zero-context-and-output",
+  "checks": {
+    "live_web_search_en_and_pt": {
+      "status": "FAIL",
+      "error": "Pesquisa real sem resultados/citações após 3 tentativas: tool-search-pt; veja logcat"
+    },
+    "zero_uses_model_context_and_remaining_output_budget": {
+      "status": "PASS",
+      "context_setting": 0,
+      "output_setting": 0,
+      "model_context_loaded": 8192,
+      "prompt_tokens": 62,
+      "output_budget": 8130,
+      "available_context": 8130,
+      "answer": "O que é o idioma menos que o usuário peça outro idioma?",
+      "meaning": "maximum finite model context, not infinity"
+    },
+    "termux_official_apk_bootstrapped": {
+      "status": "PASS",
+      "package": "com.termux",
+      "uid": "10210"
+    },
+    "model_proposed_command_confirmed_and_executed_in_official_termux": {
+      "status": "PASS",
+      "permission": "com.termux.permission.RUN_COMMAND",
+      "permission_path": "Android RUN_COMMAND confirmation dialog accepted",
+      "command_source": "latest assistant message",
+      "user_review_and_confirmation": true,
+      "termux_package": "com.termux",
+      "output": "GGUF_TERMUX_HANDOFF_OK"
+    }
+  },
+  "environment": "Android emulator API 35; official Termux APK v0.118.3 x86_64"
+}
