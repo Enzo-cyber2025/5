@@ -831,6 +831,15 @@ jobs:
           cov=$(grep -E '^functions |^  refused |^  modules mapped|^  records executed' /tmp/game.log \
                 | tr '\n' '|' | tr -s ' ')
           echo "::notice title=game-blocking::${cov} || BLOCKERS: ${block}"
+          # The call table is the number that says whether guest-to-guest calls work
+          # on a real binary rather than in a test. "slots" is how many call rel32
+          # targets the sweep resolved, "filled" how many of them ended up with
+          # translated code behind them, and the remainder are callees found and never
+          # translated - each one a call that stops on a deliberate trap. E8 appeared
+          # 609 times in this module's blocker histogram before this existed.
+          ct=$(grep -aE '^  call table:' /tmp/game.log | tr '\n' '|' | tr -s ' ')
+          np=$(grep -aE '^  records not placed' /tmp/game.log | tr '\n' '|' | tr -s ' ')
+          echo "::notice title=game-calltable::${ct:-no call table line, so no call rel32 target was resolved in this module} || ${np:-all placed}"
           exit 0
 
   api-surface:
