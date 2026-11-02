@@ -840,6 +840,12 @@ jobs:
           ct=$(grep -aE '^  call table:' /tmp/game.log | tr '\n' '|' | tr -s ' ')
           np=$(grep -aE '^  records not placed' /tmp/game.log | tr '\n' '|' | tr -s ' ')
           echo "::notice title=game-calltable::${ct:-no call table line, so no call rel32 target was resolved in this module} || ${np:-all placed}"
+          # Its own notice rather than relying on the tail of the log, which happened to
+          # reach these lines once and would not if anything below them grew. Each line
+          # carries the signal split: the region alone cannot say whether a guard-page
+          # fault is the arena containing a runaway stack pointer or something else.
+          fr=$(grep -aE '^  fault address region:' /tmp/game.log | tr '\n' '|' | tr -s ' ' | cut -c1-1200)
+          echo "::notice title=game-faultregions::${fr:-no fault region lines: either nothing faulted or the handler did not report}"
           exit 0
 
   api-surface:

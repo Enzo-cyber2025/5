@@ -700,10 +700,21 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     size_t      slots, slot, mapped = 0, unmatched = 0, capped = 0;
     size_t      nplaced = 0, not_placed = 0, i, q;
     size_t      fc_hist[FC_COUNT];
+    /* Region crossed with signal, because the region histogram alone cannot answer the
+     * only question that matters here. The tally calls a SIGTRAP "the bounds check
+     * working" and everything else "emitted code going wrong", and 40 records faulting
+     * on the guest stack's guard page could be either: a SIGSEGV there is the arena
+     * containing a runaway stack pointer, which is containment, while the same address
+     * reached by a SIGTRAP would mean something else entirely. Reporting the regions
+     * without the signals would leave that guess, and this count has already been
+     * guessed at twice. */
+    size_t      fc_trap[FC_COUNT], fc_other[FC_COUNT];
     int         arena_ok = 0;
 
     memset(&t, 0, sizeof t);
     memset(fc_hist, 0, sizeof fc_hist);
+    memset(fc_trap, 0, sizeof fc_trap);
+    memset(fc_other, 0, sizeof fc_other);
     printf("\n--- executing what was translated ---\n");
 
     /* 8 MiB, not the 64 KiB this used to be. Each translated function is called in
@@ -845,6 +856,8 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                 fault_class fc = classify_addr(fm.addr, bases, bsizes, nmods, &a,
                                                pf, nplaced);
                 fc_hist[fc]++;
+                if (fm.signo == SIGTRAP) fc_trap[fc]++;
+                else                     fc_other[fc]++;
                 printf("      fault at %016llX (%s), sig %d code %d",
                        (unsigned long long)fm.addr, fault_class_name(fc),
                        fm.signo, fm.si_code);
@@ -927,8 +940,8 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
      * corresponds to nothing in this process. */
     for (i = 0; i < FC_COUNT; i++) {
         if (!fc_hist[i]) continue;
-        printf("  fault address region: %-42s %zu record(s)\n",
-               fault_class_name((fault_class)i), fc_hist[i]);
+        printf("  fault address region: %-42s %zu record(s), %zu SIGTRAP, %zu other\n",
+               fault_class_name((fault_class)i), fc_hist[i], fc_trap[i], fc_other[i]);
     }
     if (unmatched) printf("  records belonging to no offered module: %zu\n", unmatched);
     if (capped)    printf("  records skipped by the %u cap: %zu\n", EXEC_MAX_RECORDS, capped);
