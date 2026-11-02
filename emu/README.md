@@ -1147,7 +1147,7 @@ chama uma função opaca com oito argumentos, o que força o compilador a carreg
 X0..X7 — e RBX é X3 — tornando a destruição tão certa quanto C portável permite;
 mesmo assim a garantia vem dos words, não da sorte.
 
-Suite do projeto: **994**.
+Suite do projeto: **999**.
 
 ### Um programa guest inteiro
 
@@ -1336,6 +1336,55 @@ e retorna. **Três** funções do Win32 existem; um aplicativo real precisa de c
 este PE tem **uma** função, que só chama importações — `call rel32` continua recusado,
 então qualquer função que chame outra do mesmo módulo ainda não traduz. É por isso que
 o Luanti está em 8,56% e não em 100%.
+
+### Uma função do guest chamando outra (`call rel32`): 46% das recusas
+
+Medido num binário real baixado, os dois opcodes que impediam qualquer função de
+chamar outra eram `FF` com 782 ocorrências e `E8` com 609 — **1391 de 3055 recusas,
+46%**. Sem isso o tradutor só serve para folhas: cada função executada isoladamente,
+nenhuma chamando nenhuma. `E8` (chamada direta, deslocamento relativo) é a metade
+resolvível estaticamente, e é o que este passo faz.
+
+O alvo é um VA do guest, e a mesma proibição que já existia vale aqui: **nenhum
+endereço de hospedeiro entra numa palavra emitida**, porque o cache persistido tem de
+continuar válido num processo diferente. Então o resolvedor devolve não o endereço da
+função, mas o *byte offset de um slot numa tabela de chamadas*, marcado com
+`TR_GUEST_CALL` (bit 61). A emissão carrega a tabela em X21, soma o offset, busca o
+código e chama: `ADD X17,X21,X17`, `LDUR X16,[X17]`, `BLR X16`. Em tempo de
+execução o slot aponta para a função traduzida.
+
+**Sem ponte de ABI**, e isso é o que torna a coisa barata. Uma chamada
+guest-para-guest não cruza fronteira nenhuma: o callee é código traduzido que já
+espera o estado x86-64 nos mesmos registradores mapeados. Passar os argumentos por
+X0..X3 como a AAPCS mandaria embaralharia RCX/RDX/RBX. A ponte só existe quando o
+alvo é uma função do hospedeiro.
+
+A cadeia foi executada de verdade em ARM64: um caller com `sub $8,%rsp`,
+`call callee`, `add $0x1,%eax`, `ret`, e um callee `mov $7,%eax`, `ret` — os dois
+traduzidos pelo mesmo caminho de produção, postos na mesma página, e o resultado é
+8. Provado no runner ARM64 nativo e sob QEMU.
+
+O teste falhou primeiro devolvendo 7, e vale registrar por quê: **o controle negativo
+destruía o caso positivo.** A verificação "sem resolvedor tem de continuar sendo
+recusado" traduzia no mesmo `tr_func` que o caso positivo acabara de preencher. Um
+parâmetro de saída é limpo antes de ser preenchido, então aquela recusa deixou `n` em
+zero — e o bloco de execução acrescentou zero palavras de caller, colocando o callee
+exatamente onde o `BL` do trampolim aponta. O callee rodou, devolveu 7 e retornou
+direto ao trampolim. Não havia caller na página. O resultado era limpo, sem falha, e
+não dizia nada sobre o recurso.
+
+É a terceira vez que o andaime de um teste produz um número que parece uma descoberta:
+um filho que escreve num global do pai, uma imagem `MAP_PRIVATE` que não mostra o
+store, e agora um controle negativo sobrescrevendo o estado do caso positivo. A regra
+geral é que **um controle negativo não pode escrever em nenhum estado que o caminho
+positivo vá usar**. E a decisão de ter deixado a asserção falhando em vez de ajustá-la
+para 7 é o que impediu isso de embarcar como funcional: uma chamada que alcança o
+callee e não volta ao caller não é uma chamada, e teria executado o corpo errado na
+primeira função real que a usasse.
+
+A varredura ainda não usa isto — precisa atribuir um slot a cada função descoberta e
+preencher a tabela antes de executar. Enquanto isso é uma capacidade do tradutor, não
+um ganho de cobertura no binário baixado.
 
 ### Não feito
 
