@@ -16,7 +16,9 @@ aapt2 link --manifest AndroidManifest.xml -I "$ANDROID_JAR" \
   --min-sdk-version 23 --target-sdk-version 35 \
   --version-code 1 --version-name 1.0 \
   -o out/base.apk
-d8 --lib "$ANDROID_JAR" --output dex classes
+# D8 consumes program archives or class files, not the source/classes directory itself.
+jar --create --file out/classes.jar -C classes .
+d8 --lib "$ANDROID_JAR" --output dex out/classes.jar
 cp out/base.apk out/unsigned.apk
 jar uf out/unsigned.apk -C dex classes.dex
 if [ ! -s out/debug.keystore ]; then

@@ -336,9 +336,8 @@ def main():
             output = device.shell("cat " + shlex.quote(TERMUX_HOME + "/model-audit-output.txt")).strip()
             assert output == folder["file_content"], {"expected": folder["file_content"], "actual": output}
             record["shell_output"] = output
-            description_prompt = ("Termux output, file contents: " + output + "\n"
-                                  "There is exactly one file named only-note.txt. Reply as: "
-                                  "file=<filename>; id=<identifier>.")
+            description_prompt = ("A pasta contém somente only-note.txt. O texto exato lido do arquivo é: "
+                                  + output + "\nDescreva em uma frase a pasta, incluindo o nome do arquivo e copiando o identificador exatamente.")
             description_chat = device.new_chat(model, 0, context_size=1024, threads=2, n_predict=32)
             try:
                 description = reply(device, description_chat, description_prompt,
