@@ -205,6 +205,11 @@ def check_zero_limits(device, model, summary):
     prompt_text = "Reply with only: OK"
     device.alive()
     device.send(prompt_text)
+    def prompt_saved():
+        saved = next((c for c in device.read_json("chats.json") if c["id"] == chat["id"]), None)
+        return saved if saved and any(m.get("role") == "user" and prompt_text in m.get("content", "")
+                                      for m in saved.get("messages", [])) else None
+    device.wait(prompt_saved, "prompt zero persistido no chat", timeout=30)
     def native_budget_observed():
         # These native diagnostics can be emitted by the model worker process,
         # not the Activity PID; inspect all logcat buffers, as the prior zero
@@ -217,7 +222,7 @@ def check_zero_limits(device, model, summary):
         return None
     try:
         log, budget, prompt = device.wait(native_budget_observed,
-            "orçamento nativo finito dos dois valores zero", timeout=900)
+            "orçamento nativo finito dos dois valores zero", timeout=180)
     except AssertionError:
         summary["checks"]["zero_context_and_zero_response_limits"] = {
             "status": "FAIL", "error": "budget diagnostics not observed",
@@ -356,8 +361,8 @@ def main():
             zero = check_zero_limits(device, model, summary)
         except Exception as exc:
             zero = None
-            summary["checks"]["zero_context_and_zero_response_limits"] = {
-                "status": "FAIL", "error": str(exc)}
+            failed_zero = summary["checks"].setdefault("zero_context_and_zero_response_limits", {})
+            failed_zero.update({"status": "FAIL", "error": str(exc)})
             traceback.print_exc()
 
         # Stage a minimal Java Android project and android.jar into Termux home.
