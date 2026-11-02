@@ -18,6 +18,11 @@ def test_termux_handoff_is_explicit_user_confirmed_and_scoped_to_shell_blocks():
     assert "MAX_COMMAND_CHARS = 6000" in bridge
     assert "assistantCommand(activity)" in bridge
     assert "BARE_COMMAND" in bridge and "bare.indexOf('`') < 0" in bridge
+    # Models without native tool/function calling can still return a plain-text
+    # one-line command, including the exact bash script invocations used by the
+    # requested Termux tasks. Execution remains gated by the review dialog.
+    assert "(?:bash|sh|echo|printf" in bridge
+    assert r"[^\\r\\n]*" in bridge  # bare text stays a single, reviewed command line
     assert 'setTitle("Revisar comando do Termux")' in bridge
     assert "startService(intent)" in bridge
     # This bridge delegates to a separately installed Termux and exposes code

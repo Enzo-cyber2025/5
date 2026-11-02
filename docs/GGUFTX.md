@@ -40,16 +40,19 @@ verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
 
 ## Limites e segurança
 
-- **Termux não foi embutido como runtime.** Há agora um hand-off opcional para o
-  aplicativo Termux instalado separadamente: o botão lê um bloco `bash`/`sh` da
-  última resposta, mostra o comando completo e só o envia ao Termux após confirmação
+- **Termux não foi embutido como runtime.** Há um hand-off opcional para o
+  aplicativo Termux instalado separadamente. Não depende de chamadas nativas de
+  ferramentas/funções: lê um bloco Markdown `bash`/`sh`/`shell`/`termux` ou uma
+  linha simples reconhecida (incluindo `bash ~/script.sh`) da última resposta,
+  mostra exatamente o comando selecionado e só o envia ao Termux após confirmação
   explícita. Requer Termux com `RUN_COMMAND`/“Allow external apps” habilitado; a
-  saída fica no próprio Termux e não é devolvida automaticamente à IA. O hand-off
-  foi acrescentado ao CI um teste de emulador com o APK oficial do Termux, que
-  exige confirmação, concessão runtime da permissão e verificação de um arquivo
-  marcador; o resultado ainda está pendente. A execução silenciosa irrestrita
-  continua desativada: comandos podem apagar
-  dados, expor credenciais ou instalar software.
+  saída fica no próprio Termux e não é devolvida automaticamente à IA. Comandos
+  simples sem fence são limitados a uma linha; scripts multilinha devem vir num
+  bloco de código e continuam sujeitos à revisão humana. O teste de emulador do
+  candidato de CI usa o APK oficial do Termux e verifica confirmação, permissão
+  runtime e arquivo marcador; isso não valida o APK assinado antigo nem comprova
+  o fluxo para Gemma 4 E2B/Gemma 3 270M. A execução silenciosa irrestrita continua
+  desativada: comandos podem apagar dados, expor credenciais ou instalar software.
 - **`contextSize=0` e `nPredict=0` agora significam “usar o máximo finito disponível”**:
   o contexto 0 pede ao llama.cpp o contexto de treino declarado no GGUF; saída 0
   consome o espaço restante desse contexto até EOS, cancelamento ou esgotamento.

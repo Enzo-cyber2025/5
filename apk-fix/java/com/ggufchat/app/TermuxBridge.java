@@ -28,7 +28,7 @@ public final class TermuxBridge {
     // command only for familiar Termux utilities; the existing review dialog and
     // explicit confirmation still apply before anything reaches the shell.
     private static final Pattern BARE_COMMAND = Pattern.compile(
-        "(?i)^(?:echo|printf|pwd|ls|cat|grep|find|mkdir|touch|date|whoami|uname|python3?|pip3?|pkg|apt|git|curl|wget|termux-[A-Za-z0-9_-]+)(?:\\s+[^\\r\\n]*)?$");
+        "(?i)^(?:bash|sh|echo|printf|pwd|ls|cat|grep|find|mkdir|touch|date|whoami|uname|python3?|pip3?|pkg|apt|git|curl|wget|termux-[A-Za-z0-9_-]+)(?:\\s+[^\\r\\n]*)?$");
     private static final String PERMISSION = "com.termux.permission.RUN_COMMAND";
     private static final int PERMISSION_REQUEST = 7431;
     private static final String ACTION = "com.termux.RUN_COMMAND";
