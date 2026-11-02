@@ -52,6 +52,13 @@ uint32_t a64_blr(unsigned rn);
  * loud, and its immediate is a tag so a runtime can tell one kind of stop from
  * another. */
 #define A64_BRK_GUEST_OOB 0x9F1Eu
+
+/* What an unfilled call-table slot points at: a guest function was called that no
+ * translation exists for. Its own immediate rather than reusing the one above,
+ * because the two mean opposite things - one is a guest pointer that left the image,
+ * the other is a slot the loader never filled - and a signal handler that reports the
+ * immediate is the only thing that can tell them apart. Both are SIGTRAP. */
+#define A64_BRK_UNTRANSLATED 0x9F1Fu
 uint32_t a64_brk(uint16_t imm16);
 
 /* STP X29, X30, [SP, #-16]! and LDP X29, X30, [SP], #16 - the standard frame

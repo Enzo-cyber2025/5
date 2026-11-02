@@ -311,6 +311,18 @@ static void diagnose_module(const char *path, const uint8_t *img, size_t img_len
 
 #define EXEC_MAX_RECORDS 2000u   /* a cap so a large cache cannot run for hours */
 
+/* Appends the MOVZ/MOVK run that puts a 64-bit constant into rd. Four copies of this
+ * lived inline in the trampoline builder, one per register, which is how the call
+ * table's X21 got added to the test harness but not here. */
+static size_t tr_const(uint32_t *prog, size_t n, unsigned rd, uint64_t v)
+{
+    prog[n++] = a64_movz_x(rd, (uint16_t)(v & 0xFFFFu));
+    if ((v >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(rd, (uint16_t)((v >> 16) & 0xFFFFu), 16);
+    if ((v >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(rd, (uint16_t)((v >> 32) & 0xFFFFu), 32);
+    if ((v >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(rd, (uint16_t)((v >> 48) & 0xFFFFu), 48);
+    return n;
+}
+
 /* One executable page holding a trampoline and the translated body. */
 static void *place_code(const uint32_t *prog, size_t n, size_t *out_len)
 {
@@ -365,7 +377,13 @@ static const char *outcome_name(exec_outcome o)
     return "?";
 }
 
-/* Runs one translated function in a forked child with an alarm.
+/* Runs one placed translated function in a forked child with an alarm.
+ *
+ * The body already lives in its own executable page, because a guest-to-guest call
+ * reaches it through the call table and that pointer has to outlive this one call. So
+ * the trampoline no longer contains the body: it loads the body's address into X16 and
+ * branches there. BL is not an option - it encodes a 26-bit signed WORD offset, so
+ * +-128 MiB, and two independent mmaps are under no obligation to be that close.
  *
  * Forked because the code is untrusted in the ordinary sense: it was produced from
  * someone else's binary and there is no proof it terminates. A fault or a hang has
@@ -373,60 +391,54 @@ static const char *outcome_name(exec_outcome o)
  * child, which the parent sees as SIGALRM and reports as a timeout rather than as
  * a crash - the distinction matters because a runaway loop and a bad address are
  * different bugs. */
-static exec_outcome exec_one(const void *code, uint32_t code_len, void *imgbase,
-                             uint64_t gtop, exec_tally *t, uint64_t *out_val)
+static exec_outcome exec_one(void *body, uint32_t body_len, void *imgbase,
+                             uint64_t gtop, const uint64_t *calltab,
+                             exec_tally *t, uint64_t *out_val)
 {
-    uint32_t  prog[128];
-    size_t    n = 0, bl, plen = 0;
+    uint32_t  prog[64];
+    size_t    n = 0, plen = 0;
     void     *page;
     int       fds[2];
     pid_t     pid;
     int       status = 0;
-    uint32_t  body_words = code_len / 4u;
 
+    (void)body_len;
     t->ran++;
-    if (body_words == 0 || body_words + 16u > sizeof prog / sizeof prog[0]) {
+    if (!body) {
         t->could_not_run++;
         return EXC_COULD_NOT_RUN;
     }
 
-    /* The same frame discipline the translation itself uses, so X19 and X14 are
-     * set up before the body runs and restored after it. */
+    /* The same frame discipline the translation itself uses, so every register the
+     * emitted words read is established before the body runs and restored after it. */
     prog[n++] = a64_stp_frame_push();
     prog[n++] = a64_stp_gstack_push();
     prog[n++] = a64_stp_imgbase_push();
-    prog[n++] = a64_movz_x(0u, 0u);                       /* X0 = 0 argument */
-    prog[n++] = a64_movz_x(14u, (uint16_t)(gtop & 0xFFFFu));
-    if ((gtop >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 16) & 0xFFFFu), 16);
-    if ((gtop >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 32) & 0xFFFFu), 32);
-    if ((gtop >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(14u, (uint16_t)((gtop >> 48) & 0xFFFFu), 48);
+    prog[n++] = a64_str_pre(21u, 31u, -16);
+    n = tr_const(prog, n, 0u, 0u);                       /* X0 = 0 argument */
+    n = tr_const(prog, n, 14u, gtop);
     /* Guest RBP, same value as guest RSP - see build_trampoline in test_translate.c.
      * A function that reads [rbp-8] without establishing a frame would otherwise
      * dereference whatever this process left in X15. */
-    prog[n++] = a64_movz_x(15u, (uint16_t)(gtop & 0xFFFFu));
-    if ((gtop >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(15u, (uint16_t)((gtop >> 16) & 0xFFFFu), 16);
-    if ((gtop >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(15u, (uint16_t)((gtop >> 32) & 0xFFFFu), 32);
-    if ((gtop >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(15u, (uint16_t)((gtop >> 48) & 0xFFFFu), 48);
-    {
-        uint64_t ib = (uint64_t)(uintptr_t)imgbase;
-        prog[n++] = a64_movz_x(19u, (uint16_t)(ib & 0xFFFFu));
-        if ((ib >> 16) & 0xFFFFu) prog[n++] = a64_movk_x(19u, (uint16_t)((ib >> 16) & 0xFFFFu), 16);
-        if ((ib >> 32) & 0xFFFFu) prog[n++] = a64_movk_x(19u, (uint16_t)((ib >> 32) & 0xFFFFu), 32);
-        if ((ib >> 48) & 0xFFFFu) prog[n++] = a64_movk_x(19u, (uint16_t)((ib >> 48) & 0xFFFFu), 48);
-    }
-    bl = n;
-    prog[n++] = 0u;
+    n = tr_const(prog, n, 15u, gtop);
+    n = tr_const(prog, n, 19u, (uint64_t)(uintptr_t)imgbase);
+    /* X21: the call table. Every P_CALL_TABLE in the body loads its target from here,
+     * so a function that calls another guest function branches to whatever this
+     * process left in X21 without it - and that is a live host pointer, not zero,
+     * which is why it would look like a crash in the emitted code rather than a
+     * missing initialisation. NULL is passed when the cache has no table at all. */
+    n = tr_const(prog, n, 21u, (uint64_t)(uintptr_t)calltab);
+    n = tr_const(prog, n, 16u, (uint64_t)(uintptr_t)body);
+    prog[n++] = a64_blr(16u);
+    prog[n++] = a64_ldr_post(21u, 31u, 16);   /* exact reverse of the push order */
     prog[n++] = a64_ldp_imgbase_pop();
     prog[n++] = a64_ldp_gstack_pop();
     prog[n++] = a64_ldp_frame_pop();
     prog[n++] = a64_ret();
-    prog[bl]  = a64_bl((int32_t)(n - bl));
-    if (n + body_words > sizeof prog / sizeof prog[0]) {
+    if (n > sizeof prog / sizeof prog[0]) {
         t->could_not_run++;
         return EXC_COULD_NOT_RUN;
     }
-    memcpy(prog + n, code, body_words * 4u);
-    n += body_words;
 
     page = place_code(prog, n, &plen);
     if (!page) { t->could_not_run++; return EXC_COULD_NOT_RUN; }
@@ -482,18 +494,44 @@ static exec_outcome exec_one(const void *code, uint32_t code_len, void *imgbase,
     }
     return EXC_FAULTED;
 }
-/* Walks every live cache record and runs the ones belonging to a module whose
- * image could be mapped. Records whose module did not map are counted separately
- * rather than skipped silently: "executed 0" and "had nothing executable" are
- * different statements and the summary should not blur them. */
+
+/* A translated function sitting in executable memory, and the guest address it is the
+ * translation of. The call table is built out of these. */
+typedef struct {
+    uint64_t  module_id;
+    uint64_t  guest_pc;
+    uint32_t  code_len;
+    void     *page;
+    size_t    page_len;
+} placed_fn;
+
+/* Separate from the execution cap and larger, because a function that is never itself
+ * executed still has to be placed if anything calls it. Capping placement at the
+ * execution cap would leave slots unfilled for callees that no test entry point
+ * reaches, which is most of them. */
+#define PLACE_MAX_RECORDS 4000u
+
+/* Walks every live cache record, puts each one in executable memory, fills the call
+ * table so a guest function can call another one, and then runs them.
+ *
+ * Records whose module did not map are counted separately rather than skipped
+ * silently: "executed 0" and "had nothing executable" are different statements and
+ * the summary should not blur them. */
 static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids,
                                uint8_t *const *imgs, const size_t *lens,
                                const pe_image *pes, const char *const *paths)
 {
-    exec_tally t;
-    gs_arena   a;
-    size_t     slots, slot, mapped = 0, unmatched = 0, capped = 0;
-    int        i;
+    exec_tally  t;
+    gs_arena    a;
+    placed_fn  *pf = NULL;
+    void      **bases = NULL;
+    size_t     *bsizes = NULL;
+    uint64_t   *ct = NULL;
+    void       *trap = NULL;
+    size_t      trap_len = 0, ct_n = 0, ct_filled = 0;
+    size_t      slots, slot, mapped = 0, unmatched = 0, capped = 0;
+    size_t      nplaced = 0, not_placed = 0, i, q;
+    int         arena_ok = 0;
 
     memset(&t, 0, sizeof t);
     printf("\n--- executing what was translated ---\n");
@@ -512,9 +550,22 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         printf("  EXECUTED NOTHING: no guest stack arena\n");
         return;
     }
+    arena_ok = 1;
 
     slots = ptc_record_slots(cache);
-    for (i = 0; i < nmods; i++) {
+    bases  = calloc((size_t)nmods, sizeof *bases);
+    bsizes = calloc((size_t)nmods, sizeof *bsizes);
+    pf     = calloc(slots ? slots : 1u, sizeof *pf);
+    if (!bases || !bsizes || !pf) {
+        printf("  EXECUTED NOTHING: could not allocate the placement tables\n");
+        goto cleanup;
+    }
+
+    /* Every module is mapped up front and stays mapped. They used to be mapped and
+     * unmapped one at a time, which was fine while each record ran alone and cannot
+     * work now: a call-table slot may point at a function in a different module, so
+     * every mapping has to be alive for as long as any of them can be called. */
+    for (i = 0; i < (size_t)nmods; i++) {
         size_t sz = 0;
         void  *base = pe_map_image(imgs[i], lens[i], &pes[i], &sz);
         if (!base) {
@@ -522,6 +573,8 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                    paths[i]);
             continue;
         }
+        bases[i] = base;
+        bsizes[i] = sz;
         mapped++;
         printf("  %s: image mapped at %p, size %zu, base RVA 0 there\n",
                paths[i], base, sz);
@@ -535,27 +588,83 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
             shim_fill_iat(&pes[i], (uint8_t *)base, sz, pes[i].image_base,
                           &known, &unknown);
         }
+    }
 
-        for (slot = 0; slot < slots; slot++) {
-            uint64_t    mid = 0, gpc = 0;
-            const void *code = NULL;
-            uint32_t    clen = 0;
+    /* One shared stub for every slot that cannot be filled. A slot holding 0 would
+     * make the call a branch to address 0 - a SIGSEGV, and indistinguishable in the
+     * tally from the emitted words being wrong. A BRK with its own immediate is a
+     * controlled stop that says which of the two happened. */
+    ct_n = ptc_calltab_count(cache);
+    if (ct_n) {
+        uint32_t stub[1];
+        stub[0] = a64_brk(A64_BRK_UNTRANSLATED);
+        trap = place_code(stub, 1u, &trap_len);
+        ct = calloc(ct_n, sizeof *ct);
+        if (!trap || !ct) {
+            printf("  EXECUTED NOTHING: could not place the untranslated-call stub\n");
+            goto cleanup;
+        }
+    }
+
+    /* Place every record belonging to a module that mapped. */
+    for (slot = 0; slot < slots; slot++) {
+        uint64_t    mid = 0, gpc = 0;
+        const void *code = NULL;
+        uint32_t    clen = 0;
+        void       *page;
+        size_t      plen = 0;
+        int         have_base = 0;
+        if (!ptc_record_at(cache, slot, &mid, &gpc, &code, &clen)) continue;
+        for (i = 0; i < (size_t)nmods; i++)
+            if (mids[i] == mid && bases[i]) { have_base = 1; break; }
+        if (!have_base) continue;
+        if (nplaced >= PLACE_MAX_RECORDS) { not_placed++; continue; }
+        page = place_code((const uint32_t *)code, clen / 4u, &plen);
+        if (!page) { not_placed++; continue; }
+        pf[nplaced].module_id = mid;
+        pf[nplaced].guest_pc  = gpc;
+        pf[nplaced].code_len  = clen;
+        pf[nplaced].page      = page;
+        pf[nplaced].page_len  = plen;
+        nplaced++;
+    }
+
+    /* Fill the table. Slot order came out of the cache, so an offset baked into a
+     * body loaded from disk names the same callee here that it named in the process
+     * that translated it - which is the entire reason the numbering is persisted and
+     * never compacted. */
+    for (q = 0; ct && q < ct_n; q++) {
+        uint64_t mid = 0, va = 0;
+        int      dead = 0;
+        if (!ptc_calltab_at(cache, q, &mid, &va, &dead)) continue;
+        if (!dead) {
+            for (i = 0; i < nplaced; i++) {
+                if (pf[i].module_id != mid || pf[i].guest_pc != va) continue;
+                ct[q] = (uint64_t)(uintptr_t)pf[i].page;
+                ct_filled++;
+                break;
+            }
+        }
+        if (!ct[q]) ct[q] = (uint64_t)(uintptr_t)trap;
+    }
+
+    for (i = 0; i < (size_t)nmods; i++) {
+        if (!bases[i]) continue;
+        for (q = 0; q < nplaced; q++) {
             uint64_t      val = 0;
             exec_outcome  oc;
-            if (!ptc_record_at(cache, slot, &mid, &gpc, &code, &clen)) continue;
-            if (mid != mids[i]) continue;
+            if (pf[q].module_id != mids[i]) continue;
             if (t.ran >= EXEC_MAX_RECORDS) { capped++; continue; }
-            oc = exec_one(code, clen, base, a.top, &t, &val);
+            oc = exec_one(pf[q].page, pf[q].code_len, bases[i], a.top, ct, &t, &val);
             /* The returned value is printed because it is the only evidence that
              * the code did something rather than merely not crashing. It is NOT
              * checked against anything: the argument is arbitrary and the function
              * was written for a caller that does not exist here. */
             printf("    guest_pc=%08llX  %3u bytes of ARM64  ->  %-13s%s%llu\n",
-                   (unsigned long long)gpc, clen, outcome_name(oc),
+                   (unsigned long long)pf[q].guest_pc, pf[q].code_len, outcome_name(oc),
                    oc == EXC_RETURNED ? "value 0x" : "",
                    (unsigned long long)(oc == EXC_RETURNED ? val : 0u));
         }
-        munmap(base, sz);
     }
 
     /* records belonging to no module that was offered */
@@ -563,7 +672,7 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         uint64_t mid = 0;
         int found = 0;
         if (!ptc_record_at(cache, slot, &mid, NULL, NULL, NULL)) continue;
-        for (i = 0; i < nmods; i++) if (mids[i] == mid) { found = 1; break; }
+        for (i = 0; i < (size_t)nmods; i++) if (mids[i] == mid) { found = 1; break; }
         if (!found) unmatched++;
     }
 
@@ -571,6 +680,16 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     printf("  records executed: %u   returned: %u   faulted: %u   timed out: %u"
            "   could not run: %u\n",
            t.ran, t.returned, t.faulted, t.timed_out, t.could_not_run);
+    if (ct_n)
+        /* The number that says whether guest-to-guest calls can work at all. A slot
+         * left on the stub is a callee the sweep found and nobody translated, so this
+         * is the distance between "the translator can emit a call" and "the program
+         * can make one". */
+        printf("  call table: %zu slot(s), %zu filled with translated code, "
+               "%zu left on the untranslated stub\n",
+               ct_n, ct_filled, ct_n - ct_filled);
+    if (not_placed)
+        printf("  records not placed in executable memory: %zu\n", not_placed);
     if (t.faulted) {
         /* Split out, because the two causes call for opposite reactions: a trap is
          * the bounds check declining to invent a value, a crash is a bug in what
@@ -604,8 +723,20 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         printf("  EXECUTED ON aarch64: %u translated function(s) from a real "
                "shipped module ran on this host, %u returned\n",
                t.ran, t.returned);
-    gs_free(&a);
+
+cleanup:
+    for (q = 0; q < nplaced; q++)
+        if (pf && pf[q].page) munmap(pf[q].page, pf[q].page_len);
+    if (trap) munmap(trap, trap_len);
+    free(ct);
+    free(pf);
+    for (i = 0; bases && i < (size_t)nmods; i++)
+        if (bases[i]) munmap(bases[i], bsizes[i]);
+    free(bases);
+    free(bsizes);
+    if (arena_ok) gs_free(&a);
 }
+
 #else
 static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids,
                                uint8_t *const *imgs, const size_t *lens,
