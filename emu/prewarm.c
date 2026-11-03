@@ -159,6 +159,26 @@ static void print_summary(const sweep_progress *p, const ptc_cache *cache,
             printf("  %4u function(s) stopped at opcode %s%02X\n", c,
                    m == 1 ? "0F " : (m == 2 ? "0F38 " : (m == 3 ? "0F3A " : "")), op);
         }
+        /* One opcode's count can hold several different refusals, and "1016
+         * functions stopped at FF" is at least three separate findings - an import
+         * cell nobody answered, a call through a register, a jump through a vtable.
+         * This is the level that says which, in the translator's own words, so the
+         * next change aims at a sentence rather than at a byte. The prefix avoids
+         * "refused: " and "stopped at opcode" deliberately: CI slices the log by
+         * those and a new line matching one would silently displace what it was
+         * already reporting. */
+        for (rank = 0; rank < 10u; rank++) {
+            const char *txt = NULL;
+            uint32_t c = sweep_top_detail(job, rank, &txt);
+            if (!c || !txt) break;
+            printf("  %4u function(s) stopped because: %s\n", c, txt);
+        }
+        {
+            uint32_t kinds = sweep_detail_kinds(job), over = sweep_detail_overflow(job);
+            printf("  %4u distinct reason(s) in all", kinds);
+            if (over) printf(", %u past the histogram's %u slots", over, SWEEP_DETAIL_MAX);
+            printf("\n");
+        }
         for (rank = 0; rank < TRR_COUNT; rank++) {
             uint32_t c = sweep_reason_count(job, (tr_reason)rank);
             if (c) printf("  %4u refused: %s\n", c, tr_reason_name((tr_reason)rank));

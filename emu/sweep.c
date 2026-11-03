@@ -54,6 +54,19 @@ struct sweep_job {
 
     uint32_t    reason_hist[TRR_COUNT];
     uint32_t    opcode_hist[4][256];
+
+    /* A reason says which rule refused a function and an opcode says which
+     * instruction it stopped at, but neither says why that instruction was
+     * refused - and one opcode can be refused for a dozen different reasons.
+     * 1016 functions stopping at FF is three separate findings (an import cell
+     * nobody answered, a register-indirect call, a jump through a vtable) that
+     * this table keeps apart. Details are string literals in translate.c, so the
+     * pointer is the identity: two buckets with the same pointer are the same
+     * sentence, and the linker merging identical literals only combines buckets
+     * that were already the same. */
+    struct { const char *text; uint32_t count; } detail_hist[SWEEP_DETAIL_MAX];
+    uint32_t    detail_kinds;
+    uint32_t    detail_overflow;
     uint32_t    refused_at_first_insn;
     uint32_t    refused_deeper;
     uint32_t    deepest_refusal;
@@ -472,6 +485,23 @@ static int import_slot_rva(const smod *m, uint64_t va, uint32_t *out_rva)
     return 0;
 }
 
+/* Bucket a refusal's sentence. Linear over at most SWEEP_DETAIL_MAX entries,
+ * which is small and bounded; a refusal is already the expensive path. */
+static void detail_note(sweep_job *j, const char *text)
+{
+    uint32_t i;
+
+    if (!j || !text)
+        return;
+    for (i = 0; i < j->detail_kinds; i++) {
+        if (j->detail_hist[i].text == text) { j->detail_hist[i].count++; return; }
+    }
+    if (j->detail_kinds >= SWEEP_DETAIL_MAX) { j->detail_overflow++; return; }
+    j->detail_hist[j->detail_kinds].text  = text;
+    j->detail_hist[j->detail_kinds].count = 1u;
+    j->detail_kinds++;
+}
+
 static uint64_t sweep_resolve_any(uint64_t va, void *user)
 {
     sweep_job *j = (sweep_job *)user;
@@ -602,6 +632,7 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
             uint8_t which = tr_fail_opcode(&f);
             if (which) j->opcode_hist[f.fail_map][which]++;
         }
+        detail_note(j, f.detail);
         if (f.fail_insns == 0) j->refused_at_first_insn++;
         else                   j->refused_deeper++;
         if (f.fail_insns > j->deepest_refusal) j->deepest_refusal = f.fail_insns;
@@ -681,6 +712,47 @@ uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
     }
     if (out_map) *out_map = (uint8_t)best_map;
     if (out_opcode) *out_opcode = (uint8_t)best_op;
+    return best;
+}
+
+uint32_t sweep_detail_kinds(const sweep_job *j)
+{
+    return j ? j->detail_kinds : 0u;
+}
+
+uint32_t sweep_detail_overflow(const sweep_job *j)
+{
+    return j ? j->detail_overflow : 0u;
+}
+
+uint32_t sweep_top_detail(const sweep_job *j, uint32_t rank, const char **out_text)
+{
+    uint32_t best = 0, besti = 0, k, i, n;
+    uint8_t  taken[64];
+
+    if (!j || rank >= 64u) return 0;
+    n = j->detail_kinds;
+    memset(taken, 0, sizeof(taken));
+
+    /* Selection by repeated maximum, like sweep_top_opcode: the table is tiny and
+     * the rank requested is smaller still, so sorting would cost more than it saves. */
+    for (k = 0; k <= rank; k++) {
+        best = 0;
+        besti = 0;
+        for (i = 0; i < n; i++) {
+            uint32_t c = j->detail_hist[i].count;
+            uint32_t t;
+            int dup = 0;
+            if (c == 0) continue;
+            for (t = 0; t < k; t++) if (taken[t] == i) { dup = 1; break; }
+            if (dup) continue;
+            if (c > best) { best = c; besti = i; }
+        }
+        if (best == 0) return 0;
+        /* SWEEP_DETAIL_MAX is below 64, so the index always fits the taken[] marker. */
+        taken[k] = (uint8_t)besti;
+    }
+    if (out_text) *out_text = j->detail_hist[besti].text;
     return best;
 }
 

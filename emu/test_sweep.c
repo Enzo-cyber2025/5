@@ -935,6 +935,101 @@ static void test_import_slot_is_data_not_a_callee(void)
     g_with_imports = 0;
 }
 
+/* The reason histogram says which rule fired and the opcode histogram says which
+ * instruction it stopped at, but a single opcode can be refused for a dozen
+ * different reasons - and on a real bundle "1016 functions stopped at FF" is at
+ * least three separate findings. This level has to be right before it can aim
+ * anything, so its counts are asserted exactly, on a fixture with one refusal. */
+static void test_refusal_details_are_counted_exactly(void)
+{
+    rig r;
+    sweep_progress p;
+    const char *top = NULL, *second = NULL;
+    uint32_t c0, c1, sum = 0, rank;
+
+    printf("refusal sentences are histogrammed exactly, not approximately\n");
+    rig_setup(&r, 1, "with exports");
+    CHECK(sweep_add_module(r.job, "test.exe", r.module_id, r.img.b, r.img.len,
+                           &r.pe) == 3,
+          "the entry point plus two exports");
+    CHECK(sweep_run(r.job, NULL, NULL) == 1, "the sweep should finish uninterrupted");
+    sweep_get_progress(r.job, &p);
+
+    /* One function of the three is refused: FuncB is `jmp [rip+0]`, an indirect
+     * jump with no statically knowable target. So exactly one sentence, once. */
+    CHECK(p.functions_refused == 1,
+          "the fixture refuses exactly one function, got %u", p.functions_refused);
+    { extern void sweep_dbg_note_twice(void*); }
+    CHECK(sweep_detail_kinds(r.job) == 1,
+          "one refusal must make one histogram entry, got %u",
+          sweep_detail_kinds(r.job));
+    c0 = sweep_top_detail(r.job, 0, &top);
+    CHECK(c0 == 1, "and its count must be 1, got %u", c0);
+    CHECK(top != NULL && top[0] != '\0',
+          "the sentence must be reported, not just counted");
+    if (top) printf("  top refusal sentence: %s\n", top);
+
+    /* Rank 1 must be empty rather than repeating rank 0: a ranking that runs off
+     * the end of the table would report the same finding twice and double it. */
+    c1 = sweep_top_detail(r.job, 1, &second);
+    CHECK(c1 == 0, "there is no second sentence, got count %u", c1);
+
+    /* Every rank's count sums to no more than the refusals, because a refusal is
+     * bucketed once. A detail recorded per attempt rather than per refusal would
+     * pass the checks above and still inflate this. */
+    for (rank = 0; rank < 64u; rank++) {
+        const char *t = NULL;
+        uint32_t c = sweep_top_detail(r.job, rank, &t);
+        if (!c) break;
+        sum += c;
+    }
+    CHECK(sum == p.functions_refused,
+          "the sentences must account for the refusals exactly: summed %u of %u",
+          sum, p.functions_refused);
+    CHECK(sweep_detail_overflow(r.job) == 0,
+          "a three-function fixture cannot overflow a %u-slot histogram, got %u",
+          SWEEP_DETAIL_MAX, sweep_detail_overflow(r.job));
+
+    /* Two modules in one job, each refusing one function for the same reason. This
+     * is the half the single-module case above cannot reach: with one refusal there
+     * are no repeats, so a histogram that counted a sentence only the first time it
+     * was seen - and silently dropped every later one - would pass every assertion
+     * above. Bucketing by the sentence's identity across modules is exactly what
+     * makes the top-N ranking mean anything on a real bundle, where the same
+     * sentence accounts for hundreds of refusals in dozens of modules. */
+    {
+        rig a, b;
+        sweep_progress p2;
+        uint64_t mid2 = 0;
+        const char *t0 = NULL;
+        rig_setup(&a, 1, "testmod.dll");
+        rig_setup(&b, 1, "second.dll");
+        /* The images are byte-identical; the module name is part of the identity
+         * ptc_add_module derives, so this is a genuinely second module. */
+        CHECK(ptc_add_module(a.cache, "second.dll", b.img.len, 1u,
+                             ptc_hash_bytes(b.img.b, b.img.len), &mid2) == 0,
+              "a second module with the same bytes but a different name registers");
+        CHECK(mid2 != a.module_id, "and gets its own id");
+        CHECK(sweep_add_module(a.job, "testmod.dll", a.module_id, a.img.b, a.img.len,
+                               &a.pe) == 3, "first module offers three entry points");
+        CHECK(sweep_add_module(a.job, "second.dll", mid2, b.img.b, b.img.len,
+                               &b.pe) == 3, "second module offers three entry points");
+        CHECK(sweep_run(a.job, NULL, NULL) == 1, "the two-module sweep should finish");
+        sweep_get_progress(a.job, &p2);
+        CHECK(p2.functions_refused == 2,
+              "one refusal per module, got %u", p2.functions_refused);
+        CHECK(sweep_detail_kinds(a.job) == 1,
+              "the same sentence from two modules must share one bucket, got %u",
+              sweep_detail_kinds(a.job));
+        CHECK(sweep_top_detail(a.job, 0, &t0) == 2,
+              "and that bucket must count both, got %u",
+              sweep_top_detail(a.job, 0, &t0));
+        CHECK(sweep_top_detail(a.job, 1, &t0) == 0, "and there is no second bucket");
+        rig_teardown(&a);
+        rig_teardown(&b);
+    }
+}
+
 int main(int argc, char **argv)
 {
     /* Writes a guest image to disk so prewarm can be run over a real file. The
@@ -973,6 +1068,7 @@ int main(int argc, char **argv)
     test_refusals();
     test_guest_call_gets_a_slot();
     test_import_slot_is_data_not_a_callee();
+    test_refusal_details_are_counted_exactly();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

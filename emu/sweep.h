@@ -154,6 +154,23 @@ uint32_t sweep_reason_count(const sweep_job *j, tr_reason r);
 uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
                           uint8_t *out_map, uint8_t *out_opcode);
 
+/* Why a refusal happened, in the translator's own words. sweep_reason_count says
+ * which rule fired and sweep_top_opcode says which instruction it stopped at;
+ * these say which sentence that instruction was refused with, which is the level
+ * that separates "an import cell nobody answered" from "a call through a vtable"
+ * inside one opcode's count.
+ *
+ * sweep_top_detail returns the rank-th most common sentence's count and, through
+ * out_text, the sentence itself - a pointer owned by the translator, valid for as
+ * long as the job is. Returns 0 once the ranks run out. Sentences seen after the
+ * table is full are counted by sweep_detail_overflow rather than dropped silently,
+ * because a histogram that stops recording without saying so reports a smaller
+ * world than the one it measured. */
+#define SWEEP_DETAIL_MAX 48u
+uint32_t    sweep_detail_kinds(const sweep_job *j);
+uint32_t    sweep_detail_overflow(const sweep_job *j);
+uint32_t    sweep_top_detail(const sweep_job *j, uint32_t rank, const char **out_text);
+
 const char *sweep_phase_name(sweep_phase p);
 const char *sweep_block_kind_name(block_kind k);
 
