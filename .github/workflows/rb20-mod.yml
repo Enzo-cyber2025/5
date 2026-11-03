@@ -7,9 +7,11 @@ on:
     paths:
       - 'rb20/**'
       - '.github/workflows/rb20-mod.yml'
+    paths-ignore:
+      - 'rb20/download/**'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -80,6 +82,32 @@ jobs:
             --validation rb20/out/validation/validation_report.json \
             --zip rb20/download/RB20_AssettoCorsa.zip \
             --out rb20/out/validate_report.json
+
+      - name: Publish direct-download Release and refresh ZIP in the branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          git config user.email "actions@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add rb20/download/RB20_AssettoCorsa.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "RB20: ZIP rebuilt by the Blender Actions runner [skip ci]"
+            git push origin HEAD:arena/f4e7ed77-5
+            echo "ZIP committed back to the branch"
+          else
+            echo "ZIP unchanged, nothing to commit"
+          fi
+          if gh release view rb20-v1.0 >/dev/null 2>&1; then
+            gh release upload rb20-v1.0 rb20/download/RB20_AssettoCorsa.zip --clobber
+            echo "Release asset refreshed"
+          else
+            gh release create rb20-v1.0 rb20/download/RB20_AssettoCorsa.zip \
+              --target arena/f4e7ed77-5 \
+              --title "ARB RB20 2024 - Assetto Corsa mod (vanilla, no CSP)" \
+              --notes "Original model built by Blender in GitHub Actions, physics calibrated with real 2024 Bahrain GP qualifying telemetry, vanilla Assetto Corsa with zero CSP dependency. See rb20/README.md and LEIA-ME.txt inside the ZIP."
+            echo "Release created"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
