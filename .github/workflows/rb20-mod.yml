@@ -7,8 +7,7 @@ on:
     paths:
       - 'rb20/**'
       - '.github/workflows/rb20-mod.yml'
-    paths-ignore:
-      - 'rb20/download/**'
+      - '!rb20/download/**'
 
 permissions:
   contents: write
@@ -16,6 +15,7 @@ permissions:
 jobs:
   build:
     name: Model in Blender, calibrate, build KN5 and ZIP
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
