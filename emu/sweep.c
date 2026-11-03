@@ -634,6 +634,29 @@ static uint64_t sweep_resolve_any(uint64_t va, tr_question q, void *user)
     if (!j || !j->cache)
         return 0;
 
+    /* The import cell the translating module is about to emit for. This runs before
+     * anything else and is bounded by size_of_image rather than by in_span, because
+     * in_span is the union of the module's EXECUTABLE sections and a cell is data:
+     * an IAT in .rdata below the first executable section or above the last is
+     * outside in_span, so the resolver answered 0 and recorded nothing - while the
+     * translator, whose own bound is the whole image, emitted the load anyway. The
+     * cell then held whatever the file left in it, and fourteen records on a real
+     * bundle branched to a guest VA that nothing had mapped.
+     *
+     * The bound here is deliberately spelled the same way as own_cell in
+     * translate.c, and a test pins the two together, because "the resolver records
+     * what the translator emits for" is an invariant across two files and nothing
+     * else in the design enforces it. */
+    if (q == TR_Q_IMPORT_CELL && j->cur_mod_valid && j->cur_mod < j->nmods) {
+        const smod *m = &j->mods[j->cur_mod];
+        uint64_t size = m->pe ? m->pe->size_of_image : 0u;
+        if (size != 0u && va >= m->base && (va - m->base) + 8u <= size) {
+            uint64_t rva = va - m->base;
+            cell_push(j, m, rva);
+            return rva | TR_ABI_HOST | TR_ABI_INDIRECT;
+        }
+    }
+
     /* The module being translated is asked first, and only it can be right about an
      * address inside its own span: the RVA the emitted code uses is relative to the
      * base that module's records run with, and a slot is keyed by module id, so an

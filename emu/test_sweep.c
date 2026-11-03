@@ -42,6 +42,7 @@ static int checks, failures;
 #define RDATA_VA   0x2000u
 #define DATA_VA    0x3000u
 #define IDATA_VA   0x4000u   /* only present when g_with_imports is set */
+#define XDAT_VA    0x6000u   /* and this one only when g_iat_outside is set */
 
 /* The guest code, laid out so that the reachable graph is exactly five blocks
  * and the gaps between them are padding that nothing jumps to:
@@ -102,6 +103,13 @@ static int g_with_imports;
  * `call rel32` at the IAT slot instead of `call [rip+disp32]` through it. Same
  * address, different question - which is the whole point of asking. */
 static int g_call_the_slot;
+
+/* Test-only knob, used with g_with_imports: put the IAT in a fifth section that is
+ * NOT executable and lies above every executable section, so it falls outside the
+ * sweep's in_span - which is the union of the executable sections - while staying
+ * inside the image the translator bounds its own cell test by. That gap is where a
+ * cell gets emitted for and never recorded. */
+static int g_iat_outside;
 
 #define VA_CALLER  (IMAGE_BASE + 0x1023u)   /* call VA_CALLEE; ret */
 #define VA_CALLEE  (IMAGE_BASE + 0x1029u)   /* ret - reached only by that call */
@@ -199,7 +207,7 @@ static buf build_guest(int with_exports)
 
     bu32(&out, 0x00004550u);                       /* "PE\0\0" */
     bu16(&out, PE_MACHINE_AMD64);
-    bu16(&out, g_with_imports ? 4 : 3);            /* sections */
+    bu16(&out, g_with_imports ? (g_iat_outside ? 5 : 4) : 3);   /* sections */
     bu32(&out, 0x60000000u); bu32(&out, 0); bu32(&out, 0);
     bu16(&out, 240);                               /* SizeOfOptionalHeader */
     bu16(&out, with_exports ? 0x2022u : 0x0022u);  /* DLL | EXECUTABLE | LARGE */
@@ -215,7 +223,8 @@ static buf build_guest(int with_exports)
     bu16(&out, 6); bu16(&out, 0); bu16(&out, 0); bu16(&out, 0);
     bu16(&out, 6); bu16(&out, 0);
     bu32(&out, 0);
-    bu32(&out, g_with_imports ? 0x5000u : 0x4000u); /* SizeOfImage */
+    bu32(&out, g_with_imports ? (g_iat_outside ? 0x7000u : 0x5000u)
+                              : 0x4000u);           /* SizeOfImage */
     bu32(&out, (uint32_t)hdr);                     /* SizeOfHeaders */
     bu32(&out, 0);                                 /* CheckSum */
     bu16(&out, PE_SUBSYS_GUI); bu16(&out, 0x0160u);
@@ -256,6 +265,15 @@ static buf build_guest(int with_exports)
         bu32(&out, 0x200u); bu32(&out, (uint32_t)(hdr + 0x600u));
         bu32(&out, 0); bu32(&out, 0); bu16(&out, 0); bu16(&out, 0);
         bu32(&out, PE_SCN_CNT_CODE | PE_SCN_MEM_EXECUTE | PE_SCN_MEM_READ);
+        if (g_iat_outside) {
+            /* .xdat - readable and writable, and pointedly NOT executable */
+            bput(&out, ".xdat\0\0\0", 8);
+            bu32(&out, 0x200u); bu32(&out, XDAT_VA);
+            bu32(&out, 0x200u); bu32(&out, (uint32_t)(hdr + 0x800u));
+            bu32(&out, 0); bu32(&out, 0); bu16(&out, 0); bu16(&out, 0);
+            bu32(&out, PE_SCN_CNT_INITIALIZED_DATA | PE_SCN_MEM_READ |
+                       PE_SCN_MEM_WRITE);
+        }
     }
 
     bzero(&out, hdr - btell(&out));
@@ -279,13 +297,14 @@ static buf build_guest(int with_exports)
          * because the two forms of the function are different lengths and a fixed
          * delta makes the section's raw data end one byte short of the file - which
          * the loader reports as raw data running past the end of the image. */
-        size_t sec_at = btell(&out);
+        size_t   sec_at  = btell(&out);
+        uint32_t iat_rva = g_iat_outside ? XDAT_VA + 0x100u : IDATA_VA + 0x100u;
         if (g_call_the_slot) {
             bu8(&out, 0xE8);
-            bu32(&out, 0x100u - 0x05u);               /* call rel32 at the IAT slot */
+            bu32(&out, iat_rva - (IDATA_VA + 0x05u)); /* call rel32 at the IAT slot */
         } else {
             bu8(&out, 0xFF); bu8(&out, 0x15);
-            bu32(&out, 0x100u - 0x06u);               /* call [rip+0xFA] */
+            bu32(&out, iat_rva - (IDATA_VA + 0x06u)); /* call [rip+disp] at the slot */
         }
         bu8(&out, 0xC3);
         bzero(&out, 0x40u - (btell(&out) - sec_at));
@@ -293,14 +312,28 @@ static buf build_guest(int with_exports)
         bu32(&out, 0);                                /* TimeDateStamp    */
         bu32(&out, 0);                                /* ForwarderChain   */
         bu32(&out, IDATA_VA + 0x80u);                 /* Name             */
-        bu32(&out, IDATA_VA + 0x100u);                /* FirstThunk (IAT) */
+        bu32(&out, iat_rva);                          /* FirstThunk (IAT) */
         bzero(&out, 20);                              /* null descriptor  */
         bzero(&out, 0x80u - (btell(&out) - sec_at));
         bstr(&out, "test.dll");
-        bzero(&out, 0x100u - (btell(&out) - sec_at));
+        if (!g_iat_outside) {
+            /* The IAT lives in this section, at offset 0x100. */
+            bzero(&out, 0x100u - (btell(&out) - sec_at));
+            bu64(&out, 0x8000000000000001ULL);        /* one ordinal thunk */
+            bu64(&out, 0);                            /* terminator        */
+        }
+        bzero(&out, 0x200u - (btell(&out) - sec_at));
+    }
+    if (g_with_imports && g_iat_outside) {
+        /* Raw .xdat at hdr + 0x800: the IAT alone, in a section that is not
+         * executable and sits above every executable section, so the sweep's
+         * in_span - the union of the executable sections - does not reach it while
+         * the image, which is what the translator bounds its cell test by, does. */
+        size_t xat = btell(&out);
+        bzero(&out, 0x100u);
         bu64(&out, 0x8000000000000001ULL);            /* one ordinal thunk */
         bu64(&out, 0);                                /* terminator        */
-        bzero(&out, 0x200u - (btell(&out) - sec_at));
+        bzero(&out, 0x200u - (btell(&out) - xat));
     }
 
     free(rd.b);
@@ -1146,6 +1179,83 @@ static void test_colliding_image_bases_attribute_to_the_caller(void)
     g_call_entry = 0;
 }
 
+/* The invariant that spans two files: the resolver must record every cell the
+ * translator is going to emit a load for, because the harness stubs what is on that
+ * list and nothing else. A cell it emits for but nobody recorded stays holding
+ * whatever the file left in it, and the call becomes a branch to a guest VA - a fault
+ * in unmapped memory that the report attributes to emitted code going wrong.
+ *
+ * The two bounds were not the same. The sweep tested membership of in_span, the union
+ * of the module's EXECUTABLE sections, while the translator tested membership of the
+ * whole image, which is the bound its emitted X19 + rva load actually has to satisfy.
+ * An IAT below the first executable section or above the last falls in the gap - and
+ * that is where real linkers put it, since .rdata is not executable. Fourteen records
+ * on a real bundle were exactly this. */
+static void test_cell_outside_the_executable_span_is_still_recorded(void)
+{
+    rig r;
+    sweep_progress p;
+    uint64_t mid = 0, rva = 0;
+    uint32_t iat_rva = XDAT_VA + 0x100u;
+    int iat_in_exec_section = 0;
+    unsigned i;
+
+    printf("a cell outside the executable span is recorded, because it is emitted for\n");
+    g_with_imports = 1;
+    g_iat_outside = 1;
+    rig_setup(&r, 0, "with the IAT above every executable section");
+
+    CHECK(r.pe.num_dlls == 1, "the fixture must carry one imported DLL, got %u (%s)",
+          r.pe.num_dlls, r.pe.detail ? r.pe.detail : "no detail");
+    if (r.pe.num_dlls != 1) { rig_teardown(&r); g_with_imports = 0; g_iat_outside = 0; return; }
+    CHECK(r.pe.dlls[0].iat_rva == iat_rva,
+          "with its IAT at RVA 0x%X, got 0x%X", iat_rva, r.pe.dlls[0].iat_rva);
+    CHECK(r.pe.size_of_image == 0x7000u,
+          "and an image that contains it: SizeOfImage 0x%X", r.pe.size_of_image);
+
+    /* The precondition, and the opposite of the earlier import test's: this IAT is
+     * deliberately NOT in an executable section, so in_span does not reach it. */
+    for (i = 0; i < r.pe.num_sections; i++) {
+        const pe_section *sc = &r.pe.sections[i];
+        if (iat_rva >= sc->virtual_addr &&
+            iat_rva < sc->virtual_addr + sc->virtual_size &&
+            (sc->characteristics & PE_SCN_MEM_EXECUTE))
+            iat_in_exec_section = 1;
+    }
+    CHECK(!iat_in_exec_section,
+          "the IAT must be in a non-executable section, or this test does not reach "
+          "the gap between in_span and the image bound");
+
+    CHECK(sweep_add_module(r.job, "test.exe", r.module_id, r.img.b, r.img.len,
+                           &r.pe) == 1, "one entry point");
+    CHECK(sweep_run(r.job, NULL, NULL) == 1, "the sweep should finish uninterrupted");
+    sweep_get_progress(r.job, &p);
+
+    CHECK(p.functions_translated == 1,
+          "the caller translates: its cell is inside the image even though it is "
+          "outside the executable span, got %u of %u",
+          p.functions_translated, p.functions_attempted);
+    CHECK(ptc_calltab_count(r.cache) == 0,
+          "and it is a cell, not a callee: no call-table slot, got %zu",
+          ptc_calltab_count(r.cache));
+
+    /* The point of the test. The translator emitted ADD X17,X19,#rva / LDUR / BLR,
+     * so the harness has to be able to find that cell and make it safe. */
+    CHECK(sweep_import_cell_count(r.job) == 1,
+          "the cell must be recorded even though in_span does not reach it, got %zu",
+          sweep_import_cell_count(r.job));
+    CHECK(sweep_import_cell_at(r.job, 0, &mid, &rva) == 1, "and be readable back");
+    CHECK(mid == r.module_id,
+          "recorded against the module that calls it, so the harness writes into the "
+          "mapping that will actually be read");
+    CHECK(rva == iat_rva, "with the offset the emitted load uses: got 0x%llX, want 0x%X",
+          (unsigned long long)rva, iat_rva);
+
+    rig_teardown(&r);
+    g_with_imports = 0;
+    g_iat_outside = 0;
+}
+
 int main(int argc, char **argv)
 {
     /* Writes a guest image to disk so prewarm can be run over a real file. The
@@ -1155,6 +1265,7 @@ int main(int argc, char **argv)
         int  with_exports = (argc >= 4 && strcmp(argv[3], "--exports") == 0);
         buf  f;
         if (argc >= 5 && strcmp(argv[4], "--imports") == 0) g_with_imports = 1;
+        if (argc >= 6 && strcmp(argv[5], "--iat-outside") == 0) g_iat_outside = 1;
         f = build_guest(with_exports);
         FILE *fp = fopen(argv[2], "wb");
         if (!fp) { perror(argv[2]); free(f.b); return 1; }
@@ -1187,6 +1298,7 @@ int main(int argc, char **argv)
     test_call_rel32_at_an_import_slot_gets_no_slot();
     test_refusal_details_are_counted_exactly();
     test_colliding_image_bases_attribute_to_the_caller();
+    test_cell_outside_the_executable_span_is_still_recorded();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }
