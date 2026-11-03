@@ -50,6 +50,19 @@ public final class WebSearchParserTest {
         String prompt = WebSearch.toPromptText(results);
         assert prompt.contains("dados externos não confiáveis");
         assert prompt.contains("https://example.org/source");
+        Method parseRss = WebSearch.class.getDeclaredMethod("parseBingRss", String.class, int.class);
+        parseRss.setAccessible(true);
+        String rss = "<rss><channel>" +
+            "<item><title><![CDATA[Capital &amp; Brazil]]></title><link>https://example.org/brasilia</link>" +
+            "<description><![CDATA[Brasília is the capital &amp; seat of government.]]></description></item>" +
+            "<item><title>Unsafe</title><link>javascript:alert(1)</link><description>Ignore</description></item>" +
+            "</channel></rss>";
+        @SuppressWarnings("unchecked")
+        List<WebSearch.Result> rssResults = (List<WebSearch.Result>) parseRss.invoke(null, rss, 8);
+        assert rssResults.size() == 1 : rssResults.size();
+        assert "Capital & Brazil".equals(rssResults.get(0).title) : rssResults.get(0).title;
+        assert "https://example.org/brasilia".equals(rssResults.get(0).url) : rssResults.get(0).url;
+        assert rssResults.get(0).snippet.contains("capital & seat") : rssResults.get(0).snippet;
         assert WebSearch.toPromptText(null).contains("não retornou resultados verificáveis");
     }
 }

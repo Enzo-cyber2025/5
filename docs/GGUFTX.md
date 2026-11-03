@@ -18,8 +18,9 @@ sob o ícone não foi alterado por esta troca de arte.
 O botão de pesquisa já existente continua sendo o acionamento explícito. O helper
 `apk-fix/java/com/ggufchat/app/WebSearch.java` foi refeito para:
 
-- consultar resultados reais do DuckDuckGo em português e tentar a página Lite se
-a resposta HTML principal não puder ser interpretada;
+- consultar DuckDuckGo HTML/Lite e, se o provider ou o parser estiver vazio,
+  tentar uma segunda fonte em RSS (Bing), preservando timeouts, limite de resposta
+  e citações;
 - limitar a consulta, resposta recebida (1 MiB), quantidade de resultados e tempos
 de conexão/leitura;
 - extrair título, trecho e URL de citação, decodificar entidades HTML e resolver
@@ -34,9 +35,12 @@ A pesquisa precisa de internet e pode sofrer bloqueios, mudanças de HTML,
 limitação de tráfego ou indisponibilidade do provedor. Os snippets não substituem
 a leitura das fontes originais. A inspeção do DEX do último candidato confirmou que
 `GenerationService` chama `WebSearch.search()` quando `chat.webSearch=true` e inclui
-`toPromptText()` no fluxo do modelo. Porém, a execução 41243844107 deixou essa opção
-em `false`; portanto não é prova de uma consulta real. O novo teste de emulador
-verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
+`toPromptText()` no fluxo do modelo. A execução 41450467967 ativou a opção, mas a
+busca em português retornou zero resultados/citações; o app corretamente informou
+que não conseguiu confirmar. O código agora tenta Bing RSS após respostas vazias
+ou erros no DuckDuckGo; a regressão local do parser está pronta, mas o próximo CI
+precisa confirmar consulta real em português e inglês antes de chamar a busca de
+funcional.
 
 ## Limites e segurança
 

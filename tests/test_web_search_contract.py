@@ -23,6 +23,8 @@ def test_search_has_bounded_network_and_parse_work():
     assert "setReadTimeout(READ_TIMEOUT_MS)" in source
     assert 'https://html.duckduckgo.com/html/?q=' in source
     assert 'https://lite.duckduckgo.com/lite/?q=' in source
+    assert 'https://www.bing.com/search?format=rss&q=' in source
+    assert "fetchBingRss" in source and "parseBingRss" in source
     assert "readBounded(connection.getInputStream())" in source
 
 
@@ -36,8 +38,9 @@ def test_results_are_cited_and_marked_untrusted_and_network_fails_open():
     source = SOURCE.read_text()
     assert "URL: " in source
     assert "dados externos não confiáveis" in source
-    assert 'GGUF_WEB_SEARCH status=error type=' in source
+    assert 'GGUF_WEB_SEARCH status=error provider=' in source
     assert 'GGUF_WEB_SEARCH status=' in source
+    assert ' provider=' in source
     assert 'GGUF_WEB_SEARCH_PROMPT citations=' in source
     assert "não retornou resultados verificáveis" in source
     # Links must be web URLs, never javascript:, file:, or arbitrary schemes.

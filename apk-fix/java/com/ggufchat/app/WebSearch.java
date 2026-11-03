@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Bounded, best-effort DuckDuckGo search used by the existing explicit web-search toggle.
+ * Bounded, best-effort DuckDuckGo/Bing search used by the explicit web-search toggle.
  * Runs on GenerationService's worker thread. Search results are untrusted reference data,
  * never instructions. A network/search outage must not prevent local inference.
  */
@@ -34,6 +34,7 @@ public final class WebSearch {
     private static final Pattern TAGS = Pattern.compile("(?s)<[^>]*>");
     private static final Pattern SPACE = Pattern.compile("\\s+");
     private static final Pattern NUMERIC_ENTITY = Pattern.compile("&#(x[0-9a-fA-F]+|[0-9]+);");
+    private static final Pattern RSS_ITEM = Pattern.compile("(?is)<item\\b[^>]*>(.*?)</item>");
 
     public static final class Result {
         public final String title;
@@ -56,24 +57,43 @@ public final class WebSearch {
         if (q.isEmpty()) return none;
         if (q.length() > MAX_QUERY_CHARS) q = q.substring(0, MAX_QUERY_CHARS);
         int limit = Math.max(1, Math.min(MAX_RESULTS, requestedLimit));
+        List<Result> results = none;
+        String provider = "none";
+        String encoded;
         try {
-            List<Result> results = fetch("https://html.duckduckgo.com/html/?q=" +
-                URLEncoder.encode(q, "UTF-8") + "&kl=pt-br", limit);
-            // The lightweight endpoint is useful when the regular HTML page changes or
-            // returns a consent/empty shell. It is still the same provider and no key is needed.
-            if (results.isEmpty()) {
-                results = fetch("https://lite.duckduckgo.com/lite/?q=" +
-                    URLEncoder.encode(q, "UTF-8") + "&kl=pt-br", limit);
-            }
-            android.util.Log.i("GGUFWebSearch", "GGUF_WEB_SEARCH status=" +
-                (results.isEmpty() ? "empty" : "ok") + " results=" + results.size());
-            return results;
-        } catch (Exception e) {
-            // Do not log the URL/exception: it can contain the user's raw search query.
-            android.util.Log.w("GGUFWebSearch", "GGUF_WEB_SEARCH status=error type=" +
-                e.getClass().getSimpleName());
+            encoded = URLEncoder.encode(q, "UTF-8");
+        } catch (Exception impossible) {
             return none;
         }
+        try {
+            results = fetch("https://html.duckduckgo.com/html/?q=" + encoded + "&kl=pt-br", limit);
+            if (!results.isEmpty()) provider = "duckduckgo-html";
+        } catch (Exception e) {
+            logProviderFailure("duckduckgo-html", e);
+        }
+        // The lightweight endpoint is useful when the regular HTML page changes,
+        // blocks automation, or returns a consent/empty shell.
+        if (results.isEmpty()) {
+            try {
+                results = fetch("https://lite.duckduckgo.com/lite/?q=" + encoded + "&kl=pt-br", limit);
+                if (!results.isEmpty()) provider = "duckduckgo-lite";
+            } catch (Exception e) {
+                logProviderFailure("duckduckgo-lite", e);
+            }
+        }
+        // A second provider and an RSS representation avoid depending on DuckDuckGo's
+        // frequently changing HTML markup. Each response remains size- and time-bounded.
+        if (results.isEmpty()) {
+            try {
+                results = fetchBingRss("https://www.bing.com/search?format=rss&q=" + encoded, limit);
+                if (!results.isEmpty()) provider = "bing-rss";
+            } catch (Exception e) {
+                logProviderFailure("bing-rss", e);
+            }
+        }
+        android.util.Log.i("GGUFWebSearch", "GGUF_WEB_SEARCH status=" +
+            (results.isEmpty() ? "empty" : "ok") + " results=" + results.size() + " provider=" + provider);
+        return results;
     }
 
     private static List<Result> fetch(String address, int limit) throws Exception {
@@ -95,6 +115,55 @@ public final class WebSearch {
         } finally {
             if (connection != null) connection.disconnect();
         }
+    }
+
+    private static void logProviderFailure(String provider, Exception error) {
+        // Never log a URL or exception message; either can contain the raw user query.
+        android.util.Log.w("GGUFWebSearch", "GGUF_WEB_SEARCH status=error provider=" + provider +
+            " type=" + error.getClass().getSimpleName());
+    }
+
+    private static List<Result> fetchBingRss(String address, int limit) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(address).openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            connection.setReadTimeout(READ_TIMEOUT_MS);
+            connection.setInstanceFollowRedirects(true);
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) GGUFTX/1.0");
+            connection.setRequestProperty("Accept", "application/rss+xml,application/xml,text/xml;q=0.9");
+            connection.setRequestProperty("Accept-Language", "pt-BR,pt;q=0.9,en;q=0.7");
+            connection.setRequestProperty("Cache-Control", "no-cache");
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return new ArrayList<>();
+            return parseBingRss(readBounded(connection.getInputStream()), limit);
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
+    private static List<Result> parseBingRss(String xml, int limit) {
+        ArrayList<Result> found = new ArrayList<>();
+        if (xml == null || xml.isEmpty()) return found;
+        Matcher items = RSS_ITEM.matcher(xml);
+        while (found.size() < limit && items.find()) {
+            String item = items.group(1);
+            String title = rssField(item, "title");
+            String url = safeResultUrl(rssField(item, "link"));
+            String snippet = rssField(item, "description");
+            if (title.isEmpty() || url == null) continue;
+            if (snippet.isEmpty()) snippet = "Trecho indisponível; abra a página para conferir a informação.";
+            found.add(new Result(title, url, snippet));
+        }
+        return found;
+    }
+
+    private static String rssField(String item, String name) {
+        Pattern field = Pattern.compile("(?is)<" + name + "\\b[^>]*>(.*?)</" + name + "\\s*>");
+        Matcher matcher = field.matcher(item);
+        if (!matcher.find()) return "";
+        String value = matcher.group(1).replaceAll("(?is)<!\\[CDATA\\[(.*?)\\]\\]>", "$1");
+        return cleanText(value);
     }
 
     private static String readBounded(InputStream input) throws Exception {
@@ -158,7 +227,8 @@ public final class WebSearch {
     }
 
     private static String cleanText(String value) {
-        return SPACE.matcher(decodeEntities(TAGS.matcher(value).replaceAll(" "))).replaceAll(" ").trim();
+        String decoded = decodeEntities(value);
+        return SPACE.matcher(decodeEntities(TAGS.matcher(decoded).replaceAll(" "))).replaceAll(" ").trim();
     }
 
     private static String decodeEntities(String input) {
