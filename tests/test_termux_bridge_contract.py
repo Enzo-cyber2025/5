@@ -41,6 +41,16 @@ def test_requested_models_use_the_real_reviewed_bridge_not_a_run_as_shell_bypass
     assert "emulator-only.p12" in workflow and "NOT FOR RELEASE" in workflow
 
 
+def test_requested_folder_command_and_description_retry_without_bypassing_the_model():
+    task = (ROOT / "scripts/test_requested_model_tasks_android.py").read_text()
+    workflow = (ROOT / ".github/workflows/requested-model-tasks-android.yml").read_text()
+    assert 'prompts.append("Output only this exact command on one line' in task
+    assert 'timeout=360' in task
+    assert '"attempts": attempts' in task
+    assert 'description_attempts' in task and 'model_describes_actual_folder_contents' in task
+    assert 'github.event_name == \'push\' && fromJSON(\'["gemma4-e2b","gemma3-270m"]\')' in workflow
+
+
 def test_android_harness_runs_app_before_termux_bootstrap_and_recovers_launcher_anr():
     script = (ROOT / "scripts/test_tool_integrations_android.py").read_text()
     main = script[script.index("def main():"):]

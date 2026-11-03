@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: ${{ github.event_name == 'push' && fromJSON('["gemma3-270m"]') || inputs.variant == 'gemma3-270m' && fromJSON('["gemma3-270m"]') || inputs.variant == 'gemma4-e2b' && fromJSON('["gemma4-e2b"]') || fromJSON('["gemma4-e2b","gemma3-270m"]') }}
+        variant: ${{ github.event_name == 'push' && fromJSON('["gemma4-e2b","gemma3-270m"]') || inputs.variant == 'gemma3-270m' && fromJSON('["gemma3-270m"]') || inputs.variant == 'gemma4-e2b' && fromJSON('["gemma4-e2b"]') || fromJSON('["gemma4-e2b","gemma3-270m"]') }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5

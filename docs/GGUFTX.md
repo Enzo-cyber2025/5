@@ -45,7 +45,11 @@ verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
   ferramentas/funções: lê um bloco Markdown `bash`/`sh`/`shell`/`termux` ou uma
   linha simples reconhecida (incluindo `bash ~/script.sh`) da última resposta,
   mostra exatamente o comando selecionado e só o envia ao Termux após confirmação
-  explícita. Requer Termux com `RUN_COMMAND`/“Allow external apps” habilitado; a
+  explícita. O harness Android agora tenta novamente uma inferência curta para
+  leitura/descrição da pasta em um chat novo se a primeira expira, mas continua
+  aceitando apenas o comando exato allow-listed produzido pelo modelo: retry não
+  simula a resposta nem executa shell pelo harness. Requer Termux com
+  `RUN_COMMAND`/“Allow external apps” habilitado; a
   saída fica no próprio Termux e não é devolvida automaticamente à IA. Comandos
   simples sem fence são limitados a uma linha; scripts multilinha devem vir num
   bloco de código e continuam sujeitos à revisão humana. Os runs [41544525019](https://github.com/Enzo-cyber2025/5/actions/runs/41544525019)

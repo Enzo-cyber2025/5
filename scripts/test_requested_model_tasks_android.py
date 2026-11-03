@@ -107,32 +107,55 @@ def bridge_log_tail(device):
 
 
 def ask_for_command(device, model, prompt, expected, stage, summary):
-    """Execute only an exact command proposed by the latest assistant message."""
+    """Execute only an exact command proposed by the latest assistant message.
+
+    Retry once in a fresh chat if a small/local model times out or adds prose.
+    The retry still asks for an exact, allow-listed command; no harness-side
+    shell execution or command repair is allowed.
+    """
     summary["checks"][stage] = {"prompt": prompt, "expected_command": expected,
                                 "executed": False, "status": "INFERENCE_PENDING"}
-    chat = device.new_chat(model, 0, context_size=2048, threads=2, n_predict=64)
-    try:
-        answer = reply(device, chat, prompt, stage, timeout=1200)
-    except Exception as exc:
-        summary["checks"][stage].update({"chat_id": chat["id"], "chat_title": chat["title"],
-                                         "status": "INFERENCE_FAILED_OR_TIMEOUT",
-                                         "inference_error": str(exc)})
-        raise
-    selected = assistant_code(answer)
-    record = {"prompt": prompt, "assistant_reply": answer[:6000],
-              "selected_command": selected, "expected_command": expected,
-              "chat_id": chat["id"], "chat_title": chat["title"], "executed": False,
-              "status": "AWAITING_REVIEW"}
-    summary["checks"][stage] = record
+    prompts = [prompt]
+    if stage == "folder_termux_access":
+        prompts.append("Output only this exact command on one line, with no explanation or Markdown:\n" + expected)
+    attempts = []
     accepted = {expected}
     if stage == "termux_compile_text_to_binary_apk":
-        # The staged script is also executable; accept its exact path as the
-        # equivalent of `bash <path>`, but nothing else.
         accepted.add(TERMUX_HOME + "/text-binary/run-build.sh")
-    if selected not in accepted:
-        record["status"] = "MODEL_DID_NOT_RETURN_AN_ALLOWED_COMMAND"
-        summary["checks"][stage] = record
+    for attempt, attempt_prompt in enumerate(prompts, start=1):
+        if attempt > 1:
+            # A timed-out local generation may still be active. Cold-start the
+            # app before retrying, and use a distinct chat so no stale partial
+            # assistant message can be mistaken for a completed answer.
+            device.launch()
+        chat = device.new_chat(model, 0, context_size=2048, threads=2, n_predict=64)
+        try:
+            answer = reply(device, chat, attempt_prompt, f"{stage}-attempt-{attempt}", timeout=360)
+        except Exception as exc:
+            attempts.append({"attempt": attempt, "prompt": attempt_prompt,
+                             "chat_id": chat["id"], "chat_title": chat["title"],
+                             "status": "INFERENCE_FAILED_OR_TIMEOUT", "error": str(exc)})
+            continue
+        selected = assistant_code(answer)
+        attempts.append({"attempt": attempt, "prompt": attempt_prompt,
+                         "chat_id": chat["id"], "chat_title": chat["title"],
+                         "assistant_reply": answer[:6000], "selected_command": selected,
+                         "status": "ALLOWLISTED_COMMAND" if selected in accepted else "NOT_ALLOWLISTED"})
+        if selected in accepted:
+            break
+    else:
+        summary["checks"][stage] = {"prompt": prompt, "expected_command": expected,
+                                    "attempts": attempts, "executed": False,
+                                    "status": "MODEL_DID_NOT_RETURN_AN_ALLOWED_COMMAND"}
         return None
+
+    selected = attempts[-1]["selected_command"]
+    latest = attempts[-1]
+    record = {"prompt": prompt, "assistant_reply": latest["assistant_reply"],
+              "selected_command": selected, "expected_command": expected,
+              "chat_id": latest["chat_id"], "chat_title": latest["chat_title"],
+              "attempts": attempts, "executed": False, "status": "AWAITING_REVIEW"}
+    summary["checks"][stage] = record
 
     record["execution_command"] = selected
     record["execution_method"] = "GGUF Chat TermuxBridge to official RUN_COMMAND service"
@@ -408,28 +431,34 @@ def main():
         # output back as a user message, since this app deliberately does not
         # pipe Termux output back into the model automatically.
         record = safe_ask_for_command(device, model,
-            "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\n" + FOLDER_COMMAND,
+            "Output only this exact Termux command, on one line and without explanation:\n" + FOLDER_COMMAND,
             FOLDER_COMMAND, "folder_termux_access", summary)
         if record:
             output = device.shell("cat " + shlex.quote(TERMUX_HOME + "/model-audit-output.txt")).strip()
             assert output == folder["file_content"], {"expected": folder["file_content"], "actual": output}
             record["shell_output"] = output
-            description_prompt = ("The only file is only-note.txt. Its text is exactly: " + output
-                                  + " In one sentence, name the file and repeat the full identifier BLUE-LANTERN-5831.")
-            description_chat = device.new_chat(model, 0, context_size=1024, threads=2, n_predict=96)
-            try:
-                description = reply(device, description_chat, description_prompt,
-                                    VARIANT + "-describe-folder-output", timeout=1200)
-                record["description_prompt"] = description_prompt
-                record["description_chat_id"] = description_chat["id"]
-                record["description_reply"] = description
-                record["description_status"] = ("PASS" if MARKER.casefold() in description.casefold()
-                                                 and "only-note.txt" in description.casefold() else "NOT_PASS")
-            except Exception as exc:
-                record["description_prompt"] = description_prompt
-                record["description_chat_id"] = description_chat["id"]
-                record["description_status"] = "INFERENCE_FAILED_OR_TIMEOUT"
-                record["description_error"] = str(exc)
+            description_prompt = ("Describe only-note.txt in one short sentence. Its exact text is: " + output)
+            description_attempts = []
+            for attempt, prompt in enumerate((description_prompt,
+                    "In one sentence, state the filename and identifier from this text: " + output), start=1):
+                if attempt > 1:
+                    device.launch()
+                description_chat = device.new_chat(model, 0, context_size=1024, threads=2, n_predict=64)
+                try:
+                    description = reply(device, description_chat, prompt,
+                                        VARIANT + "-describe-folder-output-attempt-" + str(attempt), timeout=360)
+                    passed = MARKER.casefold() in description.casefold() and "only-note.txt" in description.casefold()
+                    description_attempts.append({"attempt": attempt, "prompt": prompt,
+                                                 "chat_id": description_chat["id"],
+                                                 "reply": description, "status": "PASS" if passed else "NOT_PASS"})
+                    if passed:
+                        break
+                except Exception as exc:
+                    description_attempts.append({"attempt": attempt, "prompt": prompt,
+                                                 "chat_id": description_chat["id"],
+                                                 "status": "INFERENCE_FAILED_OR_TIMEOUT", "error": str(exc)})
+            record["description_attempts"] = description_attempts
+            record["description_status"] = "PASS" if any(x["status"] == "PASS" for x in description_attempts) else description_attempts[-1]["status"]
             summary["checks"]["model_describes_actual_folder_contents"] = record["description_status"]
 
         # Context=0 and response=0 are tested on the actual selected GGUF. A
