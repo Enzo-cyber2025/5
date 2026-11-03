@@ -52,6 +52,13 @@ def test_requested_folder_command_and_description_retry_without_bypassing_the_mo
     assert 'github.event_name == \'push\' && fromJSON(\'["gemma4-e2b","gemma3-270m"]\')' in workflow
 
 
+def test_termux_apk_build_uses_current_official_package_mirror():
+    build = (ROOT / "tests/android-text-binary/run-build.sh").read_text()
+    assert "packages-cf.termux.dev/apt/termux-main stable main" in build
+    assert 'rm -f "$PREFIX"/var/lib/apt/lists/*' in build
+    assert 'pkg update -y' in build and 'pkg install -y openjdk-21 libc++ aapt2 d8 apksigner' in build
+
+
 def test_box64_arm64_smoke_test_pins_reviewed_third_party_payload_and_uses_termux_ui():
     installer = (ROOT / "tests/box64-termux/install-box64-arm64.sh").read_text()
     smoke = (ROOT / "scripts/test_box64_termux_arm64.py").read_text()

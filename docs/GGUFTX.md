@@ -67,7 +67,11 @@ verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
   e instala apenas `box64` (não o launcher comercial `dragon`). Até o workflow
   concluir, isso é apenas uma tentativa pendente — não prova de instalação. Esse
   teste arquitetural separado não será apresentado como ação feita pelo modelo.
-  O CI automatiza os toques nos controles explícitos de confirmação; isso não é
+  Uma atualização de espelho Termux trouxe `aapt2` antigo (13.x) no job Gemma 4,
+  que recusou o `android.jar` API 35; o script de build agora fixa o endpoint oficial
+  `packages-cf.termux.dev` e atualiza os índices antes de instalar, aguardando nova
+  validação. O CI automatiza os toques nos controles explícitos de confirmação;
+  isso não é
   uma ação silenciosa. Os APKs
   testados foram candidatos unsigned com assinatura descartável só para emulador,
   não atualizações assinadas para instalação pública. A saída do Termux continua
