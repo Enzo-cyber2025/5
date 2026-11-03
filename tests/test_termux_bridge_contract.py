@@ -48,6 +48,7 @@ def test_requested_folder_command_and_description_retry_without_bypassing_the_mo
     assert 'timeout=360' in task
     assert '"attempts": attempts' in task
     assert 'description_attempts' in task and 'model_describes_actual_folder_contents' in task
+    assert 're.search(r"\\b(arquivo|file|pasta|folder)\\b"' in task
     assert 'github.event_name == \'push\' && fromJSON(\'["gemma4-e2b","gemma3-270m"]\')' in workflow
 
 
