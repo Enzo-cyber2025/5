@@ -677,13 +677,22 @@ typedef struct {
  * already returns 0 for a slot it does not own, which is exactly the question. Returns
  * how many slots were stubbed. */
 static size_t stub_unknown_iat(const pe_image *im, uint8_t *base, size_t sz,
-                               const void *stub)
+                               const void *stub, size_t *out_no_iat)
 {
     uint64_t stubval = (uint64_t)(uintptr_t)stub;
-    size_t   d, k, n = 0;
+    size_t   d, k, n = 0, no_iat = 0;
 
     for (d = 0; d < im->num_dlls; d++) {
         const pe_import_dll *dl = &im->dlls[d];
+        /* An iat_rva of 0 is not an IAT at the start of the image, it is the absence of
+         * one, and treating it as an address writes stub values across the DOS header,
+         * the PE header and the section table - corrupting the very structures the rest
+         * of the loader reads, while leaving the real slots untouched. Counted rather
+         * than skipped silently: if this is common, the count says the slot enumeration
+         * is not reaching the imports at all, which is a different bug from the one
+         * being fixed and would otherwise be invisible behind a large "slots stubbed"
+         * number that looked like success. */
+        if (dl->iat_rva == 0) { no_iat++; continue; }
         for (k = 0; k < dl->func_count; k++) {
             uint64_t slot_rva = (uint64_t)dl->iat_rva + (uint64_t)k * 8u;
             if (slot_rva + 8u > (uint64_t)sz) continue;
@@ -693,6 +702,7 @@ static size_t stub_unknown_iat(const pe_image *im, uint8_t *base, size_t sz,
             n++;
         }
     }
+    if (out_no_iat) *out_no_iat = no_iat;
     return n;
 }
 
@@ -750,7 +760,7 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     void       *trap = NULL;
     size_t      trap_len = 0, ct_n = 0, ct_filled = 0;
     size_t      slots, slot, mapped = 0, unmatched = 0, capped = 0;
-    size_t      nplaced = 0, not_placed = 0, iat_stubbed = 0, i, q;
+    size_t      nplaced = 0, not_placed = 0, iat_stubbed = 0, iat_no_iat = 0, i, q;
     size_t      fc_hist[FC_COUNT];
     /* Region crossed with signal, because the region histogram alone cannot answer the
      * only question that matters here. The tally calls a SIGTRAP "the bounds check
@@ -850,7 +860,11 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         {   size_t known = 0, unknown = 0;
             shim_fill_iat(&pes[i], (uint8_t *)base, sz, pes[i].image_base,
                           &known, &unknown);
-            iat_stubbed += stub_unknown_iat(&pes[i], (uint8_t *)base, sz, trap);
+            {   size_t no_iat = 0;
+                iat_stubbed += stub_unknown_iat(&pes[i], (uint8_t *)base, sz, trap,
+                                                &no_iat);
+                iat_no_iat += no_iat;
+            }
         }
     }
 
@@ -1024,8 +1038,9 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                ct_n, ct_filled, ct_n - ct_filled);
     if (not_placed)
         printf("  records not placed in executable memory: %zu\n", not_placed);
-    if (iat_stubbed)
-        printf("  import slots pointed at the stub: %zu\n", iat_stubbed);
+    if (iat_stubbed || iat_no_iat)
+        printf("  import slots pointed at the stub: %zu, import directories with no "
+               "IAT RVA: %zu\n", iat_stubbed, iat_no_iat);
     if (t.faulted) {
         /* Split out, because the two causes call for opposite reactions: a trap is
          * the bounds check declining to invent a value, a crash is a bug in what
