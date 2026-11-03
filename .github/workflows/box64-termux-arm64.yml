@@ -11,7 +11,7 @@ permissions:
   contents: read
 jobs:
   box64-arm64:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
@@ -40,8 +40,6 @@ jobs:
           expected="$(grep -F "$asset" .cache/termux-sha256sums-arm64 | head -1 | awk '{print $1}')"
           test "${#expected}" -eq 64
           printf '%s  %s\n' "$expected" .cache/termux-app-arm64.apk | sha256sum --check -
-      - name: Allow emulator acceleration when available
-        run: sudo chmod a+rw /dev/kvm || true
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           BOX64_TERMUX_APK: .cache/termux-app-arm64.apk
@@ -50,12 +48,11 @@ jobs:
           arch: arm64-v8a
           target: google_apis
           profile: pixel_5
-          cores: 4
-          ram-size: 4096M
+          cores: 2
+          ram-size: 3072M
           heap-size: 512M
           disk-size: 8192M
           emulator-boot-timeout: 1200
-          disable-linux-hw-accel: true
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
           script: python3 scripts/test_box64_termux_arm64.py

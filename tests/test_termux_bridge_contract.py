@@ -68,6 +68,7 @@ def test_box64_arm64_smoke_test_pins_reviewed_third_party_payload_and_uses_termu
     assert '"$(uname -m)" != "aarch64"' in installer
     assert '"input", "text", "bash%strun-box64-arm64-test.sh"' in smoke
     assert '"app_mediated_model_handoff": False' in smoke
+    assert "runs-on: macos-15" in workflow
     assert "arch: arm64-v8a" in workflow
     assert "system-images;android-35;google_apis;arm64-v8a" in workflow
 

@@ -64,9 +64,11 @@ verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
   x86_64 sobre ARM64, foi acrescentado um workflow separado para testar em
   Termux/Android ARM64 o release comunitário `v0.4.5-termux.1`; o script reduzido
   foi revisado, fixa o SHA-256 `0dae8257ac7396db4766721e5e4f317679b2080752d32e90d4e6e6fdfee467cf`
-  e instala apenas `box64` (não o launcher comercial `dragon`). Até o workflow
-  concluir, isso é apenas uma tentativa pendente — não prova de instalação. Esse
-  teste arquitetural separado não será apresentado como ação feita pelo modelo.
+  e instala apenas `box64` (não o launcher comercial `dragon`). A primeira
+  tentativa com imagem ARM64 sobre host x86 expirou antes do boot do emulador; o
+  workflow foi transferido para um host macOS ARM64, aguardando nova execução.
+  Até ela concluir, isso é apenas uma tentativa pendente — não prova de instalação.
+  Esse teste arquitetural separado não será apresentado como ação feita pelo modelo.
   Uma atualização de espelho Termux trouxe `aapt2` antigo (13.x) no job Gemma 4,
   que recusou o `android.jar` API 35; o script de build agora fixa o endpoint oficial
   `packages-cf.termux.dev` e atualiza os índices antes de instalar, aguardando nova
