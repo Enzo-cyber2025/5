@@ -839,7 +839,8 @@ jobs:
           # 609 times in this module's blocker histogram before this existed.
           ct=$(grep -aE '^  call table:' /tmp/game.log | tr '\n' '|' | tr -s ' ')
           np=$(grep -aE '^  records not placed' /tmp/game.log | tr '\n' '|' | tr -s ' ')
-          echo "::notice title=game-calltable::${ct:-no call table line, so no call rel32 target was resolved in this module} || ${np:-all placed}"
+          ia=$(grep -aE '^  import slots pointed at the stub' /tmp/game.log | tr '\n' '|' | tr -s ' ')
+          echo "::notice title=game-calltable::${ct:-no call table line, so no call rel32 target was resolved in this module} || ${np:-all placed} || ${ia:-no unfilled import slots}"
           # Its own notice rather than relying on the tail of the log, which happened to
           # reach these lines once and would not if anything below them grew. Each line
           # carries the signal split: the region alone cannot say whether a guard-page

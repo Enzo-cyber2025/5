@@ -664,6 +664,38 @@ typedef struct {
  * reaches, which is most of them. */
 #define PLACE_MAX_RECORDS 4000u
 
+/* Points every import-table slot that no shim answers for at the trap stub.
+ *
+ * shim_fill_iat fills the slots whose imported name has a shim and leaves the rest
+ * holding whatever the file held - an RVA, or zero. Cached code reaches an import with
+ * `LDUR X16,[X17]; BLR X16` through that slot, so an unfilled one is a branch to an RVA
+ * or to address 0. Neither is a controlled stop, and both arrive as SIGSEGV, which the
+ * tally reports as emitted code going wrong. On a real game module that was 17 records,
+ * every one with addr=0 and a pc outside every translated body.
+ *
+ * shim_resolve is asked per slot rather than a new accessor being added to shim.h: it
+ * already returns 0 for a slot it does not own, which is exactly the question. Returns
+ * how many slots were stubbed. */
+static size_t stub_unknown_iat(const pe_image *im, uint8_t *base, size_t sz,
+                               const void *stub)
+{
+    uint64_t stubval = (uint64_t)(uintptr_t)stub;
+    size_t   d, k, n = 0;
+
+    for (d = 0; d < im->num_dlls; d++) {
+        const pe_import_dll *dl = &im->dlls[d];
+        for (k = 0; k < dl->func_count; k++) {
+            uint64_t slot_rva = (uint64_t)dl->iat_rva + (uint64_t)k * 8u;
+            if (slot_rva + 8u > (uint64_t)sz) continue;
+            if (shim_resolve(im->image_base + slot_rva, NULL) != 0)
+                continue;                 /* a shim owns this slot and already filled it */
+            memcpy(base + slot_rva, &stubval, sizeof stubval);
+            n++;
+        }
+    }
+    return n;
+}
+
 static fault_class classify_addr(uint64_t addr, void *const *bases,
                                  const size_t *bsizes, int nmods,
                                  const gs_arena *a,
@@ -718,7 +750,7 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     void       *trap = NULL;
     size_t      trap_len = 0, ct_n = 0, ct_filled = 0;
     size_t      slots, slot, mapped = 0, unmatched = 0, capped = 0;
-    size_t      nplaced = 0, not_placed = 0, i, q;
+    size_t      nplaced = 0, not_placed = 0, iat_stubbed = 0, i, q;
     size_t      fc_hist[FC_COUNT];
     /* Region crossed with signal, because the region histogram alone cannot answer the
      * only question that matters here. The tally calls a SIGTRAP "the bounds check
@@ -773,6 +805,25 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         goto cleanup;
     }
 
+    /* One shared stub for every call target nobody can supply: an unfilled call-table
+     * slot, and - below - an import no shim answers for. A slot holding 0 makes the call
+     * a branch to address 0, which is a SIGSEGV and, in a tally that separates traps
+     * from crashes precisely so a code-generation bug cannot hide, indistinguishable
+     * from the emitted words being wrong. Measured, not hypothetical: 17 records on a
+     * real game module faulted with addr=0 and a pc outside every translated body,
+     * which is control arriving at address 0 - an indirect call through an IAT slot
+     * this loader never filled. A BRK with its own immediate is a controlled stop that
+     * says which of the two happened. */
+    {
+        uint32_t stub[1];
+        stub[0] = a64_brk(A64_BRK_UNTRANSLATED);
+        trap = place_code(stub, 1u, &trap_len);
+        if (!trap) {
+            printf("  EXECUTED NOTHING: could not place the unresolved-call stub\n");
+            goto cleanup;
+        }
+    }
+
     /* Every module is mapped up front and stays mapped. They used to be mapped and
      * unmapped one at a time, which was fine while each record ran alone and cannot
      * work now: a call-table slot may point at a function in a different module, so
@@ -799,21 +850,15 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         {   size_t known = 0, unknown = 0;
             shim_fill_iat(&pes[i], (uint8_t *)base, sz, pes[i].image_base,
                           &known, &unknown);
+            iat_stubbed += stub_unknown_iat(&pes[i], (uint8_t *)base, sz, trap);
         }
     }
 
-    /* One shared stub for every slot that cannot be filled. A slot holding 0 would
-     * make the call a branch to address 0 - a SIGSEGV, and indistinguishable in the
-     * tally from the emitted words being wrong. A BRK with its own immediate is a
-     * controlled stop that says which of the two happened. */
     ct_n = ptc_calltab_count(cache);
     if (ct_n) {
-        uint32_t stub[1];
-        stub[0] = a64_brk(A64_BRK_UNTRANSLATED);
-        trap = place_code(stub, 1u, &trap_len);
         ct = calloc(ct_n, sizeof *ct);
-        if (!trap || !ct) {
-            printf("  EXECUTED NOTHING: could not place the untranslated-call stub\n");
+        if (!ct) {
+            printf("  EXECUTED NOTHING: could not allocate the call table\n");
             goto cleanup;
         }
     }
@@ -961,6 +1006,8 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                ct_n, ct_filled, ct_n - ct_filled);
     if (not_placed)
         printf("  records not placed in executable memory: %zu\n", not_placed);
+    if (iat_stubbed)
+        printf("  import slots pointed at the stub: %zu\n", iat_stubbed);
     if (t.faulted) {
         /* Split out, because the two causes call for opposite reactions: a trap is
          * the bounds check declining to invent a value, a crash is a bug in what
