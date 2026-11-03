@@ -48,11 +48,20 @@ verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
   explícita. Requer Termux com `RUN_COMMAND`/“Allow external apps” habilitado; a
   saída fica no próprio Termux e não é devolvida automaticamente à IA. Comandos
   simples sem fence são limitados a uma linha; scripts multilinha devem vir num
-  bloco de código e continuam sujeitos à revisão humana. O teste de emulador do
-  candidato de CI usa o APK oficial do Termux e verifica confirmação, permissão
-  runtime e arquivo marcador; isso não valida o APK assinado antigo nem comprova
-  o fluxo para Gemma 4 E2B/Gemma 3 270M. A execução silenciosa irrestrita continua
-  desativada: comandos podem apagar dados, expor credenciais ou instalar software.
+  bloco de código e continuam sujeitos à revisão humana. Os runs [41544525019](https://github.com/Enzo-cyber2025/5/actions/runs/41544525019)
+  e [41554605496](https://github.com/Enzo-cyber2025/5/actions/runs/41554605496)
+  agora exercitam o candidato atual com Gemma 4 E2B e Gemma 3 270M, respectivamente,
+  por texto e sem exigir chamadas nativas de ferramentas. Para ambos, o CI observou
+  a revisão do comando, a confirmação de permissão Android e execução do build do
+  APK no Termux; o APK de teste instalou e converteu `A` em `01000001`. Gemma 4
+  também executou o comando de leitura da pasta; Gemma 3 não chegou a esse comando
+  porque a inferência expirou. O instalador Box64 foi tentado por ambos, mas o
+  Termux x86_64 não encontrou o pacote (`exit 100`). O CI automatiza os toques nos
+  controles explícitos de confirmação; isso não é uma ação silenciosa. Os APKs
+  testados foram candidatos unsigned com assinatura descartável só para emulador,
+  não atualizações assinadas para instalação pública. A saída do Termux continua
+  sem retorno automático ao modelo. A execução irrestrita continua desativada:
+  comandos podem apagar dados, expor credenciais ou instalar software.
 - **`contextSize=0` e `nPredict=0` agora significam “usar o máximo finito disponível”**:
   o contexto 0 pede ao llama.cpp o contexto de treino declarado no GGUF; saída 0
   consome o espaço restante desse contexto até EOS, cancelamento ou esgotamento.
