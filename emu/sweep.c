@@ -433,6 +433,39 @@ void sweep_set_resolver(tr_resolve_fn resolve, void *user)
  * Returns 0 when neither can answer, which leaves the refusal exactly as it was
  * before this existed. A sweep with no cache has nowhere to put a table, so it
  * declines every guest call rather than inventing one. */
+/* Is va one of this module's import-table slots?
+ *
+ * An import slot is DATA, and it is data even when the section carrying it is marked
+ * executable - which real modules do. Answering "guest call" for one assigns a
+ * call-table slot to something that is never a function, so it is never translated and
+ * its slot sits on the trap stub forever, and the caller that asked about an import
+ * receives an answer tagged for a different question. On a real game bundle that was 498
+ * of 513 slots unfilled, and sixteen records branching to TR_GUEST_CALL | slot_offset.
+ *
+ * The lookup tables are excluded as well: both are equally data, and a call rel32 into
+ * either would be a bug in discovery rather than a function. */
+static int is_import_slot(const smod *m, uint64_t va)
+{
+    uint64_t rva, span;
+    size_t   d;
+
+    if (!m->pe || !in_span(m, va))
+        return 0;
+    rva = va - m->base;
+    for (d = 0; d < (size_t)m->pe->num_dlls; d++) {
+        const pe_import_dll *dl = &m->pe->dlls[d];
+        /* PE32+ thunks are eight bytes, one per imported function. Computed in 64 bits
+         * so a large iat_rva near the top of the RVA space cannot wrap and make the
+         * range test pass for an address that is not in it. */
+        span = (uint64_t)dl->func_count * 8u;
+        if (dl->iat_rva && rva >= dl->iat_rva && rva < (uint64_t)dl->iat_rva + span)
+            return 1;
+        if (dl->ilt_rva && rva >= dl->ilt_rva && rva < (uint64_t)dl->ilt_rva + span)
+            return 1;
+    }
+    return 0;
+}
+
 static uint64_t sweep_resolve_any(uint64_t va, void *user)
 {
     sweep_job *j = (sweep_job *)user;
@@ -461,6 +494,11 @@ static uint64_t sweep_resolve_any(uint64_t va, void *user)
          * giving it a slot would put a trap stub where the caller expects code.
          * Refusing it keeps the reason honest: the target is not code. */
         if (!sec)
+            continue;
+        /* Inside an executable section is necessary and not sufficient. The resolver is
+         * also asked about import slots by the FF /2 path, and those are data whatever
+         * section the linker put them in. See is_import_slot. */
+        if (is_import_slot(m, va))
             continue;
 
         slot = ptc_calltab_find(j->cache, m->module_id, va);

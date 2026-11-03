@@ -3035,6 +3035,81 @@ static uint64_t abi_target(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
     return a * 1000u + b * 100u + c * 10u + d + (s - s);
 }
 
+/* Answers an IMPORT question with a GUEST-CALL answer, which is what a composite
+ * resolver does when it cannot tell the two apart - an import slot sitting in a section
+ * the linker marked executable looks exactly like a call target by address alone. */
+static uint64_t resolve_wrong_tag_for_import(uint64_t iat_va, void *user)
+{
+    (void)user; (void)iat_va;
+    return 0x380u | TR_GUEST_CALL;      /* slot 112's byte offset, tagged */
+}
+
+/* The mirror: answers a CALL REL32 question with a host-ABI answer. */
+static uint64_t resolve_wrong_tag_for_call(uint64_t tgt, void *user)
+{
+    (void)user; (void)tgt;
+    return 0x3040u | TR_ABI_HOST;
+}
+
+/* Answers an import correctly, as the control for the refusal above. */
+static uint64_t resolve_import_indirect(uint64_t iat_va, void *user)
+{
+    (void)user;
+    return (uint64_t)(iat_va - IMAGE_BASE) | TR_ABI_HOST | TR_ABI_INDIRECT;
+}
+
+static void test_resolver_tag_mismatch(void)
+{
+    /* call [rip+0] ; ret - an indirect call through an import slot */
+    static const uint8_t imp[] = { 0xFF,0x15, 0,0,0,0, 0xC3 };
+    /* call +5 ; ret - a direct call to the ret, so the target is inside the buffer */
+    static const uint8_t dir[] = { 0xE8, 0x01,0,0,0, 0xC3 };
+    tr_func   f;
+    tr_status st;
+    size_t    k;
+    int       leaked;
+
+    printf("a resolver answer tagged for the other question is refused, not emitted\n");
+
+    /* The bug this pins. The import site stripped the two tags it knew and emitted
+     * whatever was left, so TR_GUEST_CALL survived into the constant materialised in the
+     * branch register and the call went to 0x2000000000000380 - which the CPU truncated
+     * to 0x380. Sixteen records on a real game bundle faulted there. Every emitted word
+     * was a correct rendering of the value it had been handed, so no word-level check
+     * could have caught it: only refusing the answer can. */
+    /* Through the image variant, so both this and its control are on the same footing
+     * and the refusal cannot be an artefact of a missing image base firing first. */
+    st = tr_translate_function_img(imp, sizeof(imp), IMAGE_BASE + 0x1000u, 0u,
+                                   IMAGE_BASE, 0x3000u,
+                                   resolve_wrong_tag_for_import, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED,
+          "an import call answered with TR_GUEST_CALL was translated: the tag would be "
+          "materialised into the branch target, got %s", tr_status_name(st));
+    leaked = 0;
+    for (k = 0; k < f.n; k++)
+        if ((f.words[k] & 0x0000801Fu) == 0x00008011u) leaked = 1;  /* MOVZ/MOVK into X17 */
+    CHECK(!leaked || st != TR_OK,
+          "a refused translation must not have emitted the slot-address constant");
+
+    /* The control: the same bytes with a correctly tagged answer still translate. Without
+     * this, "refuse anything tagged" would pass the test above and break every real
+     * import call. */
+    st = tr_translate_function_img(imp, sizeof(imp), IMAGE_BASE + 0x1000u, 0u,
+                                   IMAGE_BASE, 0x3000u,
+                                   resolve_import_indirect, NULL, &f);
+    CHECK(st == TR_OK,
+          "a correctly tagged indirect import call must still translate, got %s (%s)",
+          tr_status_name(st), f.detail ? f.detail : "?");
+
+    /* The mirror at the call rel32 site: it already required its own tag, but requiring
+     * TR_GUEST_CALL is not rejecting TR_ABI_HOST alongside it. */
+    st = tr_translate_function(dir, sizeof(dir), IMAGE_BASE,
+                               resolve_wrong_tag_for_call, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED,
+          "a call rel32 answered with TR_ABI_HOST was translated: the host-ABI bit would "
+          "be materialised into the slot offset, got %s", tr_status_name(st));
+}
+
 static uint64_t abi_resolve_tagged(uint64_t iat_va, void *user)
 {
     (void)iat_va;
@@ -3959,6 +4034,7 @@ int main(void)
     test_guest_program_loops();
     test_mov_imm_to_stack();
     test_nop();
+    test_resolver_tag_mismatch();
     test_guest_to_guest_call();
     test_pipeline();
 #if defined(__aarch64__)

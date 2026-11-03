@@ -262,6 +262,20 @@ tr_status tr_translate_run(const uint8_t *code, size_t code_len,
                 out->detail = "no host address known for this import slot yet";
                 return TR_NEEDS_TARGET;
             }
+            /* This path emits no ABI bridge and no indirection through the image, so it
+             * cannot honour ANY tag: a host-ABI answer needs the bridge, an indirect one
+             * needs the slot loaded at run time, and a guest-call one needs the call
+             * table. It emitted the raw value, tags included, so a shim-resolved import
+             * became a branch to 0xC000000000003040 - the two tag bits arriving as the
+             * top of the address. Refusing is the honest outcome until this site grows
+             * what plan_one has, and it is why the sweep translates through
+             * tr_translate_function_img and never through here. */
+            if (host & (uint64_t)TR_ABI_TAG_MASK) {
+                out->iat_va = iat_va;
+                out->detail = "this path cannot honour a tagged resolver answer: it "
+                              "emits no bridge and no run-time indirection";
+                return TR_UNSUPPORTED;
+            }
             if (!emit_const(out, HOST_SCRATCH, host)) return TR_OVERFLOW;
             if (!push(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
         } else {
@@ -713,6 +727,15 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             out->detail = "call rel32: no call-table slot is known for this target";
             return TR_UNSUPPORTED;
         }
+        /* The mirror of the check at the import site, and for the same reason: this one
+         * already required its own tag, but requiring TR_GUEST_CALL is not the same as
+         * rejecting TR_ABI_HOST alongside it, and a value carrying both would have the
+         * host-ABI bit materialised into the slot offset. */
+        if (ans & ((uint64_t)TR_ABI_TAG_MASK & ~(uint64_t)TR_GUEST_CALL)) {
+            out->reason = TRR_NEEDS_TARGET;
+            out->detail = "call rel32: the answer also carries a host-ABI tag";
+            return TR_UNSUPPORTED;
+        }
         ans &= ~(uint64_t)TR_GUEST_CALL;
         p->op = P_CALL_TABLE;
         p->const_val = ans;
@@ -746,6 +769,19 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             out->iat_va = iat_va;
             out->reason = TRR_NEEDS_TARGET; out->detail = "no host address known for this import slot yet";
             return TR_NEEDS_TARGET;
+        }
+        /* Refuse an answer carrying a tag this site does not handle. It used to strip
+         * the two it knew and emit whatever was left, so a resolver that answered an
+         * import question with a call-table slot produced a branch to
+         * TR_GUEST_CALL | slot_offset - the tag surviving the mask as part of the
+         * address. Written against TR_ABI_TAG_MASK rather than against TR_GUEST_CALL so
+         * that a fourth tag added later is refused here instead of emitted. */
+        if (host & ((uint64_t)TR_ABI_TAG_MASK &
+                    ~((uint64_t)TR_ABI_HOST | (uint64_t)TR_ABI_INDIRECT))) {
+            out->reason = TRR_NEEDS_TARGET;
+            out->detail = "the resolver answered an import slot with a tag this call "
+                          "site does not handle";
+            return TR_UNSUPPORTED;
         }
         p->host_abi  = (host & TR_ABI_HOST) != 0u;
         p->indirect  = (host & TR_ABI_INDIRECT) != 0u;

@@ -219,6 +219,17 @@ typedef uint64_t (*tr_resolve_fn)(uint64_t guest_iat_va, void *user);
  * legitimate value sets it. */
 #define TR_GUEST_CALL (1ULL << 61)
 
+/* Every tag a resolver may set. A call site handles the tags it understands and MUST
+ * refuse an answer carrying any other one, rather than masking off its own and emitting
+ * the rest as an address. That is not a style preference: an unmasked tag becomes part of
+ * the constant materialised into the branch register, and the CPU then truncates it to a
+ * canonical address, so the call lands on the low bits alone. Measured on a real game
+ * bundle - sixteen records branched to TR_GUEST_CALL | slot_offset and faulted at the
+ * offset, and every emitted word was a correct rendering of the value it had been given.
+ * Adding a fourth tag means adding it here, which is what makes the check at each site
+ * catch the next one instead of silently emitting it. */
+#define TR_ABI_TAG_MASK (TR_ABI_HOST | TR_ABI_INDIRECT | TR_GUEST_CALL)
+
 typedef struct {
     uint32_t    words[TR_MAX_WORDS];
     size_t      n;
