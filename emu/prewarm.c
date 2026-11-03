@@ -729,7 +729,18 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
      * without the signals would leave that guess, and this count has already been
      * guessed at twice. */
     size_t      fc_trap[FC_COUNT], fc_other[FC_COUNT];
+    /* Per-record detail for the faults that are NOT bounds-check traps, bounded and
+     * collapsed onto one line. The aggregate regions say which mechanism is operating
+     * but not which instruction, and reclassifying a category as "the harness's fault,
+     * not the emitted code's" on the strength of an aggregate is exactly how the 86
+     * above-the-stack faults came to be explained as a runaway stack pointer for as
+     * long as they were. The guest address and the word index into the body are what
+     * make the claim checkable against the bytes. */
+    char        other_detail[1400];
+    size_t      other_len = 0, other_n = 0;
     int         arena_ok = 0;
+
+    other_detail[0] = '\0';
 
     memset(&t, 0, sizeof t);
     memset(fc_hist, 0, sizeof fc_hist);
@@ -900,6 +911,19 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                                (unsigned long long)((fm.pc - b) / 4u),
                                (unsigned long long)pf[w].guest_pc);
                         located = 1;
+                        /* Only the non-trap ones, and only the first few: this exists to
+                         * be read, not to be complete. */
+                        if (fm.signo != SIGTRAP && other_n < 12u &&
+                            other_len + 96u < sizeof other_detail) {
+                            other_len += (size_t)snprintf(other_detail + other_len,
+                                        sizeof other_detail - other_len,
+                                        "%sgpc=%08llX w=%llu addr=%llX",
+                                        other_n ? " | " : "",
+                                        (unsigned long long)pf[w].guest_pc,
+                                        (unsigned long long)((fm.pc - b) / 4u),
+                                        (unsigned long long)fm.addr);
+                            other_n++;
+                        }
                         break;
                     }
                     /* The informative case: control was somewhere that is not
@@ -972,6 +996,9 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
         printf("  fault address region: %-42s %zu record(s), %zu SIGTRAP, %zu other\n",
                fault_class_name((fault_class)i), fc_hist[i], fc_trap[i], fc_other[i]);
     }
+    if (other_n)
+        printf("  non-trap fault detail: %zu shown of %u, %s\n",
+               other_n, t.crashed, other_detail);
     if (unmatched) printf("  records belonging to no offered module: %zu\n", unmatched);
     if (capped)    printf("  records skipped by the %u cap: %zu\n", EXEC_MAX_RECORDS, capped);
     if (t.ran == 0)

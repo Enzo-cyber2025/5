@@ -846,6 +846,12 @@ jobs:
           # fault is the arena containing a runaway stack pointer or something else.
           fr=$(grep -aE '^  fault address region:' /tmp/game.log | tr '\n' '|' | tr -s ' ' | cut -c1-1200)
           echo "::notice title=game-faultregions::${fr:-no fault region lines: either nothing faulted or the handler did not report}"
+          # Which instructions, not just which regions. Reclassifying a category as the
+          # harness's fault rather than the emitted code's is a claim about specific
+          # bytes, and an aggregate cannot support it - the 86 above-the-stack faults
+          # were explained as a runaway stack pointer for exactly that long.
+          od=$(grep -aE '^  non-trap fault detail:' /tmp/game.log | tr '\n' ' ' | tr -s ' ' | cut -c1-1400)
+          echo "::notice title=game-n trapdetail::${od:-no non-trap faults, so nothing to detail}"
           exit 0
 
   api-surface:
