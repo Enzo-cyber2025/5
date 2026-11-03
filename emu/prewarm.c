@@ -947,8 +947,9 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                     printf(", stack ran %llu bytes below its entry value",
                            (unsigned long long)(a.top - fm.addr));
                 if (fm.pc) {
-                    size_t w;
-                    int    located = 0;
+                    size_t   w;
+                    int      located = 0;
+                    uint64_t located_gpc = 0, located_word = 0;
                     for (w = 0; w < nplaced; w++) {
                         uint64_t b = (uint64_t)(uintptr_t)pf[w].page;
                         if (fm.pc < b || fm.pc >= b + pf[w].page_len) continue;
@@ -956,19 +957,8 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                                (unsigned long long)((fm.pc - b) / 4u),
                                (unsigned long long)pf[w].guest_pc);
                         located = 1;
-                        /* Only the non-trap ones, and only the first few: this exists to
-                         * be read, not to be complete. */
-                        if (fm.signo != SIGTRAP && other_n < 12u &&
-                            other_len + 96u < sizeof other_detail) {
-                            other_len += (size_t)snprintf(other_detail + other_len,
-                                        sizeof other_detail - other_len,
-                                        "%sgpc=%08llX w=%llu addr=%llX",
-                                        other_n ? " | " : "",
-                                        (unsigned long long)pf[w].guest_pc,
-                                        (unsigned long long)((fm.pc - b) / 4u),
-                                        (unsigned long long)fm.addr);
-                            other_n++;
-                        }
+                        located_gpc = pf[w].guest_pc;
+                        located_word = (uint64_t)((fm.pc - b) / 4u);
                         break;
                     }
                     /* The informative case: control was somewhere that is not
@@ -976,6 +966,34 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                     if (!located)
                         printf(", pc %016llX is outside every placed body\n",
                                (unsigned long long)fm.pc);
+                    /* Collected for BOTH cases, and collecting only the located ones was
+                     * a hole in the instrumentation rather than a choice. The first
+                     * version of this reported "1 shown of 17" and the one shown was the
+                     * least interesting of them: 16 faults had a pc outside every placed
+                     * body - control somewhere that is not translated code at all - and
+                     * those were exactly the ones dropped, because the collection sat
+                     * inside the branch that only runs when the pc IS in a body. The
+                     * unexplained majority went unreported while the explained minority
+                     * was printed. */
+                    if (fm.signo != SIGTRAP && other_n < 12u &&
+                        other_len + 128u < sizeof other_detail) {
+                        if (located)
+                            other_len += (size_t)snprintf(other_detail + other_len,
+                                        sizeof other_detail - other_len,
+                                        "%sgpc=%08llX w=%llu addr=%llX",
+                                        other_n ? " | " : "",
+                                        (unsigned long long)located_gpc,
+                                        (unsigned long long)located_word,
+                                        (unsigned long long)fm.addr);
+                        else
+                            other_len += (size_t)snprintf(other_detail + other_len,
+                                        sizeof other_detail - other_len,
+                                        "%spc=%llX (no body) addr=%llX",
+                                        other_n ? " | " : "",
+                                        (unsigned long long)fm.pc,
+                                        (unsigned long long)fm.addr);
+                        other_n++;
+                    }
                 } else {
                     printf(", pc unavailable\n");
                 }
