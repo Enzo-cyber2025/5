@@ -167,6 +167,24 @@ uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
  * because a histogram that stops recording without saying so reports a smaller
  * world than the one it measured. */
 #define SWEEP_DETAIL_MAX 48u
+
+/* Every import cell a translated function was made to call through, as a guest VA,
+ * in the order the sweep met them. The emitted code loads the target out of the cell
+ * at run time and that load is safe - the cell is inside the mapped image - but
+ * nothing checks what the cell holds. A cell the loader never filled still contains
+ * the file's raw value, an RVA or a name pointer, and branching to it is a fault in
+ * unmapped memory. This list exists so a harness can guarantee the invariant instead
+ * of hoping for it: every cell reachable from translated code holds either a known
+ * host function or a trap stub.
+ *
+ * Entries repeat when several functions call the same import, which they usually do.
+ * Stubbing is idempotent, so deduplicating here would cost a lookup on every resolve
+ * to save a redundant store. sweep_import_cell_at returns 0 past the end; a real cell
+ * is never at guest VA 0. */
+#define SWEEP_CELL_MAX 65536u
+size_t   sweep_import_cell_count(const sweep_job *j);
+uint64_t sweep_import_cell_at(const sweep_job *j, size_t i);
+size_t   sweep_import_cell_overflow(const sweep_job *j);
 uint32_t    sweep_detail_kinds(const sweep_job *j);
 uint32_t    sweep_detail_overflow(const sweep_job *j);
 uint32_t    sweep_top_detail(const sweep_job *j, uint32_t rank, const char **out_text);

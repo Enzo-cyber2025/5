@@ -67,6 +67,18 @@ struct sweep_job {
     struct { const char *text; uint32_t count; } detail_hist[SWEEP_DETAIL_MAX];
     uint32_t    detail_kinds;
     uint32_t    detail_overflow;
+
+    /* Every import cell a translated function was made to call through, as a guest
+     * VA. The emitted code loads the target out of the cell at run time and the
+     * load is not bounds-checked - it does not have to be, because the cell is
+     * inside the image - but nothing checks what is IN it. A cell the loader never
+     * filled holds the raw file value, which is an RVA or a name pointer, and
+     * branching to that is a fault in unmapped memory. Recorded so the harness can
+     * guarantee the invariant instead of hoping for it: every cell reachable from
+     * translated code holds either a known host function or the trap stub.
+     * Duplicates are kept, because writing a stub is idempotent and deduplicating
+     * here would cost a lookup on the hot path to save a redundant store. */
+    uint64_t   *cells;  size_t ncells, capcells, cell_overflow;
     uint32_t    refused_at_first_insn;
     uint32_t    refused_deeper;
     uint32_t    deepest_refusal;
@@ -241,6 +253,7 @@ void sweep_free(sweep_job *j)
     free(j->entries);
     free(j->wl);
     free(j->blocks);
+    free(j->cells);
     free(j);
 }
 
@@ -502,19 +515,58 @@ static void detail_note(sweep_job *j, const char *text)
     j->detail_kinds++;
 }
 
-static uint64_t sweep_resolve_any(uint64_t va, void *user)
+/* Append a cell to the recorded list. A cell that cannot be recorded is counted
+ * rather than dropped: the harness stubs what is on this list, so a silent cap
+ * would leave reachable cells holding whatever the file had, and the failure would
+ * arrive as a fault in a child process with no connection to the reason. */
+static void cell_push(sweep_job *j, uint64_t va)
+{
+    if (j->ncells >= j->capcells) {
+        size_t   want = j->capcells ? j->capcells * 2 : 256;
+        uint64_t *n = (uint64_t *)realloc(j->cells, want * sizeof(*n));
+        if (!n) { j->cell_overflow++; return; }
+        j->cells = n;
+        j->capcells = want;
+    }
+    if (j->ncells >= SWEEP_CELL_MAX) { j->cell_overflow++; return; }
+    j->cells[j->ncells++] = va;
+}
+
+static uint64_t sweep_resolve_any(uint64_t va, tr_question q, void *user)
 {
     sweep_job *j = (sweep_job *)user;
     uint64_t   ans;
     size_t     i;
 
     if (sweep_resolve) {
-        ans = sweep_resolve(va, sweep_resolve_user);
+        ans = sweep_resolve(va, q, sweep_resolve_user);
         if (ans)
             return ans;
     }
     if (!j || !j->cache)
         return 0;
+
+    /* The import question gets its own answer, and it does not go through find_exec
+     * at all. A cell is data by definition; whether the linker put it in a section
+     * marked executable is irrelevant to what the emitted code has to do with it,
+     * which is load from X19 + rva and branch. Requiring executability here is what
+     * made the answer depend on a section flag, and requiring membership of a
+     * parsed IAT is what left 128 functions on a real bundle refused - their cells
+     * are inside the image but in no import range this loader parses, and the cell
+     * form is still the correct answer for them.
+     *
+     * Bounded to the image, because the emitted load is not bounds-checked and
+     * X19 + rva has to be mapped. */
+    if (q == TR_Q_IMPORT_CELL) {
+        for (i = 0; i < j->nmods; i++) {
+            const smod *m = &j->mods[i];
+            if (!in_span(m, va))
+                continue;
+            cell_push(j, va);
+            return (uint64_t)(va - m->base) | TR_ABI_HOST | TR_ABI_INDIRECT;
+        }
+        return 0;
+    }
 
     for (i = 0; i < j->nmods; i++) {
         const smod *m = &j->mods[i];
@@ -525,25 +577,14 @@ static uint64_t sweep_resolve_any(uint64_t va, void *user)
         if (!in_span(m, va))
             continue;
         rva = (uint32_t)(va - m->base);
-        /* The resolver answers two different questions through one callback, and
-         * which one is being asked is visible only in the address. An FF /2 import
-         * asks about a thunk slot; a call rel32 asks about a function. Answering the
-         * first with the second's shape is what puts a tag into a branch target.
-         *
-         * Checked before find_exec, because "inside a section marked executable" is
-         * necessary and nowhere near sufficient: real linkers put import tables in
-         * executable sections, so an IAT slot is indistinguishable from a call target
-         * by address alone. Answering it as a function assigned ~498 slots that could
-         * never be filled and, worse, handed the import site a TR_GUEST_CALL that the
-         * emitted code materialised into the branch register.
-         *
-         * The right answer for a thunk slot is the host-ABI indirect form: load the
-         * cell at X19 + rva and branch to whatever the loader put there. That is the
-         * same shape shim_resolve returns for the imports it implements, so an
-         * unimplemented one lands on the BRK stub - a trap, counted and honest -
-         * instead of refusing the whole caller. */
+        /* Still guarded, even though the import question is answered above and never
+         * reaches here. A `call rel32` aimed at an import slot is malformed guest
+         * code, but a malformed guest binary is input, not a licence: giving that
+         * address a call-table slot would promise a translation of a function that
+         * is eight bytes of pointer, and the slot would stay on the trap stub
+         * forever while looking like a coverage gap. */
         if (import_slot_rva(m, va, &rva))
-            return (uint64_t)rva | TR_ABI_HOST | TR_ABI_INDIRECT;
+            continue;
 
         sec = find_exec(m->pe, rva, &within);
         /* A call into a non-executable section is not a call to a function, and
@@ -713,6 +754,23 @@ uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
     if (out_map) *out_map = (uint8_t)best_map;
     if (out_opcode) *out_opcode = (uint8_t)best_op;
     return best;
+}
+
+size_t sweep_import_cell_count(const sweep_job *j)
+{
+    if (!j) return 0;
+    return j->ncells < SWEEP_CELL_MAX ? j->ncells : SWEEP_CELL_MAX;
+}
+
+uint64_t sweep_import_cell_at(const sweep_job *j, size_t i)
+{
+    if (!j || i >= j->ncells) return 0;
+    return j->cells[i];
+}
+
+size_t sweep_import_cell_overflow(const sweep_job *j)
+{
+    return j ? j->cell_overflow : 0;
 }
 
 uint32_t sweep_detail_kinds(const sweep_job *j)

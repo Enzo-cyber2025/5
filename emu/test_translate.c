@@ -334,8 +334,9 @@ typedef struct {
     int      queries;
 } resolver;
 
-static uint64_t resolve_cb(uint64_t iat_va, void *user)
+static uint64_t resolve_cb(uint64_t iat_va, tr_question q, void *user)
 {
+    (void)q;
     resolver *r = user;
     r->queries++;
     return (iat_va == r->iat_guest_va) ? r->host_addr : 0;
@@ -3038,22 +3039,25 @@ static uint64_t abi_target(uint64_t a, uint64_t b, uint64_t c, uint64_t d)
 /* Answers an IMPORT question with a GUEST-CALL answer, which is what a composite
  * resolver does when it cannot tell the two apart - an import slot sitting in a section
  * the linker marked executable looks exactly like a call target by address alone. */
-static uint64_t resolve_wrong_tag_for_import(uint64_t iat_va, void *user)
+static uint64_t resolve_wrong_tag_for_import(uint64_t iat_va, tr_question q, void *user)
 {
+    (void)q;
     (void)user; (void)iat_va;
     return 0x380u | TR_GUEST_CALL;      /* slot 112's byte offset, tagged */
 }
 
 /* The mirror: answers a CALL REL32 question with a host-ABI answer. */
-static uint64_t resolve_wrong_tag_for_call(uint64_t tgt, void *user)
+static uint64_t resolve_wrong_tag_for_call(uint64_t tgt, tr_question q, void *user)
 {
+    (void)q;
     (void)user; (void)tgt;
     return 0x3040u | TR_ABI_HOST;
 }
 
 /* Answers an import correctly, as the control for the refusal above. */
-static uint64_t resolve_import_indirect(uint64_t iat_va, void *user)
+static uint64_t resolve_import_indirect(uint64_t iat_va, tr_question q, void *user)
 {
+    (void)q;
     (void)user;
     return (uint64_t)(iat_va - IMAGE_BASE) | TR_ABI_HOST | TR_ABI_INDIRECT;
 }
@@ -3110,15 +3114,17 @@ static void test_resolver_tag_mismatch(void)
           "be materialised into the slot offset, got %s", tr_status_name(st));
 }
 
-static uint64_t abi_resolve_tagged(uint64_t iat_va, void *user)
+static uint64_t abi_resolve_tagged(uint64_t iat_va, tr_question q, void *user)
 {
+    (void)q;
     (void)iat_va;
     return (uint64_t)(uintptr_t)*(void **)user | TR_ABI_HOST;
 }
 
 /* The control: the same address with no tag. */
-static uint64_t abi_resolve_untagged(uint64_t iat_va, void *user)
+static uint64_t abi_resolve_untagged(uint64_t iat_va, tr_question q, void *user)
 {
+    (void)q;
     (void)iat_va;
     return (uint64_t)(uintptr_t)*(void **)user;
 }
@@ -3410,8 +3416,9 @@ static uint64_t shim_ExitProcess(uint64_t code)
     return 0;
 }
 
-static uint64_t gp_resolve(uint64_t iat_va, void *user)
+static uint64_t gp_resolve(uint64_t iat_va, tr_question q, void *user)
 {
+    (void)q;
     (void)user;
     if (iat_va == GP_IMG_VA + GP_IAT_RVA + 0u)
         return (uint64_t)(uintptr_t)&shim_GetStdHandle | TR_ABI_HOST;
@@ -3855,8 +3862,9 @@ static void test_mov_imm_to_stack(void)
 }
 
 /* Answers for exactly one target: the callee's guest VA, as slot 0 of the table. */
-static uint64_t ct_resolve(uint64_t tgt, void *user)
+static uint64_t ct_resolve(uint64_t tgt, tr_question q, void *user)
 {
+    (void)q;
     if (tgt == *(const uint64_t *)user)
         return (uint64_t)(0u * 8u) | TR_GUEST_CALL;
     return 0;

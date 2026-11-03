@@ -47,8 +47,11 @@ size_t shim_fill_iat(const pe_image *im, uint8_t *image, size_t image_len,
  * Anything else returns 0, which the translator reports as TRR_NEEDS_TARGET rather
  * than guessing at - an unresolved import must stay visibly unresolved.
  *
+ * Answers TR_Q_IMPORT_CELL only; asked TR_Q_CALL_TARGET it returns 0, because a
+ * Win32 function is host code and has no call-table slot to be given.
+ *
  * `user` is ignored; the mapping recorded by shim_fill_iat is the context. */
-uint64_t shim_resolve(uint64_t guest_iat_va, void *user);
+uint64_t shim_resolve(uint64_t guest_iat_va, tr_question q, void *user);
 
 /* Number of distinct Win32 functions this layer implements, for reporting. */
 size_t shim_count(void);

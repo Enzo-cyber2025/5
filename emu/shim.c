@@ -236,11 +236,17 @@ size_t shim_fill_iat(const pe_image *im, uint8_t *image, size_t image_len,
     return filled;
 }
 
-uint64_t shim_resolve(uint64_t guest_iat_va, void *user)
+uint64_t shim_resolve(uint64_t guest_iat_va, tr_question q, void *user)
 {
     size_t k;
 
     (void)user;
+    /* This layer only ever answers the import question. A Win32 function is not a
+     * guest function, so it has no call-table slot and must not be offered one: a
+     * `call rel32` aimed here would be a guest-to-guest call to host code with no
+     * bridge in it, which is the same mistake in the other direction. */
+    if (q != TR_Q_IMPORT_CELL)
+        return 0;
     for (k = 0; k < shim_slot_n; k++)
         if (shim_slot_va[k] == guest_iat_va)
             return (guest_iat_va - shim_slot_base[k]) | TR_ABI_HOST | TR_ABI_INDIRECT;

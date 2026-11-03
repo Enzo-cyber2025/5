@@ -256,7 +256,7 @@ tr_status tr_translate_run(const uint8_t *code, size_t code_len,
                 out->detail = "call target is not a RIP-relative import slot";
                 return TR_UNSUPPORTED;
             }
-            host = resolve ? resolve(iat_va, user) : 0;
+            host = resolve ? resolve(iat_va, TR_Q_IMPORT_CELL, user) : 0;
             if (host == 0) {
                 out->iat_va = iat_va;
                 out->detail = "no host address known for this import slot yet";
@@ -720,7 +720,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
      * as it always was: nothing is guessed at. */
     if (in.op[0] == 0xE8) {
         uint64_t tgt = va + in.len + (uint64_t)(int64_t)in.imm;
-        uint64_t ans = resolve ? resolve(tgt, user) : 0;
+        uint64_t ans = resolve ? resolve(tgt, TR_Q_CALL_TARGET, user) : 0;
 
         if ((ans & TR_GUEST_CALL) == 0u) {
             out->reason = TRR_NEEDS_TARGET;
@@ -764,7 +764,7 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             out->reason = TRR_NEEDS_TARGET; out->detail = "call target is not a RIP-relative import slot";
             return TR_UNSUPPORTED;
         }
-        host = resolve ? resolve(iat_va, user) : 0;
+        host = resolve ? resolve(iat_va, TR_Q_IMPORT_CELL, user) : 0;
         if (host == 0) {
             out->iat_va = iat_va;
             out->reason = TRR_NEEDS_TARGET; out->detail = "no host address known for this import slot yet";

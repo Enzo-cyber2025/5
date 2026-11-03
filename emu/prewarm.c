@@ -736,7 +736,7 @@ static size_t stub_unknown_iat(const pe_image *im, uint8_t *base, size_t sz,
         for (k = 0; k < dl->func_count; k++) {
             uint64_t slot_rva = (uint64_t)dl->iat_rva + (uint64_t)k * 8u;
             if (slot_rva + 8u > (uint64_t)sz) continue;
-            if (shim_resolve(im->image_base + slot_rva, NULL) != 0)
+            if (shim_resolve(im->image_base + slot_rva, TR_Q_IMPORT_CELL, NULL) != 0)
                 continue;                 /* a shim owns this slot and already filled it */
             memcpy(base + slot_rva, &stubval, sizeof stubval);
             n++;
@@ -746,6 +746,59 @@ static size_t stub_unknown_iat(const pe_image *im, uint8_t *base, size_t sz,
     return n;
 }
 
+
+/* Points every import cell the sweep actually made translated code call through at
+ * the trap stub, unless a shim owns it.
+ *
+ * stub_unknown_iat covers the cells this loader can enumerate from the import
+ * directory. That is not the same set, and the difference is measured rather than
+ * guessed: on a real 19-module bundle, 128 functions were refused because their
+ * `call [rip+disp32]` target was in no parsed import range, and once the resolver
+ * answers the import question for any cell inside the image, those functions
+ * translate and call through cells nobody stubbed. A cell the loader never filled
+ * still holds the file's raw value - an RVA, a forwarder, a name pointer - so the
+ * emitted LDUR/BLR branches to it and arrives as a fault in unmapped memory, which
+ * the tally reports as emitted code going wrong. It is not: it is an unfilled cell.
+ *
+ * Cells the sweep could not record because the list was full are counted and
+ * reported, because those are reachable calls left holding file data and the number
+ * says how much of the invariant this does not actually cover. */
+static size_t stub_recorded_cells(const sweep_job *job, const pe_image *pes,
+                                  void *const *bases, const size_t *bsizes,
+                                  int nmods, const void *stub,
+                                  size_t *out_orphan, size_t *out_claimed)
+{
+    uint64_t stubval = (uint64_t)(uintptr_t)stub;
+    size_t   i, n = 0, cells, orphan = 0, claimed = 0;
+
+    cells = sweep_import_cell_count(job);
+    for (i = 0; i < cells; i++) {
+        uint64_t va = sweep_import_cell_at(job, i);
+        int      m;
+        int      placed = 0;
+
+        if (shim_resolve(va, TR_Q_IMPORT_CELL, NULL) != 0) {
+            claimed++;          /* shim_fill_iat already wrote a host address here */
+            continue;
+        }
+        for (m = 0; m < nmods; m++) {
+            uint64_t ib = pes[m].image_base;
+            uint64_t rva;
+            if (va < ib || va - ib + 8u > (uint64_t)bsizes[m])
+                continue;
+            rva = va - ib;
+            memcpy((uint8_t *)bases[m] + rva, &stubval, sizeof stubval);
+            n++;
+            placed = 1;
+            break;
+        }
+        if (!placed)
+            orphan++;   /* the sweep only answers cells inside a module, so this is a bug */
+    }
+    if (out_orphan)  *out_orphan  = orphan;
+    if (out_claimed) *out_claimed = claimed;
+    return n;
+}
 static fault_class classify_addr(uint64_t addr, void *const *bases,
                                  const size_t *bsizes, int nmods,
                                  const gs_arena *a,
@@ -787,7 +840,8 @@ static fault_class classify_addr(uint64_t addr, void *const *bases,
  * Records whose module did not map are counted separately rather than skipped
  * silently: "executed 0" and "had nothing executable" are different statements and
  * the summary should not blur them. */
-static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids,
+static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods,
+                               const uint64_t *mids,
                                uint8_t *const *imgs, const size_t *lens,
                                const pe_image *pes, const char *const *paths)
 {
@@ -800,7 +854,8 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
     void       *trap = NULL;
     size_t      trap_len = 0, ct_n = 0, ct_filled = 0;
     size_t      slots, slot, mapped = 0, unmatched = 0, capped = 0;
-    size_t      nplaced = 0, not_placed = 0, iat_stubbed = 0, iat_no_iat = 0, i, q;
+    size_t      nplaced = 0, not_placed = 0, iat_stubbed = 0, iat_no_iat = 0,
+                cells_stubbed = 0, i, q;
     size_t      fc_hist[FC_COUNT];
     /* Region crossed with signal, because the region histogram alone cannot answer the
      * only question that matters here. The tally calls a SIGTRAP "the bounds check
@@ -906,6 +961,22 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                 iat_no_iat += no_iat;
             }
         }
+    }
+
+    /* After every module is mapped, because a cell in one module can be called by
+     * code translated from another, and stubbing needs the mapping to write into. */
+    {   size_t orphan = 0, claimed = 0, over = sweep_import_cell_overflow(job);
+        cells_stubbed = stub_recorded_cells(job, pes, (void *const *)bases, bsizes,
+                                            nmods, trap, &orphan, &claimed);
+        printf("  import cells translated code calls through: %zu recorded, %zu stubbed, "
+               "%zu owned by a shim", sweep_import_cell_count(job), cells_stubbed,
+               claimed);
+        if (orphan) printf(", %zu in no mapped module", orphan);
+        if (over)   printf(", %zu NOT RECORDED (list full at %u)", over, SWEEP_CELL_MAX);
+        printf("\n");
+        if (orphan)
+            printf("  a recorded cell mapped to no module: the sweep only answers cells "
+                   "inside a module, so this is a bug in one of the two\n");
     }
 
     ct_n = ptc_calltab_count(cache);
@@ -1147,11 +1218,12 @@ cleanup:
 }
 
 #else
-static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids,
+static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods,
+                               const uint64_t *mids,
                                uint8_t *const *imgs, const size_t *lens,
                                const pe_image *pes, const char *const *paths)
 {
-    (void)cache; (void)nmods; (void)mids; (void)imgs; (void)lens; (void)pes;
+    (void)cache; (void)job; (void)nmods; (void)mids; (void)imgs; (void)lens; (void)pes;
     (void)paths;
     printf("\n--- executing what was translated ---\n");
     printf("  SKIP: host is not aarch64, so there is no instruction set to run the\n"
@@ -1375,7 +1447,7 @@ int main(int argc, char **argv)
     }
 
     if (execute)
-        execute_translated(cache, nmods, mids, imgs, lens, pes, paths);
+        execute_translated(cache, job, nmods, mids, imgs, lens, pes, paths);
 
     sweep_free(job);
     ptc_free(cache);

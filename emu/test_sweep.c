@@ -98,6 +98,11 @@ static int g_call_entry;
  * linkers do and it is the shape that made an IAT slot look like a function. */
 static int g_with_imports;
 
+/* Test-only knob, used with g_with_imports: make the section's function do
+ * `call rel32` at the IAT slot instead of `call [rip+disp32]` through it. Same
+ * address, different question - which is the whole point of asking. */
+static int g_call_the_slot;
+
 #define VA_CALLER  (IMAGE_BASE + 0x1023u)   /* call VA_CALLEE; ret */
 #define VA_CALLEE  (IMAGE_BASE + 0x1029u)   /* ret - reached only by that call */
 
@@ -269,23 +274,33 @@ static buf build_guest(int with_exports)
          * displacement is 0x100 - 0x06. The thunk is an ordinal (top bit set) so
          * the loader does not chase a name RVA through a section that has none. */
         /* btell is already hdr + 0x600 here: .text, .rdata and .data each pad
-         * themselves out to a full 0x200, so .idata's raw starts exactly here. */
-        bu8(&out, 0xFF); bu8(&out, 0x15);
-        bu32(&out, 0x100u - 0x06u);                   /* call [rip+0xFA] */
+         * themselves out to a full 0x200, so .idata's raw starts exactly here. Every
+         * pad below is measured from sec_at rather than written as a fixed delta,
+         * because the two forms of the function are different lengths and a fixed
+         * delta makes the section's raw data end one byte short of the file - which
+         * the loader reports as raw data running past the end of the image. */
+        size_t sec_at = btell(&out);
+        if (g_call_the_slot) {
+            bu8(&out, 0xE8);
+            bu32(&out, 0x100u - 0x05u);               /* call rel32 at the IAT slot */
+        } else {
+            bu8(&out, 0xFF); bu8(&out, 0x15);
+            bu32(&out, 0x100u - 0x06u);               /* call [rip+0xFA] */
+        }
         bu8(&out, 0xC3);
-        bzero(&out, 0x40u - 0x07u);
+        bzero(&out, 0x40u - (btell(&out) - sec_at));
         bu32(&out, 0);                                /* OriginalFirstThunk */
         bu32(&out, 0);                                /* TimeDateStamp    */
         bu32(&out, 0);                                /* ForwarderChain   */
         bu32(&out, IDATA_VA + 0x80u);                 /* Name             */
         bu32(&out, IDATA_VA + 0x100u);                /* FirstThunk (IAT) */
         bzero(&out, 20);                              /* null descriptor  */
-        bzero(&out, 0x80u - 0x68u);
+        bzero(&out, 0x80u - (btell(&out) - sec_at));
         bstr(&out, "test.dll");
-        bzero(&out, 0x100u - 0x89u);
+        bzero(&out, 0x100u - (btell(&out) - sec_at));
         bu64(&out, 0x8000000000000001ULL);            /* one ordinal thunk */
         bu64(&out, 0);                                /* terminator        */
-        bzero(&out, 0x200u - 0x110u);
+        bzero(&out, 0x200u - (btell(&out) - sec_at));
     }
 
     free(rd.b);
@@ -1030,6 +1045,51 @@ static void test_refusal_details_are_counted_exactly(void)
     }
 }
 
+/* Same address, other question. `call rel32` asks which function is here, and the
+ * answer for an import slot is "none": eight bytes of pointer are not a function, so
+ * giving them a call-table slot would promise a translation that can never exist and
+ * leave the slot on the trap stub forever - looking exactly like a coverage gap in
+ * the report, which is how ~498 unfilled slots came to be read as work not yet done
+ * rather than as slots that should never have been assigned. */
+static void test_call_rel32_at_an_import_slot_gets_no_slot(void)
+{
+    rig r;
+    sweep_progress p;
+    const char *top = NULL;
+
+    printf("a call rel32 aimed at an import slot is refused, not given a slot\n");
+    g_with_imports = 1;
+    g_call_the_slot = 1;
+    rig_setup(&r, 0, "calling an import slot as a function");
+    CHECK(r.pe.num_dlls == 1, "the fixture must still carry one imported DLL, got %u",
+          r.pe.num_dlls);
+    CHECK(sweep_add_module(r.job, "test.exe", r.module_id, r.img.b, r.img.len,
+                           &r.pe) == 1, "one entry point");
+    CHECK(sweep_run(r.job, NULL, NULL) == 1, "the sweep should finish uninterrupted");
+    sweep_get_progress(r.job, &p);
+
+    CHECK(p.functions_translated == 0,
+          "the caller cannot be translated: its target is data, got %u translated",
+          p.functions_translated);
+    CHECK(ptc_calltab_count(r.cache) == 0,
+          "an import slot must not be given a call-table slot, got %zu",
+          ptc_calltab_count(r.cache));
+    CHECK(ptc_calltab_find(r.cache, r.module_id, IMAGE_BASE + IDATA_VA + 0x100u) ==
+              PTC_CALLTAB_NONE,
+          "and the slot address must not be findable as a call target");
+    /* The sentence matters as much as the outcome: a refusal that says "no
+     * call-table slot is known" is a different finding from one that says the
+     * instruction is unsupported, and the histogram is what keeps them apart. */
+    CHECK(sweep_top_detail(r.job, 0, &top) == 1, "one refusal, one sentence");
+    CHECK(top != NULL && strstr(top, "call rel32") != NULL,
+          "and it must be refused as a call rel32 with no target, got: %s",
+          top ? top : "(none)");
+
+    rig_teardown(&r);
+    g_with_imports = 0;
+    g_call_the_slot = 0;
+}
+
 int main(int argc, char **argv)
 {
     /* Writes a guest image to disk so prewarm can be run over a real file. The
@@ -1068,6 +1128,7 @@ int main(int argc, char **argv)
     test_refusals();
     test_guest_call_gets_a_slot();
     test_import_slot_is_data_not_a_callee();
+    test_call_rel32_at_an_import_slot_gets_no_slot();
     test_refusal_details_are_counted_exactly();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;

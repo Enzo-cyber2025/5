@@ -146,10 +146,27 @@ typedef enum {
  * and the limit is only an output buffer size. */
 #define TR_MAX_WORDS 256
 
-/* Returns the host address to call for a guest import-table slot, or 0 when it
- * is not known yet. The loader supplies this: imports are resolved before code
- * runs, which is what makes the target a constant at translation time. */
-typedef uint64_t (*tr_resolve_fn)(uint64_t guest_iat_va, void *user);
+/* Which question a call site is asking about an address. The resolver cannot work
+ * this out from the address: an import cell and a function both live inside the
+ * image, and real linkers put import tables in sections marked executable, so
+ * "inside an executable section" is true of both. Answering one question with the
+ * other's shape is what puts a tag inside a branch target - a call site strips the
+ * tags it handles, and whatever survives the mask is emitted as part of an address.
+ *
+ * So the call site says. This is the difference between a resolver that has to guess
+ * what it is being asked and one that can be wrong only by being wrong on purpose. */
+typedef enum {
+    TR_Q_CALL_TARGET = 0,  /* call rel32: which function is at this guest VA? */
+    TR_Q_IMPORT_CELL = 1   /* call [rip+disp32]: what does this cell hold? */
+} tr_question;
+
+/* Answers one of the two questions above about a guest VA, or returns 0 when it has
+ * no answer. For TR_Q_IMPORT_CELL the answer is the cell's offset from the image
+ * base, tagged TR_ABI_HOST | TR_ABI_INDIRECT, and the emitted code loads the target
+ * out of the cell at run time - imports are resolved by the loader before code runs,
+ * which is what makes the cell the only stable thing to point at. For
+ * TR_Q_CALL_TARGET it is a call-table slot tagged TR_GUEST_CALL. */
+typedef uint64_t (*tr_resolve_fn)(uint64_t guest_va, tr_question q, void *user);
 
 /* Tag the resolver ORs into a returned address to say the target is a real host
  * function following the AAPCS, not translated guest code following the x86-64
