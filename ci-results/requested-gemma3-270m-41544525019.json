@@ -1,0 +1,181 @@
+{
+  "status": "PARTIAL",
+  "scope": "requested-Gemma-folder-Termux-Box64-APK-and-zero-limits",
+  "variant": "gemma3-270m",
+  "apk": {
+    "test_install_sha256": "3dcac254948e2ff4ef783eac830c7b731f069d14ee29a891bfc2563681424c1d",
+    "unsigned_candidate_sha256": "dad0f224a45f6326a8d07d015afc3bd1aa11771db4a926e96561f0e4799792dd",
+    "signature_scope": "ephemeral emulator-only signing; not a release/update signature",
+    "candidate_source_commit": "573d88fe8ecb824c6f1c160d169d7f18c9312eaf"
+  },
+  "checks": {
+    "test_apk_and_real_gguf_provisioning": {
+      "status": "PASS",
+      "method": "ADB provisioning into app-private models directory",
+      "SAF_import_in_this_task": false,
+      "note": "This matrix run isolates model-to-Termux handoff behavior; SAF import is not retested. Test APK uses an ephemeral emulator-only signature."
+    },
+    "official_termux_bootstrap": "PASS",
+    "app_mediated_termux_handoff": {
+      "status": "PASS",
+      "review_and_confirmation_required": true,
+      "stdout_automatically_returned_to_model": false,
+      "validated_stages": [
+        "folder_termux_access",
+        "box64_install_attempt",
+        "termux_compile_text_to_binary_apk"
+      ]
+    },
+    "folder_termux_access": {
+      "prompt": "Use Termux to inspect the folder. Return only a fenced bash block with exactly this command:\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "assistant_reply": "```bash\ncat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt\n```",
+      "selected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "expected_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "chat_id": "1a19e92b5de460cd4",
+      "chat_title": "GGUF regression 1a19e92b5de460cd4",
+      "executed": false,
+      "status": "TERMUX_OUTPUT_FILE_NOT_CREATED",
+      "execution_command": "cat /data/data/com.termux/files/home/model-audit/only-note.txt > /data/data/com.termux/files/home/model-audit-output.txt",
+      "execution_method": "GGUF Chat TermuxBridge to official RUN_COMMAND service",
+      "termux_output_returned_to_model_automatically": false,
+      "output_handling": "test driver inspects Termux files/logs; only explicit later prompts include selected content",
+      "confirmation": {
+        "review_dialog": true,
+        "runtime_permission": "granted after explicit Android prompt",
+        "confirmation_path": "in-app review and runtime permission dialog",
+        "confirmation_driver": "CI tapped the explicit confirmation controls"
+      },
+      "in_app_termux_review_dialog": true,
+      "execution_invoked": true,
+      "completion_file": "/data/data/com.termux/files/home/model-audit-output.txt",
+      "execution_error": "Timeout: resultado do comando no Termux: folder_termux_access"
+    },
+    "zero_context_and_zero_response_limits": {
+      "status": "PASS",
+      "context_setting": 0,
+      "response_limit_setting": 0,
+      "model_context_tokens_observed": 32768,
+      "prompt_tokens": 40,
+      "remaining_response_budget": 32728,
+      "effective_context_is_finite": true,
+      "assistant_partial_before_stop": "OK\n",
+      "full_generation_completed": false,
+      "chat_settings_and_user_message_persisted_after_restart": true,
+      "history_path": "/data/user/0/com.ggufchat.app/files/chats.json",
+      "explicit_context_on_disk_setting": "not found in Settings UI"
+    },
+    "text_to_binary_project_staged_in_termux_home": "PASS",
+    "box64_install_script_staged": {
+      "status": "PASS",
+      "path": "/data/data/com.termux/files/home/install-box64.sh",
+      "script": "#!/data/data/com.termux/files/usr/bin/bash\npkg install -y box64 > \"$HOME/box64-install.log\" 2>&1\nstatus=$?\nprintf '%s\\n' \"$status\" > \"$HOME/box64-install.status\"\nexit $status\n"
+    },
+    "box64_install_attempt": {
+      "prompt": "Copy this exact Termux command. Do not rewrite it or add explanation; return one fenced bash block:\nbash ~/install-box64.sh",
+      "assistant_reply": "```bash\nbash ~/install-box64.sh\n```",
+      "selected_command": "bash ~/install-box64.sh",
+      "expected_command": "bash ~/install-box64.sh",
+      "chat_id": "1a19ea1b1f0e68a64",
+      "chat_title": "GGUF regression 1a19ea1b1f0e68a64",
+      "executed": false,
+      "status": "TERMUX_OUTPUT_FILE_NOT_CREATED",
+      "execution_command": "bash ~/install-box64.sh",
+      "execution_method": "GGUF Chat TermuxBridge to official RUN_COMMAND service",
+      "termux_output_returned_to_model_automatically": false,
+      "output_handling": "test driver inspects Termux files/logs; only explicit later prompts include selected content",
+      "confirmation": {
+        "review_dialog": true,
+        "runtime_permission": "granted after explicit Android prompt",
+        "confirmation_path": "in-app review and runtime permission dialog",
+        "confirmation_driver": "CI tapped the explicit confirmation controls"
+      },
+      "in_app_termux_review_dialog": true,
+      "execution_invoked": true,
+      "completion_file": "/data/data/com.termux/files/home/box64-install.status",
+      "execution_error": "Timeout: resultado do comando no Termux: box64_install_attempt"
+    },
+    "termux_compile_text_to_binary_apk": {
+      "prompt": "Copy this exact Termux build command without explanation; return one fenced bash block:\nbash ~/text-binary/run-build.sh",
+      "assistant_reply": "```bash\nbash ~/text-binary/run-build.sh\n```",
+      "selected_command": "bash ~/text-binary/run-build.sh",
+      "expected_command": "bash ~/text-binary/run-build.sh",
+      "chat_id": "1a19eb02395aab52a",
+      "chat_title": "GGUF regression 1a19eb02395aab52a",
+      "executed": false,
+      "status": "TERMUX_OUTPUT_FILE_NOT_CREATED",
+      "execution_command": "bash ~/text-binary/run-build.sh",
+      "execution_method": "GGUF Chat TermuxBridge to official RUN_COMMAND service",
+      "termux_output_returned_to_model_automatically": false,
+      "output_handling": "test driver inspects Termux files/logs; only explicit later prompts include selected content",
+      "confirmation": {
+        "review_dialog": true,
+        "runtime_permission": "granted after explicit Android prompt",
+        "confirmation_path": "in-app review and runtime permission dialog",
+        "confirmation_driver": "CI tapped the explicit confirmation controls"
+      },
+      "in_app_termux_review_dialog": true,
+      "execution_invoked": true,
+      "completion_file": "/data/data/com.termux/files/home/text-binary/build.exit",
+      "execution_error": "Timeout: resultado do comando no Termux: termux_compile_text_to_binary_apk"
+    }
+  },
+  "limitations": [
+    "Android emulator x86_64, not a physical handset"
+  ],
+  "model": {
+    "name": "Gemma 3 270M IT",
+    "quantization": "Q8_0",
+    "weights_sha256": "d156a5159f2f79c1b1d53c7c1cc20f1ff28ab8d00f17a292620aad13399b9698",
+    "apk_test_install_sha256": "3dcac254948e2ff4ef783eac830c7b731f069d14ee29a891bfc2563681424c1d",
+    "app_name": "gemma-3-270m-it-Q8_0",
+    "architecture": null,
+    "capability": null,
+    "size": 291546144
+  },
+  "settings_ui": {
+    "visible_settings_labels": [
+      "‹",
+      "Ajustes",
+      "Tamanho de contexto (tokens)",
+      "0",
+      "Threads de CPU (0 = automático)",
+      "Camadas na GPU Vulkan (-1 = todas, 0 = só CPU)",
+      "99",
+      "Máximo de tokens por resposta",
+      "Temperatura",
+      "0.8",
+      "Top-P",
+      "0.95",
+      "Top-K",
+      "40.0",
+      "Min-P",
+      "0.05",
+      "Penalidade de repetição",
+      "1.1",
+      "Ferramentas (padrão para novas conversas):",
+      "Thinking",
+      "Busca",
+      "Salvar ajustes",
+      "Descarregar modelo da memória",
+      "GGUF Chat\nInferência local via llama.cpp (llamarn) com backend Vulkan.\nBackend atual: —\n\nDicas:\n• Para gerar com a tela bloqueada, basta enviar a mensagem e bloquear: a geração continua em segundo plano.\n• Use “Thinking” para raciocínio estendido e “Busca” para respostas embasadas na web.\n• Modelos multimodais: importe o GGUF de texto e o mmproj juntos."
+    ],
+    "storage_backed_context_option_found": false,
+    "context_related_labels": [
+      "Tamanho de contexto (tokens)",
+      "Descarregar modelo da memória"
+    ]
+  },
+  "folder_fixture": {
+    "path": "/data/data/com.termux/files/home/model-audit",
+    "files": [
+      "only-note.txt"
+    ],
+    "file_content": "Arquivo unico da pasta de teste. Identificador: BLUE-LANTERN-5831.",
+    "sha256": "ca381c3fba7b0a9c158d0d6a9622f3c725d78d3c6bf770e68fa0ced966348fd6"
+  },
+  "internal_context_storage": {
+    "chat_settings_and_user_message_saved_in_private_app_files": true,
+    "explicit_context_storage_toggle_in_settings": false,
+    "native_KV_cache_persistence": "not claimed or tested; chat transcript persistence is separate"
+  }
+}
