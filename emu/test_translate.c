@@ -1246,11 +1246,23 @@ static void test_guest_stack_arena(void)
     CHECK((a.top & 15u) == 0,
           "initial guest RSP 0x%llX is not 16-byte aligned",
           (unsigned long long)a.top);
-    CHECK(a.top == (uint64_t)(uintptr_t)(a.usable + a.usable_size),
-          "guest RSP does not start at the high end of the arena");
+    CHECK(a.top == (uint64_t)(uintptr_t)(a.usable + a.usable_size) - GS_TOP_HEADROOM,
+          "guest RSP does not start GS_TOP_HEADROOM below the high end of the arena");
 
     CHECK(gs_contains(&a, a.top - 8u) == 1, "the first slot below the top is outside");
-    CHECK(gs_contains(&a, a.top) == 0, "the top itself counts as inside the arena");
+    /* The assertion this replaces read == 0 and described the bug as though it were
+     * the contract: the initial guest RSP sat in the high guard page, so the first
+     * `pop`, `leave` or [rsp+d] load in any translated function faulted. 86 records on
+     * a real game module died that way. A `push` pre-decrements and so never noticed,
+     * which is why most functions still worked and this read as an occasional crash. */
+    CHECK(gs_contains(&a, a.top) == 1,
+          "the initial guest RSP is not inside the arena: a callee reads [rsp] for the "
+          "return address its caller pushed, so this address must be readable");
+    CHECK(gs_contains(&a, a.top + 8u) == 1,
+          "[rsp+8] must be readable too: that is the caller's argument home space");
+    CHECK(gs_contains(&a, a.top + GS_TOP_HEADROOM) == 0,
+          "the headroom above the initial RSP must end before the guard page does, or "
+          "it is not headroom");
     CHECK(gs_contains(&a, (uint64_t)(uintptr_t)a.usable) == 1,
           "the first usable byte is outside the arena");
     CHECK(gs_used(&a, a.top) == 0, "an untouched stack reports %zu bytes used",
@@ -1268,10 +1280,16 @@ static void test_guest_stack_arena(void)
     {
         int w0 = write_completed(a.usable);
         int w1 = write_completed((char *)(uintptr_t)a.top - 8);
+        /* The decisive one, and it is host-independent: before the fix this address was
+         * in the PROT_NONE high guard and the write did not complete. */
+        int wt = write_completed((char *)(uintptr_t)a.top);
         int g_lo = write_completed(a.usable - 1);
         int g_hi = write_completed(a.usable + a.usable_size);
         CHECK(w0 == 1, "the first usable byte could not be written");
         CHECK(w1 == 1, "the first stack slot below the top could not be written");
+        CHECK(wt == 1,
+              "the initial guest RSP itself could not be written: a pop or a leave "
+              "would fault on it, and so would any load at [rsp+d]");
         CHECK(g_lo == 0,
               "a write BELOW the arena completed: a runaway guest stack would walk "
               "into whatever the allocator put there");

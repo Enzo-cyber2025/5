@@ -66,10 +66,24 @@ int gs_alloc(size_t bytes, gs_arena *a)
     a->map_size    = total;
     a->usable      = (char *)(p + pg);
     a->usable_size = usable;
-    /* p is page-aligned and usable is a whole number of pages, so this is
-     * already 16-byte aligned; masking states the invariant instead of relying
-     * on it, because the guest stack pointer has to be aligned on entry. */
-    a->top         = (uint64_t)(uintptr_t)(p + pg + usable) & ~(uint64_t)15u;
+    /* GS_TOP_HEADROOM below the high end of the usable region, and that is a
+     * correctness fix rather than a nicety. This value is the initial guest RSP, and
+     * on real x86-64 at function entry [rsp] holds the return address the caller
+     * pushed - so it is readable. Setting the initial RSP to one-past-the-last-usable
+     * byte, as this did, put it in the high guard page instead, and every function
+     * that executed a `pop`, a `leave`, or any load at [rsp+d] faulted on its first
+     * such instruction. Measured on a real game module: 86 records died that way, all
+     * of them reported as faults ABOVE the stack, which is what finally separated it
+     * from the runaway-stack-pointer explanation the same number had been given.
+     *
+     * A `push` never noticed, because it pre-decrements and so wrote below the top.
+     * That is why 185 other records in the same run returned normally and this looked
+     * like an occasional crash rather than a wrong definition.
+     *
+     * Still 16-byte aligned: usable_end is page aligned, so subtracting a multiple of
+     * 16 preserves it, and the mask states the invariant instead of relying on it. */
+    a->top         = ((uint64_t)(uintptr_t)(p + pg + usable) - GS_TOP_HEADROOM)
+                     & ~(uint64_t)15u;
     a->guards      = 1;
     errbuf[0] = '\0';
     return 1;

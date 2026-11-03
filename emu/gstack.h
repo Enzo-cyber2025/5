@@ -34,6 +34,11 @@
 #ifndef GSTACK_H
 #define GSTACK_H
 
+/* Bytes of readable stack left above the initial guest RSP. 64 covers the return
+ * address plus the 32-byte argument home space a callee may reach above it, rounded
+ * up to a multiple of 16 so the initial RSP stays aligned. */
+#define GS_TOP_HEADROOM 64u
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -42,7 +47,14 @@ typedef struct {
     size_t   map_size;
     char    *usable;       /* first writable byte */
     size_t   usable_size;  /* writable bytes, a whole number of pages */
-    uint64_t top;          /* initial guest RSP: the high end, 16-byte aligned */
+    /* Initial guest RSP, 16-byte aligned, and guaranteed to be READABLE - which is
+     * the part that matters. On x86-64 a callee may read [rsp] for the return address
+     * its caller pushed and [rsp+8..] for the incoming argument home space, so an
+     * initial RSP pointing at unmapped memory faults on the first pop or the first
+     * such load. It therefore sits GS_TOP_HEADROOM below the high end of the usable
+     * region rather than at it, and the bytes above it are reserved and never handed
+     * out. gs_used still reports 0 at top. */
+    uint64_t top;
     int      guards;       /* 1 when PROT_NONE pages bound the usable region */
 } gs_arena;
 
