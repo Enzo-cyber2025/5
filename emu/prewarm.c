@@ -612,7 +612,14 @@ typedef enum {
     FC_NULLISH = 0,     /* below 64 KiB: an uninitialised or truncated guest pointer */
     FC_IN_IMAGE,        /* inside a mapped module: a bounds check should have caught it */
     FC_IN_STACK,        /* inside the arena's usable pages */
-    FC_IN_GUARD,        /* the arena's PROT_NONE guard: walked off the guest stack */
+    /* The two guards, split because they are opposite bugs. The arena has a PROT_NONE
+     * page on each side: below, a runaway guest stack pointer walks off the bottom;
+     * above, a pop or a positive displacement reads past the top. One says the guest
+     * kept growing its stack, the other says something moved the pointer the wrong way,
+     * and a single "guard page" count cannot tell them apart - which is why 86 faults
+     * in that bucket said nothing actionable. */
+    FC_GUARD_LOW,       /* below the arena: the guest stack ran off the bottom */
+    FC_GUARD_HIGH,      /* above the arena: past the initial guest RSP */
     FC_IN_CODE,         /* inside emitted code: a branch or a load went to the wrong place */
     /* The stub every unfilled call-table slot points at. Its own region because it is
      * the one fault here that is a feature working: the sweep found a callee, nobody
@@ -631,7 +638,8 @@ static const char *fault_class_name(fault_class c)
     case FC_NULLISH:   return "null-ish";
     case FC_IN_IMAGE:  return "inside a mapped guest image";
     case FC_IN_STACK:  return "inside the guest stack";
-    case FC_IN_GUARD:  return "on the guest stack's guard page";
+    case FC_GUARD_LOW:  return "below the guest stack (ran off the bottom)";
+    case FC_GUARD_HIGH: return "above the guest stack (past its entry value)";
     case FC_IN_CODE:   return "inside emitted code";
     case FC_UNTRANSLATED: return "on the untranslated-call stub";
     case FC_ELSEWHERE: return "nowhere this process mapped for the guest";
@@ -681,7 +689,7 @@ static fault_class classify_addr(uint64_t addr, void *const *bases,
     if (a->map_base &&
         addr >= (uint64_t)(uintptr_t)a->map_base &&
         addr <  (uint64_t)(uintptr_t)a->map_base + a->map_size)
-        return FC_IN_GUARD;
+        return addr < (uint64_t)(uintptr_t)a->usable ? FC_GUARD_LOW : FC_GUARD_HIGH;
     /* Every placed body, not just the one that was called: a guest-to-guest call means
      * the fault can be in a different function's code than the entry point's. */
     for (q = 0; q < nplaced; q++) {
@@ -873,6 +881,15 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                 printf("      fault at %016llX (%s), sig %d code %d",
                        (unsigned long long)fm.addr, fault_class_name(fc),
                        fm.signo, fm.si_code);
+                /* How far the guest stack pointer travelled from its entry value. This
+                 * is the number that settles an argument the arena-size experiment
+                 * could not: growing the arena from 64 KiB to 8 MiB left the count
+                 * unchanged, which rules out large frames, and the distance says so
+                 * directly - a frame would be kilobytes, a stack that never stops
+                 * growing is the whole arena. */
+                if (fc == FC_GUARD_LOW && a.top > fm.addr)
+                    printf(", stack ran %llu bytes below its entry value",
+                           (unsigned long long)(a.top - fm.addr));
                 if (fm.pc) {
                     size_t w;
                     int    located = 0;
