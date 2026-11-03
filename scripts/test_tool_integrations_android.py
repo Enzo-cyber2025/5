@@ -135,7 +135,7 @@ def request_permission_and_confirm(d):
     # Do not grant the permission with adb or bypass the bridge: the following
     # marker check proves that this Android confirmation authorized the app's
     # real RUN_COMMAND intent to the separately installed Termux service.
-    return "Android RUN_COMMAND confirmation dialog accepted"
+    return "Android RUN_COMMAND confirmation dialog accepted by test automation"
 
 
 def run_termux_handoff(d, model):
@@ -164,7 +164,8 @@ def run_termux_handoff(d, model):
     d.capture("termux-command-completed.png")
     return {"status": "PASS", "permission": "com.termux.permission.RUN_COMMAND",
             "permission_path": permission_path, "command_source": "latest assistant message",
-            "user_review_and_confirmation": True, "termux_package": TERMUX_PACKAGE, "output": MARKER}
+            "review_dialog_presented": True, "confirmation_dialog_accepted_by_test_automation": True,
+            "human_confirmation": False, "termux_package": TERMUX_PACKAGE, "output": MARKER}
 
 
 def record_stage_failure(summary, key, error):

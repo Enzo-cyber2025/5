@@ -1,9 +1,12 @@
 # GGUFTX — trabalho em andamento
 
-**GGUFTX** é o nome pedido para a próxima identidade do GGUF Chat. O CI já compilou
-candidatos unsigned, mas a aceitação física ainda falha na resposta visual
-`CERO EMIOFSELLA.` (run 41243844107); não é release validada. Os checks de
-persistência e inferência com o mesmo GGUF passaram nesse run.
+**GGUFTX** é o nome pedido para a próxima identidade do GGUF Chat. O CI compilou
+candidatos unsigned e validou pesquisa web real, hand-off protegido do Termux e
+zeros com limites finitos no run [41695739950](https://github.com/Enzo-cyber2025/5/actions/runs/41695739950).
+A aceitação Android completa desse run falhou depois, com a resposta `CERO
+EMIOFSELLA.` em um check de inferência; portanto ainda não é uma release validada.
+Os checks de integridade física, persistência após reinício e inferência visual
+com Vulkan passaram nesse run.
 
 ## Logo
 
@@ -33,14 +36,17 @@ confirmar fatos atuais.
 
 A pesquisa precisa de internet e pode sofrer bloqueios, mudanças de HTML,
 limitação de tráfego ou indisponibilidade do provedor. Os snippets não substituem
-a leitura das fontes originais. A inspeção do DEX do último candidato confirmou que
+a leitura das fontes originais. A inspeção do DEX confirmou que
 `GenerationService` chama `WebSearch.search()` quando `chat.webSearch=true` e inclui
-`toPromptText()` no fluxo do modelo. A execução 41450467967 ativou a opção, mas a
-busca em português retornou zero resultados/citações; o app corretamente informou
-que não conseguiu confirmar. O código agora tenta Bing RSS após respostas vazias
-ou erros no DuckDuckGo; a regressão local do parser está pronta, mas o próximo CI
-precisa confirmar consulta real em português e inglês antes de chamar a busca de
-funcional.
+`toPromptText()` no fluxo do modelo. A execução anterior [41450467967](https://github.com/Enzo-cyber2025/5/actions/runs/41450467967)
+ativou a opção, mas retornou zero resultados/citações. Após adicionar Bing RSS como
+fallback, o teste Android real [41695739950](https://github.com/Enzo-cyber2025/5/actions/runs/41695739950)
+registrou um resultado e uma citação (`[5]`) tanto na consulta em português quanto
+na consulta em inglês. Isso comprova a recuperação e inclusão de uma citação no
+prompt; não valida a exatidão factual da resposta gerada nem a URL da fonte. O run
+falhou depois em outro check de inferência (`CERO EMIOFSELLA.`), não no teste de
+busca. A regressão local do parser passou (10 testes; 1 teste Java ignorado por
+falta de `javac`).
 
 ## Limites e segurança
 
@@ -56,15 +62,19 @@ funcional.
   `RUN_COMMAND`/“Allow external apps” habilitado; a
   saída fica no próprio Termux e não é devolvida automaticamente à IA. Comandos
   simples sem fence são limitados a uma linha; scripts multilinha devem vir num
-  bloco de código e continuam sujeitos à revisão humana. No rerun [41691161767](https://github.com/Enzo-cyber2025/5/actions/runs/41691161767), Gemma 4 E2B e Gemma 3 270M usaram texto simples, sem chamadas nativas de ferramentas; ambos passaram pelo diálogo de revisão/permissão, leram a pasta isolada de um TXT e descreveram seu identificador. Os dois builds no Termux terminaram com `exit 0`, instalaram o APK de teste e converteram `A` em `01000001`. Os relatórios funcionais continuam `PARTIAL` porque `pkg install box64` falhou com `exit 100` em Termux x86_64. Os zeros não são infinitos: contexto observado finito de 131.072 tokens (Gemma 4) e 32.768 (Gemma 3); orçamento de saída restante também finito. O histórico/configuração do chat sobreviveu ao reinício, mas não há opção de armazenamento explícito do contexto nem prova de persistência do KV cache.
+  bloco de código e continuam sujeitos à revisão humana. No rerun [41691161767](https://github.com/Enzo-cyber2025/5/actions/runs/41691161767), Gemma 4 E2B e Gemma 3 270M usaram texto simples, leram a pasta isolada de um TXT e descreveram seu identificador. Os dois builds no Termux terminaram com `exit 0`, instalaram o APK de teste e converteram `A` em `01000001`. Os relatórios funcionais continuam `PARTIAL` porque `pkg install box64` falhou com `exit 100` em Termux x86_64.
+
+  No teste Android [41695739950](https://github.com/Enzo-cyber2025/5/actions/runs/41695739950), um modelo propôs o comando allow-listed, o app mostrou o diálogo de revisão e o Android exibiu a permissão oficial `RUN_COMMAND`; o teste automatizado tocou nos botões para comprovar o caminho, e o comando executou no Termux oficial instalado à parte. **Isso não é confirmação por uma pessoa real**: o relatório antigo dizia `user_review_and_confirmation=true`, mas a inspeção do harness revelou que a confirmação foi um toque automatizado. O relatório foi corrigido para distinguir automação de ação humana. Em uso real, cabe à pessoa revisar e confirmar no dispositivo. A saída do shell não foi retornada automaticamente à IA.
+
+  Os zeros não são infinitos: o mesmo run carregou um contexto máximo finito de 8.192 tokens para o modelo compacto, reservando 8.130 tokens para saída. No run Gemma, os contextos observados foram 131.072 (Gemma 4) e 32.768 (Gemma 3). O histórico/configuração do chat sobreviveu ao reinício, mas não há opção de armazenamento explícito do contexto nem prova de persistência do KV cache.
 
   Box64 precisa de host ARM64 para emular x86_64. O workflow separado fixa o release comunitário ARM64 `v0.4.5-termux.1` e SHA-256 `0dae8257ac7396db4766721e5e4f317679b2080752d32e90d4e6e6fdfee467cf`, depois executa apenas `box64 --version` (não instala o launcher comercial `dragon`). As tentativas [41688469902](https://github.com/Enzo-cyber2025/5/actions/runs/41688469902) (host x86) e [41692500040](https://github.com/Enzo-cyber2025/5/actions/runs/41692500040) (host macOS ARM64) expiraram antes do boot do emulador Android ARM64; não comprovam instalação. Esse teste arquitetural separado não será apresentado como ação feita pelo modelo.
   Uma atualização de espelho Termux trouxe `aapt2` antigo (13.x) no job Gemma 4,
-  que recusou o `android.jar` API 35; o script de build agora fixa o endpoint oficial
-  `packages-cf.termux.dev` e atualiza os índices antes de instalar, aguardando nova
-  validação. O CI automatiza os toques nos controles explícitos de confirmação;
-  isso não é
-  uma ação silenciosa. Os APKs
+  que recusou o `android.jar` API 35; o script de build fixa o endpoint oficial
+  `packages-cf.termux.dev` e atualiza os índices antes de instalar, correção validada
+  no run [41691161767](https://github.com/Enzo-cyber2025/5/actions/runs/41691161767).
+  O CI automatiza os toques nos controles explícitos de confirmação; isso não é
+  uma ação silenciosa nem confirmação humana em ambiente real. Os APKs
   testados foram candidatos unsigned com assinatura descartável só para emulador,
   não atualizações assinadas para instalação pública. A saída do Termux continua
   sem retorno automático ao modelo. A execução irrestrita continua desativada:
@@ -83,8 +93,10 @@ funcional.
 ## Para uma release
 
 Compilar o helper com `apk-fix/build_mobile.py`, verificar a permissão de internet
-no manifesto base, instalar o APK em Android real/emulador com rede, validar buscas
-em português e inglês, sem rede, resposta HTTP vazia/limitada e busca desativada;
-confirmar URLs e citações visíveis; e executar a regressão completa antes de assinar.
+no manifesto base e executar a regressão completa antes de assinar. Buscas ao vivo
+em português e inglês já produziram uma citação cada no emulador (run 41695739950);
+ainda faltam os cenários sem rede, HTTP vazio/limitado, busca desativada e inspeção
+da URL e do conteúdo da fonte exibida ao usuário. A assinatura do workflow foi
+apenas efêmera para o emulador, não uma chave de atualização pública.
 Se também for desejado trocar o nome mostrado sob o ícone, a label do aplicativo
 precisa ser alterada separadamente; esta etapa substitui só os PNGs do launcher.
