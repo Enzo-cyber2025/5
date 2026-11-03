@@ -41,7 +41,7 @@ jobs:
       - name: MODEL THE CAR IN BLENDER (headless bpy)
         run: python rb20/tools/blender_model.py --out rb20/out
 
-      - name: Calibrate physics from real 2024 F1 telemetry
+      - name: Calibrate physics + native ERS/DRS/wet compounds
         run: |
           python rb20/tools/calibrate.py \
             --telemetry rb20/telemetry/VER_2024_Bahrain_Q.csv \
@@ -105,7 +105,7 @@ jobs:
             gh release create rb20-v1.0 rb20/download/RB20_AssettoCorsa.zip \
               --target arena/f4e7ed77-5 \
               --title "ARB RB20 2024 - Assetto Corsa mod (vanilla, no CSP)" \
-              --notes "Original model built by Blender in GitHub Actions, physics calibrated with real 2024 Bahrain GP qualifying telemetry, vanilla Assetto Corsa with zero CSP dependency. See rb20/README.md and LEIA-ME.txt inside the ZIP."
+              --notes "Original model built by Blender in GitHub Actions, physics calibrated with real 2024 Bahrain GP qualifying telemetry, official published 805 kW power unit (685 kW ICE + 120 kW MGU-K), native ERS/DRS and wet compounds, vanilla Assetto Corsa with zero CSP dependency. See rb20/README.md and LEIA-ME.txt inside the ZIP."
             echo "Release created"
           fi
 

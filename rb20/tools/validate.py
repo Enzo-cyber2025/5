@@ -41,6 +41,15 @@ REQUIRED = [
     "content/cars/arb_rb20/data/aero.ini",
     "content/cars/arb_rb20/data/brakes.ini",
     "content/cars/arb_rb20/data/setup.ini",
+    "content/cars/arb_rb20/data/ers.ini",
+    "content/cars/arb_rb20/data/drs.ini",
+    "content/cars/arb_rb20/data/kers_torque.lut",
+    "content/cars/arb_rb20/data/kers_torque_coast.lut",
+    "content/cars/arb_rb20/data/ctrl_ers_0.ini",
+    "content/cars/arb_rb20/data/ctrl_ers_1.ini",
+    "content/cars/arb_rb20/data/ctrl_ers_2.ini",
+    "content/cars/arb_rb20/data/aero_drs_CL.lut",
+    "content/cars/arb_rb20/data/aero_drs_CD.lut",
     "content/cars/arb_rb20/data/lods.ini",
     "content/cars/arb_rb20/data/electronics.ini",
     "content/cars/arb_rb20/calibration.json",
@@ -148,6 +157,39 @@ def check_car_dir(car_dir):
         problems.append("expected 15,000 rpm limiter")
     if not (1.4 < float(tyres["FRONT"]["DX0"]) < 2.2):
         problems.append("tyre grip out of realistic range")
+
+    # 6. Native ERS, DRS, wet compounds and the official published power.
+    ers = ini(os.path.join(data, "ers.ini"))
+    if ers.get("HEADER", "VERSION", fallback="") != "1":
+        problems.append("ers.ini must be vanilla VERSION=1")
+    kin = ers["KINETIC"] if ers.has_section("KINETIC") else {}
+    if str(kin.get("HAS_BUTTON_OVERRIDE", "0")) != "1":
+        problems.append("ERS KERS-button override missing")
+    try:
+        if abs(float(kin["DISCHARGE_TIME"]) - 33333.0) > 100:
+            problems.append("ERS discharge time does not implement 4 MJ/lap")
+    except (KeyError, ValueError):
+        problems.append("ERS discharge time missing")
+    drs = ini(os.path.join(data, "drs.ini"))
+    if drs.get("HEADER", "VERSION", fallback="") != "2":
+        problems.append("drs.ini must be vanilla VERSION=2")
+    if drs.get("DRS_ZONES", "IGNORE_ZONES", fallback="0") != "1":
+        problems.append("DRS must use IGNORE_ZONES=1 for vanilla tracks")
+    for sec in ("FRONT_3", "REAR_3", "FRONT_4", "REAR_4"):
+        if sec not in tyres:
+            problems.append("missing wet compound section " + sec)
+    if "FRONT_4" in tyres and float(tyres["FRONT_4"]["DX0"]) >= float(tyres["FRONT"]["DX0"]):
+        problems.append("full-wet compound has no grip reduction")
+    with open(os.path.join(car_dir, "calibration.json"), "r", encoding="utf-8") as f:
+        cal = json.load(f)
+    if abs(float(cal.get("official_power", {}).get("published_rb20_combined_kw", 0)) - 805.0) > 0.5:
+        problems.append("official 805 kW power figure missing from calibration")
+    with open(os.path.join(car_dir, "ui", "ui_car.json"), "r", encoding="utf-8") as f:
+        ui = json.load(f)
+    bhp = ui.get("specs", {}).get("bhp", "")
+    if "1080" not in bhp or "805" not in bhp:
+        problems.append("ui_car.json does not show the official 805 kW")
+    notes.append("features: ERS 120 kW/4 MJ, DRS WING_4, 5 compounds (2 wet), 805 kW official")
     return problems, notes
 
 

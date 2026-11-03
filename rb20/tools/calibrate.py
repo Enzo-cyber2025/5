@@ -45,6 +45,15 @@ FUEL_L = 110.0
 WHEELBASE = 3.600
 CG_LOCATION = 0.455
 
+# Official published 2024 RB20 / Honda RBPTH002 combined peak = 805 kW (1,080 hp).
+# FIA 2024 caps the MGU-K at 120 kW with 4 MJ deployment / 2 MJ recovery per lap,
+# so the ICE share is 685 kW. power.lut holds ONLY the ICE; the MGU-K lives in
+# kers_torque.lut and is deployed by ers.ini. Their sum is the official 805 kW.
+# Single source of truth for these numbers: features.py.
+import features
+from features import (PU_PEAK_KW, MGUK_KW, ICE_KW, ERS_DEPLOY_MJ_LAP,
+                      ERS_RECOVERY_MJ_LAP, DRIVETRAIN_EFF)
+
 
 # ------------------------------------------------------------------ telemetry
 def _td(s):
@@ -190,12 +199,57 @@ def fit_power_and_aero(d, mu, c1):
             "K": float(K), "CdA": float(CdA), "CLA": float(CLA), "B": float(B),
             "samples": int(m.sum()), "peak_power_w": float(P_max),
             "peak_power_rpm": 11000.0,
-            "fit_method": "2-parameter least squares: P_max (fuel-flow shape) + K=CdA+Crr*CLA"}
+            "fit_method": "LEGACY: 2-parameter least squares (kept for reference, unused)"}
+
+
+def fit_aero(d, mu, c1):
+    """Fit ONLY the aero drag coefficient from telemetry.
+
+    The power curve is no longer a free parameter: it is FIXED at the official
+    published RB20 output (ICE 685 kW + MGU-K 120 kW = 805 kW peak). Because
+    the FIA allows just 4 MJ of ERS deployment per lap, the lap-average
+    electrical share is 4e6/(120e3*lap_time) ~ 0.374 of the MGU-K peak.
+    Everything else (CdA, CLA) is solved from telemetry, using the same
+    braking relation as before.
+
+    Only the power-limited band (v > 45 m/s) is used: below that the car is
+    traction limited and those samples say nothing about aerodynamic drag.
+    """
+    deploy_fraction = ERS_DEPLOY_MJ_LAP * 1e6 / (MGUK_KW * 1000.0 * d["lap_time"])
+    p_lap_w = DRIVETRAIN_EFF * (ICE_KW + MGUK_KW * deploy_fraction) * 1000.0
+    v, a, rpm, thr, brk = d["v"], d["a"], d["rpm"], d["thr"], d["brk"]
+    m = ((thr > 99) & (brk < 0.5) & (v > 45) & (v < 95) &
+         (a > -2) & (a < 22) & (rpm > 7000))
+    v, a, rpm = v[m], a[m], rpm[m]
+    shape = np.array([power_shape(r) for r in rpm])
+    drag = 0.5 * RHO * v ** 3                      # W per unit K
+    Z = p_lap_w * shape - (MASS * a * v + CRR * MASS * G * v)
+    K = float(np.clip(np.dot(drag, Z) / np.dot(drag, drag), 0.8, 2.6))
+
+    # Split K into drag and downforce using the braking relation:
+    #   c1*m/(0.5*rho) = mu*CLA + CdA =: B,   K = CdA + Crr*CLA
+    B = c1 * MASS / (0.5 * RHO)
+    CLA = (B - K) / max(0.2, mu - CRR)
+    CdA = K - CRR * CLA
+    if not (2.0 <= CLA <= 12.0) or not (0.7 <= CdA <= 2.6):
+        CdA = float(np.clip(CdA, 0.9, 2.4))
+        CLA = float(np.clip((B - CdA) / max(0.2, mu), 2.0, 9.0))
+        K = CdA + CRR * CLA
+    bins = list(range(4000, 15001, 1000))
+    pw = [PU_PEAK_KW * 1000.0 * power_shape(r) for r in bins]
+    return {"bins": bins, "power_w": [float(x) for x in pw],
+            "K": float(K), "CdA": float(CdA), "CLA": float(CLA), "B": float(B),
+            "samples": int(m.sum()), "peak_power_w": PU_PEAK_KW * 1000.0,
+            "peak_power_rpm": 11000.0,
+            "lap_average_power_w": float(p_lap_w),
+            "ers_deploy_fraction": float(deploy_fraction),
+            "fit_method": "K=CdA+Crr*CLA by least squares with official 805 kW "
+                          "power fixed; CLA/CdA split by the braking relation"}
 
 
 def torque_curve(fit):
     """power.lut is TORQUE (Nm) in AC: T = P/omega."""
-    P_max = fit["peak_power_w"]
+    P_max = ICE_KW * 1000.0  # official ICE share; MGU-K is in kers_torque.lut
     out = []
     for rpm in (0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000,
                 10000, 10500, 11000, 11500, 12000, 12500, 13000, 13500,
@@ -237,7 +291,7 @@ def main():
     d = load_telemetry(args.telemetry)
     gears = fit_gears(d)
     braking = fit_braking(d)
-    fit = fit_power_and_aero(d, braking["mu"], braking["c1"])
+    fit = fit_aero(d, braking["mu"], braking["c1"])
     lut = torque_curve(fit)
     mu = braking["mu"]
     CLA, CdA = fit["CLA"], fit["CdA"]
@@ -358,9 +412,10 @@ RPM_DAMAGE_K=30
 MINIMUM_TURBO=0
 """)
     write_lut(os.path.join(data, "power.lut"), lut,
-              ["Torque [Nm] vs engine rpm.",
-               "Fitted from VER 2024 Bahrain Q full-throttle acceleration;",
-               "combined ICE + MGU-K output (ERS deployment baked into the curve)."])
+              ["Torque [Nm] vs engine rpm -- INTERNAL COMBUSTION ENGINE ONLY.",
+               "685 kW ICE = 805 kW published RB20 peak minus the 120 kW MGU-K.",
+               "Aero drag was fitted from VER 2024 Bahrain Q telemetry with the",
+               "official power held fixed. MGU-K is in kers_torque.lut / ers.ini."])
     write_lut(os.path.join(data, "coast.lut"),
               [(0, 0), (3000, -25), (5000, -48), (7000, -65), (9000, -80),
                (11000, -95), (13000, -105), (15000, -115)])
@@ -1019,6 +1074,7 @@ SUSPENSION_DAMAGE_K=0.0005
     calib["ui_specs"] = ui_car["specs"]
     with open(os.path.join(CAR_DIR, "calibration.json"), "w", encoding="utf-8") as f:
         json.dump(calib, f, indent=2)
+    features.apply(CAR_DIR)
     print("wrote calibration.json")
     print("\nCALIBRATION SUMMARY")
     print("  lap            %.3f s  / %.0f m  / %d samples" %

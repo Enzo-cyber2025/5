@@ -23,50 +23,79 @@ LEIAME = """ARB RB20 2024 - MOD PARA ASSETTO CORSA (VANILLA / SEM CSP)
 INSTALACAO
 ----------
 1. Extraia este ZIP e copie a pasta "content/cars/arb_rb20" para:
-   ...\\Steam\\steamapps\\common\\assettocorsa\\content\\cars\\arb_rb20
-   (ou simplesmente extraia o ZIP dentro da pasta raiz do Assetto Corsa,
-    mantendo a estrutura "content/cars/...").
-2. Abra o Assetto Corsa (launcher original ou Content Manager) e selecione
-   "ARB RB20 2024". Nao e necessario Custom Shaders Patch, Sol, extensoes
-   de fisica, data.acd criptografado nem arquivos .lua.
+   .../Steam/steamapps/common/assettocorsa/content/cars/arb_rb20
+   (ou extraia o ZIP dentro da raiz do AC, mantendo "content/cars/...").
+2. Abra o AC (launcher original ou Content Manager) e selecione "ARB RB20 2024".
+   Nao e necessario Custom Shaders Patch, Sol, fisica estendida, data.acd nem Lua.
+3. Mapeie os botoes DRS e KERS/ERS em Opcoes -> Controles.
+
+POTENCIA OFICIAL
+----------------
+805 kW (1.080 hp) e o pico combinado publicado para a RB20 / Honda RBPTH002:
+685 kW do ICE (power.lut) + 120 kW do MGU-K (kers_torque.lut, limite FIA 2024).
+A FIA permite apenas 4 MJ de deploy por volta (33,33 s a 120 kW) e 2 MJ de
+recuperacao, entao numa volta de classificacao a media eletrica e menor que o
+pico. O arrasto e a downforce foram reajustados por minimos quadrados a partir
+da telemetria real COM a potencia oficial fixa. Veja VALIDACAO.md e
+calibration.json (fontes: README.md / REFERENCIAS.md no repositorio).
+
+ERS (NATIVO, SEM CSP)
+---------------------
+Arquivos: data/ers.ini, data/ctrl_ers_0..2.ini, data/kers_torque.lut,
+data/kers_torque_coast.lut e as LUTs de controle.
+- 3 modos no cockpit: Charge, Balanced, Hotlap (seletor "ERS delivery").
+- Botao KERS/overtake = deploy maximo imediato de 120 kW.
+- Carga limitada a 33,33 s de deploy continuo (4 MJ por volta).
+- MGU-K recupera energia na frenagem (2 MJ/volta) com correcao no eixo traseiro.
+
+DRS (NATIVO, SEM CSP)
+---------------------
+Arquivo: data/drs.ini (VERSION=2). O flap traseiro e a asa WING_4 de aero.ini.
+- Pressione o botao "DRS" mapeado nos controles para abrir o flap.
+- IGNORE_ZONES=1: funciona em QUALQUER pista vanilla, sem editar o circuito.
+- Aberto: CdA cai ~13% e a downforce ~15%; ganho de velocidade em VALIDACAO.md.
+
+PNEUS DE CHUVA
+--------------
+5 compostos selecionaveis no setup: Soft, Medium, Hard, Cinturato Intermediate
+e Cinturato Full Wet. Os de chuva tem raio maior, aderencia menor, maior
+resistencia ao rolamento e temperatura ideal mais baixa.
+IMPORTANTE: o AC vanilla NAO tem chuva dinamica (isso exigiria CSP/RainFX,
+que nao usamos). Os pneus existem e tem a fisica de pista molhada, mas a
+condicao da pista nao muda sozinha no jogo base.
 
 O QUE ESTA INCLUSO
 ------------------
-- Modelo 3D original (KN5 v5 vanilla), 4 rodas, asas, halo, difusor,
-  sidepods, suspensao, cockpit; texturas DDS DXT1 embutidas.
-- data/ aberto (nao criptografado): car.ini, engine.ini, power.lut,
-  drivetrain.ini, suspensions.ini, tyres.ini (3 compostos), aero.ini,
-  brakes.ini, setup.ini, electronics.ini, ai.ini e todas as LUTs.
-- 3 compostos P Zero, termica, desgaste, pressao e camber ajustaveis.
-- Física calibrada com telemetria REAL da volta da pole de Verstappen
-  no GP do Bahrein 2024 (FastF1): relacoes de cambio, curva de torque,
-  arrasto, downforce, aderencia e frenagem. Veja calibration.json e VALIDACAO.md.
+- Modelo 3D original (KN5 v5 vanilla), asas, halo, difusor, sidepods,
+  suspensao e cockpit; texturas DDS DXT1 embutidas.
+- data/ aberto (nao criptografado) com todos os INIs/LUTs: car, engine,
+  power, coast, drivetrain, suspensions, tyres (5 compostos), aero (5 asas),
+  brakes, setup, electronics, ai, ers, drs e curvas de controle.
+- Fisica calibrada com telemetria REAL da pole de Verstappen no GP do Bahrein
+  2024 (FastF1): cambio, torque, arrasto, downforce, aderencia e frenagem.
 
 SEM CSP - POR CONSTRUCAO
 ------------------------
-- car.ini VERSION=1 (nunca "extended-2"), tyres.ini VERSION=7 (nao v10/CSP),
-  aero.ini VERSION=3, suspensions.ini VERSION=2.
-- Somente shaders vanilla (ksPerPixel). Sem ext_config.ini, sem wing_controller,
-  sem data.acd, sem scripts Lua, sem physics/extended.
-- Sem DRS ativo e sem gerenciamento de energia ERS (recursos que exigem CSP
-  ou scripting): a contribuicao eletrica esta embutida na curva de torque real.
+- Headers inteiros vanilla: car.ini 1, tyres.ini 7, aero.ini 3, drs.ini 2,
+  ers.ini 1, suspensions/drivetrain 2, ai.ini 4.
+- Somente shaders vanilla ksPerPixel. Sem ext_config.ini, sem extension/,
+  sem data.acd, sem Lua, sem fisica estendida, sem shaders _emissive.
 
 LIMITACOES HONESTAS
 -------------------
-- Nao ha banco de som FMOD (.bank) proprio: o carro pode ficar sem som de
-  motor ou usar o fallback do jogo. Nao e um defeito de fisica.
-- Modelo e livery sao uma interpretacao original, SEM logos, marcas ou
-  pintura oficial de equipe. Projeto de fa, nao oficial, sem licenca F1.
-- DRS, ERS ajustavel em cockpit, chuva e fisica estendida nao existem.
-- Este mod NAO foi executado dentro do Assetto Corsa neste ambiente
-  (sem jogo/Windows). A validacao feita foi: leitura/round-trip do KN5,
-  checagem de todas as referencias de arquivos, varredura anti-CSP e
-  simulacao numerica offline comparada com a telemetria (VALIDACAO.md).
+- Nao ha banco FMOD proprio: o AC pode usar o fallback de audio do jogo.
+- Sem animacao visual do flap do DRS (a aerodinamica e nativa e real).
+- Chuva dinamica e MGU-H detalhado exigiriam CSP; nao foram usados.
+- Modelo e livery originais, SEM logos ou marcas de equipe. Projeto de fa.
+- Este mod NAO foi executado dentro do Assetto Corsa neste ambiente (sem
+  jogo/Windows). Validacao: KN5 round-trip, parsing de INIs/LUTs, varredura
+  anti-CSP e simulacao numerica offline contra a telemetria (VALIDACAO.md).
 
 RECONSTRUIR (GitHub Actions com Blender)
 ---------------------------------------
 O workflow .github/workflows/rb20-mod.yml instala o Blender (bpy), modela o
-carro, calibra a fisica com a telemetria, gera os KN5, valida e produz este ZIP.
+carro, calibra a fisica, gera ERS/DRS/pneus de chuva, gera os KN5, valida e
+produz este ZIP.
 """
 VALIDACAO_HEAD = """VALIDACAO DA FISICA (offline, comparada com telemetria real)
 ============================================================
@@ -95,7 +124,7 @@ def main():
     validacao += "Valores obtidos pela simulacao dos arquivos .ini/.lut entregues:\n\n"
     validacao += "- Velocidade maxima .......... %.1f km/h (telemetria: 322 km/h no Bahrein)\n" % sim["top_speed_kmh"]
     validacao += "- 0-100 / 0-200 / 0-300 ....... %s / %s / %s s\n" % (
-        sim["accel_times_s"].get(100), sim["accel_times_s"].get(200), sim["accel_times_s"].get(300))
+        sim["accel_times_s"].get("100"), sim["accel_times_s"].get("200"), sim["accel_times_s"].get("300"))
     validacao += "- Frenagem 300 -> 0 km/h ..... %.1f m, pico %.2f g (telemetria: %.2f g)\n" % (
         sim["braking_from_300_kmh"]["distance_m"],
         sim["braking_from_300_kmh"]["peak_decel_g"],
@@ -109,6 +138,32 @@ def main():
     validacao += "- mu (slick) %.3f | CdA %.3f m2 | CLA %.3f m2 | massa %.1f kg\n" % (
         p["mu"], p["CdA"], p["CLA"], p["m"])
     validacao += "- Cambio: 8 marchas, UP %.0f rpm, diferencial e relacoes reais da telemetria\n" % p["shift"]
+    op = vr.get("official_power", {})
+    validacao += "\nPOTENCIA OFICIAL, ERS, DRS E PNEUS DE CHUVA\n"
+    validacao += "- Pico combinado publicado ....... %.0f kW (%.0f hp)\n" % (
+        op.get("published_rb20_combined_kw", 0), op.get("published_rb20_hp", 0))
+    validacao += "- ICE %.0f kW + MGU-K %.0f kW = %.1f kW lidos das curvas entregues\n" % (
+        op.get("ice_kw", 0), op.get("mguk_kw", 0),
+        op.get("combined_peak_kw_from_shipped_luts", 0))
+    validacao += "- ERS: %.0f MJ/volta = %.2f s a 120 kW; fracao media na volta %.3f\n" % (
+        op.get("ers_deploy_mj_per_lap", 0), op.get("full_deploy_seconds_per_lap", 0),
+        op.get("lap_average_deploy_fraction", 0))
+    ersr = vr.get("ers", {})
+    validacao += "- 0-300 km/h: so ICE %s s / volta %s s / deploy pleno %s s\n" % (
+        ersr.get("ice_only", {}).get("marks_s", {}).get("300", "-"),
+        ersr.get("lap_average", {}).get("marks_s", {}).get("300", "-"),
+        ersr.get("full_deploy", {}).get("marks_s", {}).get("300", "-"))
+    drsr = vr.get("drs", {})
+    validacao += "- DRS: CdA %.3f -> %.3f, CLA %.3f -> %.3f, ganho %.1f km/h\n" % (
+        drsr.get("closed_CdA", 0), drsr.get("open_CdA", 0),
+        drsr.get("closed_CLA", 0), drsr.get("open_CLA", 0),
+        drsr.get("top_speed_gain_kmh", 0))
+    wtr = vr.get("wet_tyres", {})
+    validacao += "- Pneus: mu slick %.3f / intermediate %.3f / full wet %.3f\n" % (
+        wtr.get("slick_mu", 0), wtr.get("intermediate_mu", 0), wtr.get("full_wet_mu", 0))
+    validacao += "- Frenagem 300->0: %.1f m (slick) / %.1f m (wet); lateral @260 wet %.2f g\n" % (
+        wtr.get("braking_300_to_0_slick_m", 0), wtr.get("braking_300_to_0_wet_m", 0),
+        wtr.get("lateral_g_260_wet", 0))
     validacao += "\nTodos os checks: %s\n" % ("PASSOU" if vr["all_checks_passed"] else "FALHOU")
     validacao += "\nIMPORTANTE: isto e uma simulacao numerica offline dos dados do mod,\n"
     validacao += "NAO uma execucao do jogo Assetto Corsa (veja LEIA-ME.txt).\n"

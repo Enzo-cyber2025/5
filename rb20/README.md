@@ -1,9 +1,9 @@
 # ARB RB20 2024 — mod de Assetto Corsa (vanilla, sem CSP)
 
-Mod de carro de F1 2024 inspirado no **RB20**, com modelo 3D original feito em
+Mod de F1 2024 inspirado no **RB20**, com modelo 3D original feito em
 **Blender dentro de um runner do GitHub Actions**, física calibrada com
-**telemetria real** da volta da pole de Verstappen no GP do Bahrein 2024 e
-**nenhuma dependência de Custom Shaders Patch**.
+**telemetria real**, **potência oficial publicada de 805 kW**, **ERS**, **DRS** e
+**pneus de chuva** — tudo nativo do AC vanilla, **nenhuma dependência de CSP**.
 
 > Projeto de fã, não oficial. Sem logos, marcas ou pintura de equipe. Nenhum
 > arquivo de terceiros é redistribuído dentro do mod.
@@ -16,23 +16,83 @@ Mod de carro de F1 2024 inspirado no **RB20**, com modelo 3D original feito em
 
 https://github.com/Enzo-cyber2025/5/releases/download/rb20-v1.0/RB20_AssettoCorsa.zip
 
-Espelho no branch: `rb20/download/RB20_AssettoCorsa.zip` (609.500 bytes,
-SHA-256 `7d4a2453e2958758111f377a37dfcb5e1a378c6aad7aee61801014e2866e636f`).
-
-O ZIP contém `content/cars/arb_rb20/` pronta para extrair na raiz do Assetto
-Corsa, mais `LEIA-ME.txt`, `VALIDACAO.md` e `REFERENCIAS.md`. O KN5 entregue
-tem 32.604 triângulos (o Bevel/WeightedNormal do Blender aumentou a malha de
-9.336 triângulos da geometria base), 127 objetos, 9 texturas DDS DXT1 e apenas
-o shader vanilla `ksPerPixel`.
+Espelho no branch: `rb20/download/RB20_AssettoCorsa.zip`. O asset da Release é
+sempre o ZIP reconstruído pelo Actions (modelado no Blender). O ZIP contém
+`content/cars/arb_rb20/` pronta para extrair na raiz do AC, mais `LEIA-ME.txt`,
+`VALIDACAO.md` e `REFERENCIAS.md`.
 
 ## 🎮 Instalação
 
 Copie `content/cars/arb_rb20` para
 `.../steamapps/common/assettocorsa/content/cars/arb_rb20` e abra o jogo
-(launcher original **ou** Content Manager, tanto faz). Selecione **ARB RB20 2024**.
+(launcher original **ou** Content Manager). Selecione **ARB RB20 2024**.
+Não instale CSP, Sol, Lua, `data.acd` ou física estendida: nada disso é usado.
 
-Não instale CSP, Sol, Lua, `data.acd` ou "extended physics": nada disso é
-necessário e nada disso é usado.
+**Controles:** mapeie **DRS** e **KERS/ERS** em Opções → Controles. No cockpit,
+o seletor *ERS delivery* alterna `Charge → Balanced → Hotlap`; o botão KERS dá
+deploy máximo imediato (overtake).
+
+---
+
+## ⚡ Potência oficial: 805 kW
+
+| Grandeza | Valor | Origem |
+|---|---:|---|
+| Pico combinado publicado RB20 / Honda RBPTH002 | **805 kW (1.080 hp)** | Liquipedia RB20; Wikipedia *Honda V6 hybrid F1 power unit* cita 810 kW (est.) |
+| MGU-K (elétrico) | **120 kW** | Limite FIA 2024 / especificação oficial Mercedes W15 |
+| ICE (combustão) | **685 kW** | 805 − 120, derivado |
+| Deploy ERS | **4 MJ/volta = 33,33 s a 120 kW** | Regulamento FIA 2024 |
+| Recuperação MGU-K | **2 MJ/volta** | Regulamento FIA 2024 |
+
+`power.lut` contém **somente o ICE** (685 kW, 654 Nm de pico).
+`kers_torque.lut` contém o MGU-K (120 kW constantes de 3.000 ao limitador de
+15.000 rpm). A soma das curvas entregues é **805,6 kW** — medida pelo validador,
+não apenas escrita na UI.
+
+**Por que a telemetria não "via" 805 kW o tempo todo?** Uma volta de
+classificação de 89,179 s só permite 4 MJ de deploy elétrico, ou seja fração
+média de 0,374 do MGU-K → ~730 kW no virabrequim em média. Antes o ajuste livre
+por mínimos quadrados chegava a 483 kW *nas rodas*; agora a potência é **fixada
+no número oficial** e é o **arrasto/downforce** que são ajustados aos dados reais
+(`CdA = 1,727 m²`, `CLA = 2,849 m²`). A tensão entre número de marketing e
+limite de energia por volta está modelada e documentada, não escondida.
+Fontes e conflitos: [`references/POWER_AND_VANILLA_FEATURES.md`](references/POWER_AND_VANILLA_FEATURES.md).
+
+---
+
+## 🔋 ERS nativo (sem CSP)
+
+`data/ers.ini` (`VERSION=1`), `ctrl_ers_0.ini` **Charge**, `ctrl_ers_1.ini`
+**Balanced**, `ctrl_ers_2.ini` **Hotlap**, `kers_torque.lut`,
+`kers_torque_coast.lut` e LUTs de controle (`GAS`, `GEAR`, `SLIPRATIO_MAX`).
+
+- `DISCHARGE_TIME=33333` ms = 4 MJ ÷ 120 kW: a carga dura 33,33 s de deploy
+  contínuo, como o regulamento.
+- `HAS_BUTTON_OVERRIDE=1` → botão KERS/overtake ignora o perfil e entrega 120 kW.
+- `BRAKE_REAR_CORRECTION=45` compensa o torque de recuperação no eixo traseiro.
+- `[HEAT] TORQUE_PERC=0`: o MGU-H só recupera energia, não inventa torque extra
+  acima do limite regulamentar de 120 kW.
+
+## 🪽 DRS nativo (sem CSP)
+
+`data/drs.ini` (`VERSION=2`) atua sobre a asa `WING_4`, o **flap traseiro**
+separado em `aero.ini`. `MODE=ANGLE` leva o flap de 12° (fechado) a 0° (aberto),
+onde as LUTs reduzem seu CL a 10% e seu CD a 30%. `IGNORE_ZONES=1` faz o DRS
+funcionar em **qualquer pista vanilla**, sem editar arquivos de circuito.
+Efeito medido: `CdA 1,727 → 1,509`, `CLA 2,849 → 2,413`, velocidade final
+**319,6 → 334,3 km/h** com deploy pleno.
+
+## 🌧️ Pneus de chuva
+
+`tyres.ini` ganhou os compostos **3** e **4**: *2024 Cinturato Intermediate*
+(`SHORT_NAME=I3`, μ = 0,72 × slick, raio 362 mm) e *2024 Cinturato Full Wet*
+(`W4`, μ = 0,56 × slick, raio 368 mm), com curvas próprias de desgaste,
+temperatura (pico ~60 °C em vez de ~100 °C), maior resistência ao rolamento e
+ângulo de limite menor. Selecionáveis no setup, como qualquer composto vanilla.
+
+> **Limite honesto:** o AC vanilla **não tem chuva dinâmica** — isso exigiria
+> CSP/RainFX, que recusamos. Os pneus existem e têm a física de pista molhada,
+> mas a condição da pista não muda sozinha no jogo base.
 
 ---
 
@@ -43,163 +103,98 @@ Workflow: [`.github/workflows/rb20-mod.yml`](../.github/workflows/rb20-mod.yml)
 ```
 checkout → setup-python 3.11 → apt (libs X/GL) → pip install bpy==4.5.4
         → blender_model.py   (MODELA O CARRO EM BLENDER, headless)
-        → calibrate.py       (física a partir da telemetria real)
-        → make_kn5.py        (FBX/mesh.json → KN5 v5 vanilla + texturas DDS)
+        → calibrate.py       (telemetria → INIs/LUTs + features.py)
+        → make_kn5.py        (mesh.json → KN5 v5 vanilla + texturas DDS)
         → render_preview.py  (preview.jpg / badge.png)
-        → physics_sim.py     (validação numérica offline)
+        → physics_sim.py     (validação: potência, ERS, DRS, chuva, telemetria)
         → make_package.py    (ZIP)
-        → validate.py        (gate: estrutura + anti-CSP + física)
-        → upload-artifact (ZIP, .blend, .fbx, mesh.json, relatórios)
+        → validate.py        (gate: estrutura + anti-CSP + física + recursos)
+        → publicação da Release + ZIP no branch
 ```
 
-`tools/blender_model.py` roda com a API `bpy` do Blender: cria 127 objetos a
-partir de `tools/mesh_core.py`, aplica modificadores reais **Bevel** e
-**WeightedNormal**, triangula com `bmesh`, extrai posições/normais/UVs e exporta
-`mesh.json` (e salva `.blend` + `.fbx` editáveis como artefato). O KN5 entregue
-é gerado **a partir dessa saída do Blender**.
-
-Executar localmente (sem Actions) também funciona: se `mesh.json` não existir,
-`make_kn5.py` usa a geometria paramétrica diretamente.
-
-```bash
-python -m pip install bpy==4.5.4 pillow numpy matplotlib
-python rb20/tools/blender_model.py --out rb20/out
-python rb20/tools/calibrate.py --telemetry rb20/telemetry/VER_2024_Bahrain_Q.csv \
-       --car-dir rb20/out/content/cars/arb_rb20
-python rb20/tools/make_kn5.py --mesh rb20/out/mesh.json \
-       --car-dir rb20/out/content/cars/arb_rb20 \
-       --skins-dir rb20/out/content/cars/arb_rb20/skins/default
-python rb20/tools/render_preview.py --mesh rb20/out/mesh.json \
-       --car-dir rb20/out/content/cars/arb_rb20
-python rb20/tools/physics_sim.py --car-dir rb20/out/content/cars/arb_rb20 \
-       --telemetry rb20/telemetry/VER_2024_Bahrain_Q.csv --out rb20/out/validation
-python rb20/tools/make_package.py --car-dir rb20/out/content/cars/arb_rb20 \
-       --validation rb20/out/validation/validation_report.json \
-       --references rb20/references/REFERENCES.md \
-       --zip rb20/download/RB20_AssettoCorsa.zip
-python rb20/tools/validate.py --car-dir rb20/out/content/cars/arb_rb20 \
-       --validation rb20/out/validation/validation_report.json \
-       --zip rb20/download/RB20_AssettoCorsa.zip --out rb20/out/validate_report.json
-```
+`tools/features.py` é chamado ao final de `calibrate.py` e escreve todos os
+arquivos nativos de ERS/DRS/compostos de chuva, além de atualizar `ui_car.json`
+e `calibration.json`. O KN5 é gerado a partir da saída do Blender (32.604
+triângulos com Bevel/WeightedNormal, 127 objetos, 9 texturas DXT1).
 
 ---
 
-## 📈 Física calibrada com telemetria real
+## 📈 Física e validação offline
 
 Fonte: [`telemetry/VER_2024_Bahrain_Q.csv`](telemetry/VER_2024_Bahrain_Q.csv)
 — 702 amostras, 89,179 s, 5.367 m, FastF1, classificação do Bahrein 2024, VER.
-Detalhes e atribuição em [`telemetry/SOURCES.md`](telemetry/SOURCES.md).
 
-Ajustes por mínimos quadrados (código em `tools/calibrate.py`, resultados em
-`content/cars/arb_rb20/calibration.json`):
-
-| Grandeza | Valor | Como saiu da telemetria |
+| Grandeza | Valor | Como saiu |
 |---|---:|---|
-| Relações de câmbio (8 marchas) | 4,655 … 12,5 (total) | mediana de `RPM / rotação da roda` por marcha + ajuste log-linear; rpm de troca 10.815 |
+| Relações de câmbio (8 marchas) | 4,655 … 12,5 (total) | mediana `RPM/rotação da roda`, ajuste log-linear; troca a 10.815 rpm |
 | μ do pneu slick | 1,624 | envelope de frenagem `decel = μg + c₁v²` |
 | Frenagem de pico | 4,65 g | percentil 10 por faixa de velocidade |
-| `CdA` | 0,980 m² | ajuste conjunto com a equação de potência |
-| `CLA` (downforce) | 3,309 m² | combinada com a relação de frenagem |
-| Potência efetiva sustentada | 483 kW | `m·a·v = P(rpm) − ½ρ(CdA+Crr·CLA)v³ − Crr·m·g·v` |
-| Torque de pico | 462 Nm | `T = P/ω` → `power.lut` |
-| Freio | 2.920 Nm/roda | limite de aderência a ~63 m/s + 25% de folga |
+| `CdA` / `CLA` | **1,727 / 2,849 m²** | mínimos quadrados com **potência oficial fixa** + relação de frenagem |
+| Potência | **805 kW** (685 ICE + 120 MGU-K) | número publicado + limite FIA, não ajustado |
+| Torque ICE de pico | 654 Nm | `T = P/ω` → `power.lut` |
+| Freio | 2.710 Nm/roda | limite de aderência + 25% de folga |
 
-**Validação numérica offline** (lendo os `.ini`/`.lut` **entregues**, não os
-atalhos da calibração) — `tools/physics_sim.py`, `out/validation/validation.png`:
+Validação numérica lendo os `.ini`/`.lut` **entregues** (`physics_sim.py`):
 
-| Métrica | Mod | Referência real |
+| Métrica | Mod | Referência |
 |---|---:|---|
-| Velocidade final | **322,6 km/h** | 322 km/h no Bahrein |
-| 0–100 km/h | **2,63 s** | ~2,6 s (F1 2024) |
-| 0–200 / 0–300 km/h | **5,25 s / 13,54 s** | ~5 s / ~13 s |
-| Frenagem 300→0 | **116,2 m**, pico **4,66 g** | 4,65 g na telemetria |
-| Aderência lateral @260 km/h | **3,82 g** | ~4 g em alta velocidade |
-| Erro médio de aceleração | **1,18 m/s²** | — |
-| Erro médio de frenagem | **4,06 m/s²** | — |
+| Velocidade final (volta) | **309,3 km/h** | 322 km/h no Bahrein |
+| Só ICE / deploy pleno / deploy pleno + DRS | **302,8 / 319,6 / 334,3 km/h** | — |
+| 0–100 / 0–200 / 0–300 | **2,69 / 5,16 / 12,60 s** | ~2,6 / ~5 / ~13 s |
+| Frenagem 300→0 (slick) | **116,1 m**, pico **4,76 g** | 4,65 g na telemetria |
+| Frenagem 300→0 (full wet) | **189,3 m** | — |
+| Aderência lateral @260 (slick / wet) | **3,51 / 1,98 g** | ~4 g em alta velocidade |
+| Erro médio aceleração / frenagem | **1,81 / 3,88 m/s²** | — |
 
-Arquivos de física: `car.ini` (798 kg, `INERTIA=2.00,0.95,5.60`), `engine.ini`
-(15.000 rpm), `power.lut`/`coast.lut`, `drivetrain.ini` (8 marchas, diferencial),
-`suspensions.ini` (DWB + heave springs, WHEELBASE 3,6 m), `tyres.ini` v7 com
-**3 compostos** (térmica, desgaste, pressão, camber, load sensitivity),
-`aero.ini` (4 asas, LUTs de AoA e de altura/efeito-solo), `brakes.ini`,
-`setup.ini` (asas, pressões, alturas, molas, camber, brake bias),
-`electronics.ini` (sem ABS/TC, como o regulamento), `ai.ini`.
-
-> **Por que 483 kW e não os ~750 kW divulgados?** 1.021 hp é o pico de ICE+MGU-K
-> em condição ideal. Numa volta de classificação o fluxo de combustível e o
-> estado de carga do ERS limitam a potência *sustentada*, e os dados de timing
-> da FastF1 são filtrados. Ajustar à telemetria reproduz 322 km/h, 2,63 s e
-> 4,65 g de frenagem; usar o número de marketing sem aumentar o arrasto
-> produziria um carro irreal. Tudo está documentado, não escondido.
+O gate `validate.py` exige 10 checks, incluindo pico combinado 805 kW lido das
+curvas, DRS reduzindo arrasto/downforce, ERS melhorando 0–300 e compostos de
+chuva com menos aderência.
 
 ## 🚫 Zero dependência de CSP
 
 | Item | Estado |
 |---|---|
-| `car.ini` | `VERSION=1` (nunca `extended-2`) |
-| `tyres.ini` | `VERSION=7` (vanilla Kunos SDK, não v10/CSP) |
-| `aero.ini` / `suspensions.ini` / `drivetrain.ini` | `VERSION=3 / 2 / 2` |
-| Shaders | apenas `ksPerPixel` (shader fallback do próprio ksEditor) |
-| Texturas | DDS **DXT1** descomprimíveis pelo AC vanilla |
-| `data/` | aberto, sem `data.acd` criptografado |
-| `ext_config.ini`, `extension/`, `wing_controller.ini`, `.lua`, `physics/extended` | **ausentes** |
-| DRS / ERS ajustável / chuva / física estendida | **não implementados** (exigiriam CSP) |
-
-`tools/validate.py` varre todo o carro e o ZIP e **falha o build** se qualquer
-token CSP aparecer, se um LUT/textura referenciado não existir, se o KN5 não
-fizer round-trip ou se a validação de física não passar.
-
-## 🖼️ Referências
-
-Imagens de referência (launch/side/top/blueprint), modelos 3D de referência
-(RB6 ortográfico, silhueta RB20 em STL, Formula K do SDK para *formato* de
-arquivos) e dimensões publicadas: [`references/REFERENCES.md`](references/REFERENCES.md).
+| Headers | `car.ini=1`, `tyres.ini=7`, `aero.ini=3`, `drs.ini=2`, `ers.ini=1`, `suspensions/drivetrain=2`, `ai.ini=4` |
+| Shaders / texturas | apenas `ksPerPixel`; DDS DXT1 |
+| `data/` | aberto, sem `data.acd` |
+| `ext_config.ini`, `extension/`, `wing_controller.ini`, `.lua`, `physics/extended`, `_emissive` | **ausentes** |
+| DRS / ERS / pneus de chuva | **nativos vanilla** (`drs.ini`, `ers.ini`, `tyres.ini`) |
+| Chuva dinâmica / RainFX / física estendida | **ausentes** (exigiriam CSP) |
 
 ---
 
 ## ⚠️ Limitações honestas
 
-1. **Não rodou no Assetto Corsa real.** Este ambiente é Linux, sem o jogo, sem
-   Windows e sem licença do AC. O que foi executado de verdade: Blender
-   headless no Actions, geração/leitura binária do KN5, parsing de todos os
-   INIs/LUTs, varredura anti-CSP, rasterização do preview e uma simulação
-   numérica longitudinal/lateral comparada com a telemetria. A última palavra
-   sobre "aparece no showroom" só o seu AC pode dar — o `LEIA-ME.txt` explica
-   como testar em 2 minutos.
-2. **Sem banco de som FMOD próprio** (`.bank` proprietário não é redistribuído).
-   O carro pode ficar sem som de motor ou cair no fallback do jogo; isso não
-   afeta física nem compatibilidade.
-3. **DRS, ERS gerenciável, chuva e animações de asa** não existem: são recursos
-   de CSP/script. A contribuição elétrica está embutida na curva de torque real.
-4. **É uma volta, um circuito, um piloto.** Não é um mapa de motor de fábrica
-   nem dados de engenharia de equipe (isso é confidencial). Posição X/Y da
-   FastF1 é grossa demais para aceleração lateral, então o grip lateral veio do
-   envelope de frenagem + downforce.
-5. **Modelo é uma interpretação original** (9.336 triângulos), não uma conversão
-   de um mod existente. Sem logotipos ou pintura oficial.
-
----
+1. **Não rodou no Assetto Corsa real.** Ambiente Linux, sem o jogo. O que foi
+   executado: Blender headless no Actions, leitura/round-trip do KN5, parsing de
+   todos os INIs/LUTs, varredura anti-CSP, rasterização do preview e simulação
+   numérica contra telemetria. A última palavra sobre o showroom é do seu AC.
+2. **Sem banco FMOD próprio** (`.bank` proprietário não redistribuído).
+3. **Sem animação visual do flap do DRS** — a aerodinâmica é nativa e real, mas
+   o flap não gira na malha (isso exigiria `.ksanim`/CSP).
+4. **Sem chuva dinâmica.** Os compostos de chuva existem; a pista não fica
+   molhada sozinha no AC vanilla.
+5. **É uma volta, um circuito, um piloto.** Não é mapa de motor de fábrica nem
+   dados confidenciais de equipe. A FIA/Red Bull não publicam uma potência
+   combinada única "oficial": 805 kW é o valor publicado para a RB20; outras
+   fontes citam 550–560 kW de ICE e ~750 kW combinados. Conflito documentado.
+6. **Modelo é interpretação original**, sem logotipos ou pintura oficial.
 
 ## 🗂️ Estrutura
 
 ```
 rb20/
-├── README.md                     este arquivo
-├── references/REFERENCES.md      imagens + modelos 3D de referência
-├── telemetry/
-│   ├── VER_2024_Bahrain_Q.csv    telemetria real
-│   └── SOURCES.md                origem, licença e limitações
+├── README.md
+├── references/
+│   ├── REFERENCES.md                 imagens + modelos 3D de referência
+│   └── POWER_AND_VANILLA_FEATURES.md potência oficial + formatos ERS/DRS
+├── telemetry/VER_2024_Bahrain_Q.csv + SOURCES.md
 ├── tools/
-│   ├── mesh_core.py              geometria paramétrica original
-│   ├── blender_model.py          Blender/bpy (roda no Actions)
-│   ├── kn5format.py              writer/reader KN5 v5 próprio
-│   ├── textures.py               DDS DXT1 + materiais ksPerPixel
-│   ├── make_kn5.py               mesh.json → KN5 + collider
-│   ├── calibrate.py              telemetria → todos os .ini/.lut
-│   ├── physics_sim.py            validação offline contra telemetria
-│   ├── render_preview.py         preview.jpg + badge.png (CPU)
-│   ├── make_package.py           ZIP instalável
-│   └── validate.py               gate anti-CSP / estrutura / física
+│   ├── mesh_core.py / blender_model.py / kn5format.py / textures.py
+│   ├── make_kn5.py / render_preview.py
+│   ├── calibrate.py       telemetria → INIs/LUTs (potência oficial fixa)
+│   ├── features.py        ERS + DRS + pneus de chuva + UI/calibration
+│   ├── physics_sim.py / make_package.py / validate.py
 ├── download/RB20_AssettoCorsa.zip   ← ENTREGÁVEL
-└── out/                         gerado (ignorado pelo git)
+└── out/                             gerado (ignorado)
 ```
