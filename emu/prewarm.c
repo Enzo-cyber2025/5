@@ -866,7 +866,7 @@ static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods
     size_t      trap_len = 0, ct_n = 0, ct_filled = 0;
     size_t      slots, slot, mapped = 0, unmatched = 0, capped = 0;
     size_t      nplaced = 0, not_placed = 0, iat_stubbed = 0, iat_no_iat = 0,
-                cells_stubbed = 0, i, q;
+                cells_stubbed = 0, ct_unreadable = 0, i, q;
     size_t      fc_hist[FC_COUNT];
     /* Region crossed with signal, because the region histogram alone cannot answer the
      * only question that matters here. The tally calls a SIGTRAP "the bounds check
@@ -1080,8 +1080,16 @@ static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods
     for (q = 0; ct && q < ct_n; q++) {
         uint64_t mid = 0, va = 0;
         int      dead = 0;
-        if (!ptc_calltab_at(cache, q, &mid, &va, &dead)) continue;
-        if (!dead) {
+        /* A slot whose entry cannot be read is still a slot some emitted word will
+         * load, so it gets the trap stub like every other unfilled one. Skipping it
+         * left ct[q] at 0, and 0 is not a controlled stop: the call becomes a branch
+         * to address 0, which arrives as a SIGSEGV in the null-ish region and reads
+         * in the tally as emitted code going wrong. Counted, because a disagreement
+         * between the entry count and what can be read is a finding about the cache
+         * format and should not hide inside a filled-slot number. */
+        if (!ptc_calltab_at(cache, q, &mid, &va, &dead)) {
+            ct_unreadable++;
+        } else if (!dead) {
             for (i = 0; i < nplaced; i++) {
                 if (pf[i].module_id != mid || pf[i].guest_pc != va) continue;
                 ct[q] = (uint64_t)(uintptr_t)pf[i].page;
@@ -1091,6 +1099,9 @@ static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods
         }
         if (!ct[q]) ct[q] = (uint64_t)(uintptr_t)trap;
     }
+    if (ct_unreadable)
+        printf("  call-table slots whose entry could not be read: %zu (stubbed anyway)\n",
+               ct_unreadable);
 
     for (i = 0; i < (size_t)nmods; i++) {
         if (!bases[i]) continue;

@@ -1576,6 +1576,146 @@ No modelo de pilha do guest:
   1 porque o índice 0 é o prólogo — a falha imprimiu `0xA9BF3FEE` e eu tinha
   assertido sobre ele como se fosse a constante.
 
+### Dezessete SIGSEGV viram zero: o que uma resposta etiquetada para outra pergunta custa
+
+O job `game` do CI tem uma asserção dura desde o começo: `trapped + crashed ==
+faulted`, e **morre se `crashed > 0`**. Um trap é um `BRK` deliberado — uma
+verificação de limites ou uma chamada a uma função que ninguém traduziu — e é o
+resultado honesto para código que ainda não existe. Um *crash* é o código emitido
+errando. Durante onze commits seguidos o job ficou vermelho com 17, depois 15,
+depois 14 crashes, e cada explicação que escrevi para eles foi **falsificada por
+medição**, não por argumento: tamanho da arena de pilha, slots de IAT não
+preenchidos (2596 foram stubados e o perfil de fault saiu byte-idêntico),
+`iat_rva == 0` (a contagem era 0), e "esses endereços são RVAs de import".
+
+O que resolveu foi parar de ler `si_addr` e capturar **registradores** no handler
+de sinal: X16, X17, X21, X30 e SP. Os doze faults mostrados tinham
+`X16 = 0x2000000000000380` e vizinhos — `TR_GUEST_CALL`, bit 61, ORed com o
+deslocamento de um slot da call table. X21 e X17 eram **idênticos em todos os
+faults** enquanto `pc` diferia, o que por si só prova que a sequência
+`ADD X17,X21,X17 / LDUR X16,[X17]` nunca executou: o valor etiquetado foi
+materializado direto em X16 e o `BLR` saltou para ele. Cada word emitido era uma
+renderização correta do valor que lhe deram, então **nenhuma asserção ao nível de
+word poderia apanhar isto** — só recusar a resposta.
+
+Eram dois bugs, um produzindo o valor e outro emitindo-o:
+
+- O sítio `FF /2` removia só as duas etiquetas que conhecia (bits 63 e 62) e
+  emitia o que sobrasse. O bit 61 sobrevivia à máscara e virava parte do endereço.
+- `sweep_resolve_any` respondia "chamada de guest" para **endereços de slots de
+  import**, porque testava apenas `find_exec` — e linkers reais colocam a tabela de
+  import numa secção marcada como executável. "Dentro de uma secção executável" é
+  necessário e muito longe de suficiente para "é uma função".
+
+Corrigidos os dois, com as guardas escritas contra `TR_ABI_TAG_MASK` (todas as
+etiquetas) e não contra `TR_GUEST_CALL`, para que uma quarta etiqueta adicionada
+depois seja recusada em vez de emitida. **`crashed` 17 → 1.** E custou 32 funções:
+uma recusa é honesta, mas não é a melhor resposta disponível.
+
+### Um histograma de frases, porque um histograma de opcodes não mira nada
+
+Com as recusas a subir, o relatório dizia `1016 function(s) stopped at opcode FF`.
+Isso são **pelo menos três descobertas diferentes** dentro de um número: uma célula
+de import que ninguém respondeu, uma chamada por registrador, um salto por vtable.
+Apontar uma mudança a um byte foi como dois commits seguidos perseguiram a coisa
+errada, ambos com uma história plausível anexada.
+
+`sweep_top_detail` agora histograma **a frase do próprio tradutor**. Os detalhes são
+literais em `translate.c`, logo o ponteiro é a identidade. Uma corrida nomeou o
+problema imediatamente: `128 function(s) stopped because: the resolver answered an
+import slot with a tag this call site does not handle`. Não eram slots de import —
+`import_slot_rva` não os reconhecia — e por isso dois commits tinham medido
+números byte-idênticos: ambas as guardas diziam "não é slot de import" sobre os
+mesmos 128 endereços, pela mesma razão.
+
+### A ambiguidade era da API, não do resolver
+
+Um callback respondia a duas perguntas e a única evidência de qual era o endereço.
+`tr_resolve_fn` agora recebe um `tr_question`: os dois sítios `FF /2` perguntam
+`TR_Q_IMPORT_CELL`, o `call rel32` pergunta `TR_Q_CALL_TARGET`. `shim_resolve`
+responde só à pergunta de import — uma função Win32 é código hospedeiro e não tem
+slot de call table a receber.
+
+E a célula do próprio módulo **não precisa de resolver nenhum**: um `FF /2`
+RIP-relative que cai dentro da imagem do módulo que está a ser traduzido é uma
+chamada de import por construção, e o deslocamento é o `image_base_va` desse módulo
+— exatamente o que X19 terá em tempo de execução. Com as 128 recusas resolvidas:
+**pre-translated 482 → 512**, bytes ARM64 escritos 34552 → 43988, e `FF` deixou de
+ser o bloqueador de 123 funções.
+
+### 120 pares de bases colidem: um VA de guest não identifica um módulo
+
+Isto trouxe 15 crashes novos, numa região nova — "nowhere this process mapped" —
+com X16 a segurar um VA de guest carregado de uma célula. O relatório do harness
+dizia `import cells verified safe: 149 of 149`. **As duas coisas eram verdade**, e
+é isso que importa: o loop de stubbing escolhia um mapping perguntando qual base
+declarada continha aquele VA, escrevia no módulo errado, e a verificação lia de
+volta do mesmo sítio errado. **Uma verificação que partilha o lookup com aquilo que
+verifica concorda consigo própria e com nada que execute.**
+
+A medição que expôs: `modules declaring a colliding image base: 120 pair(s)`. Um
+`ImageBase` de PE é uma *preferência*; com 19 módulos, 120 dos 171 pares possíveis
+colidem, e os intervalos de VA coincidem exatamente. Células passaram a ser
+gravadas como `(module_id, rva)`, e tanto o stubbing quanto a verificação escolhem
+o mapping **pelo id do módulo** — o único handle não ambíguo. O resolver passou a
+perguntar primeiro ao módulo que está a ser traduzido.
+
+O efeito na call table foi grande e não era o alvo da mudança: **slots preenchidos
+13 → 82 de 531**. Um slot é chaveado por `(module_id, guest_va)`, logo um callee
+atribuído ao módulo errado ganhava um slot que nenhum registro do módulo chamador
+preenchia — e 449 slots vazios liam-se como lacuna de cobertura quando parte era
+contabilidade. `translated 515 → 583`, `executed 476 → 523`, e a região null-ish
+esvaziou.
+
+### Um invariante em dois ficheiros, sem nada a exigir que concordem
+
+Sobraram 14 crashes. O harness stuba as células da lista gravada e mais nenhuma,
+logo a lista tem de cobrir **toda célula para a qual o tradutor vai emitir um
+load**. Os dois limites não eram o mesmo limite: o sweep testava `in_span` — a união
+das secções **executáveis**, construída para o bitmap de visitados — enquanto o
+tradutor testava a imagem inteira, que é o que o seu `X19 + rva` precisa de
+satisfazer. Uma IAT abaixo da primeira secção executável ou acima da última cai no
+intervalo: o resolver respondia 0 e não gravava nada, o tradutor emitia o load na
+mesma, e a célula continuava a segurar o que o ficheiro lá deixou. **E é exatamente
+onde linkers reais põem tabelas de import, porque `.rdata` não é executável.**
+
+O teste põe a IAT numa quinta secção deliberadamente não-executável, acima de todas
+as executáveis, e **asserta a pré-condição** — que a secção não é executável — sem a
+qual o teste nem chega ao intervalo. Injetando o limite antigo: quatro falhas, todas
+na gravação, e `functions_translated == 1` continua a passar, que é a violação dita
+sem rodeios: o tradutor emite o load gravando alguém ou não.
+
+### Onde isto deixa o número
+
+No bundle real (Luanti 5.17.0 win64, 17 539 019 bytes, 19 módulos, sha256
+`3ce20c77…631c`), medido num runner aarch64 nativo:
+
+| | |
+|---|---|
+| funções pré-traduzidas | **583** de 3872 tentadas (**15.06%**) |
+| funções executadas do cache | **523** |
+| retornaram normalmente | 191 |
+| faults | 332 — **332 traps, 0 crashes** |
+| desses, `BRK` de verificação de limites | 147 |
+| desses, chamada a função ainda não traduzida | 185 |
+| células de import gravadas / stubadas / verificadas | 171 / 171 / **171** |
+| call table | 531 slots, **82 preenchidos** |
+| código ARM64 escrito | 52 136 bytes (eram 34 552 no começo deste arco) |
+| recusadas na **primeira** instrução do ponto de entrada | **508** (eram 668) |
+| regiões "nowhere mapped", null-ish, acima/abaixo da pilha | **0, 0, 0, 0** |
+
+**Todos os oito jobs do CI verdes, e o `game` pela primeira vez por passar na
+asserção e não por não haver o que afirmar.** Cada fault num binário Windows real
+de 19 módulos tem agora um mecanismo conhecido e deliberado: não há nenhum que seja
+o código emitido a enganar-se. O que resta é cobertura — 449 slots vazios são
+callees recusados por opcode, não contabilidade — e não correção. A fila de
+trabalho, em ordem: `FF` 913 funções (chamadas e saltos indiretos por registrador,
+que são dependentes de dados e não resolvíveis estaticamente), `83` 459, `8D` 192,
+`C7` 164, `0F B6` 162, `0F 94` 121.
+
+Suite do projeto: **1122 checks, 0 falhas**, limpa sob `-Wall -Wextra -Wshadow
+-Werror` e sob o portão forçado `-D__aarch64__ -fsyntax-only`.
+
 ## Limitação deste ambiente
 
 **Não é possível gerar um APK aqui.** Não há NDK, `javac`, `aapt2`, `zipalign`
