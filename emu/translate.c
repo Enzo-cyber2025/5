@@ -294,7 +294,12 @@ typedef enum {
     /* a guest pointer held in a general register, bounds-checked at run time */
     P_LD_GUEST, P_ST_GUEST,
     /* lea: rd = rn + delta, with no memory touched */
-    P_LEA_IMM
+    P_LEA_IMM,
+    /* Emits nothing at all. Planned rather than skipped so that it still occupies a
+     * position in the layout: a branch whose target is a NOP has to resolve to the
+     * address the NOP would have occupied, and dropping the instruction from the plan
+     * instead of from the output would lose that position. */
+    P_NOP
 } plan_op;
 
 typedef struct {
@@ -654,12 +659,31 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
     if (in.map == 1) {
         if (in.op[1] >= 0x80u && in.op[1] <= 0x8Fu)
             return plan_jcc(in.op[1] & 0xFu, va, &in, p, out);
+        /* Multi-byte NOP, which is what compilers emit as alignment padding at the top
+         * of a function - so refusing it kills a function on its own prologue padding
+         * before any real instruction is reached. The ModRM operand is ignored rather
+         * than modelled: a NOP performs no memory access, so there is nothing to
+         * bounds-check and no addressing form to refuse. */
+        if (in.op[1] == 0x1Fu) {
+            p->op = P_NOP; p->words = 0u; return TR_OK;
+        }
         out->reason = TRR_UNSUPPORTED_OP; out->detail = "two-byte opcode outside the subset";
         return TR_UNSUPPORTED;
     }
 
     is_grp1 = (in.op[0] == 0x83 || in.op[0] == 0x81);
 
+    if (in.op[0] == 0x90 && !in.rex_b) {
+        /* NOP, and the prefix decides rather than the opcode byte alone: REX.B + 0x90
+         * is `xchg r8, eax`, a real instruction with a real effect, so accepting it
+         * here would silently delete a register exchange. REX.W + 0x90 is
+         * `xchg rax, rax`, which is a no-op, so it stays accepted.
+         *
+         * Zero words, not one. A NOP that cost an instruction would inflate every
+         * function by the padding its compiler put in it, and the padding is never
+         * executed as anything but a fall-through. */
+        p->op = P_NOP; p->words = 0u; return TR_OK;
+    }
     if (in.op[0] == 0xC3 && in.rex == 0 && in.mod == 0) {
         p->op = P_RET; p->words = 1u; return TR_OK;
     }
@@ -1808,6 +1832,11 @@ tr_status tr_translate_function_img(const uint8_t *code, size_t code_len,
             }
             if (!emit_const_f(out, HOST_SCRATCH, p->const_val)) return TR_OVERFLOW;
             if (!pushf(out, a64_blr(HOST_SCRATCH))) return TR_OVERFLOW;
+            break;
+        case P_NOP:
+            /* Emits nothing, and must not emit anything: the whole point is that the
+             * guest instruction has no effect. word_at was still assigned by the layout
+             * pass, so a branch targeting this instruction resolves correctly. */
             break;
         case P_RET:
             /* Reverse of the prologue: the X14/X15 record was pushed last, so it

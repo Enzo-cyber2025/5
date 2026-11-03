@@ -3606,6 +3606,72 @@ static void test_guest_program_loops(void)
  * that opened `sub $0x38,%rsp` and then passed WriteFile's fifth argument with
  * `movq $0x0,0x20(%rsp)`. AArch64 has no store-immediate, so the constant is
  * materialised in the scratch register and a STUR follows it. */
+/* 0x90 was the seventh most common blocker on a real game module - 127 functions
+ * stopped there - and it is padding, not code. These check both halves of the
+ * decision: that a NOP costs nothing, and that the prefix is what distinguishes it
+ * from the instruction sharing its opcode byte. */
+static void test_nop(void)
+{
+    /* nop ; ret */
+    static const uint8_t plain[]   = { 0x90, 0xC3 };
+    /* rex.w nop (xchg rax,rax, a no-op) ; ret */
+    static const uint8_t rexw[]    = { 0x48, 0x90, 0xC3 };
+    /* rex.b 0x90 is `xchg r8, eax` - a real instruction, not a NOP */
+    static const uint8_t rexb[]    = { 0x41, 0x90, 0xC3 };
+    /* nop dword [rax], the multi-byte alignment form ; ret */
+    static const uint8_t multinop[]= { 0x0F, 0x1F, 0x00, 0xC3 };
+    /* jmp +0, landing exactly on a NOP, then ret */
+    static const uint8_t to_nop[]  = { 0xEB, 0x00, 0x90, 0xC3 };
+    tr_func   f;
+    tr_status st;
+
+    printf("nop emits nothing, and rex.b 0x90 is not one\n");
+
+    st = tr_translate_function(plain, sizeof(plain), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_OK, "nop;ret was refused: %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        CHECK(f.n == 1u, "a NOP must cost zero words, so nop;ret is one word, got %zu",
+              f.n);
+        CHECK(f.words[0] == 0xD65F03C0u,
+              "the single word must be the RET, got 0x%08X: a NOP that emitted a "
+              "placeholder would leave it here", f.words[0]);
+    }
+
+    st = tr_translate_function(rexw, sizeof(rexw), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_OK && f.n == 1u,
+          "rex.w + 0x90 is xchg rax,rax, a no-op, and must also cost nothing");
+
+    /* The case that would silently delete an operation. 0x41 is REX.B, and REX.B makes
+     * 0x90 mean xchg r8, eax: accepting it as a NOP would drop a register exchange and
+     * every word would still look correct. */
+    st = tr_translate_function(rexb, sizeof(rexb), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_UNSUPPORTED,
+          "rex.b + 0x90 is xchg r8,eax and must be refused, not treated as a NOP: "
+          "accepting it would delete a register exchange and still look correct");
+
+    st = tr_translate_function(multinop, sizeof(multinop), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_OK && f.n == 1u,
+          "the multi-byte NOP compilers use for alignment must cost nothing too: got "
+          "%s with %zu words", tr_status_name(st), f.n);
+
+    /* A branch to a NOP is the reason a NOP is planned rather than dropped from the
+     * plan. It has to occupy a position in the layout even though it occupies no words,
+     * and that position is the RET's - so the jump must target the RET. */
+    st = tr_translate_function(to_nop, sizeof(to_nop), IMAGE_BASE, NULL, NULL, &f);
+    CHECK(st == TR_OK, "jmp to a NOP was refused: %s (%s)", tr_status_name(st),
+          f.detail ? f.detail : "?");
+    if (st == TR_OK) {
+        CHECK(f.n == 2u, "jmp + ret is two words with the NOP between them free, got %zu",
+              f.n);
+        CHECK(f.words[0] == 0x14000001u,
+              "the jump must land on the word after it (B +1 = 0x14000001), got 0x%08X: "
+              "a NOP with no layout position would send it somewhere else", f.words[0]);
+        CHECK(f.words[1] == 0xD65F03C0u, "and that word must be the RET, got 0x%08X",
+              f.words[1]);
+    }
+}
+
 static void test_mov_imm_to_stack(void)
 {
     /* mov qword [rsp+0x10], 0x1234 ; ret */
@@ -3865,6 +3931,7 @@ int main(void)
     test_guest_program_runs();
     test_guest_program_loops();
     test_mov_imm_to_stack();
+    test_nop();
     test_guest_to_guest_call();
     test_pipeline();
 #if defined(__aarch64__)
