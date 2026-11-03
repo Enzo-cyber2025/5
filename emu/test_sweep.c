@@ -41,6 +41,7 @@ static int checks, failures;
 #define TEXT_VA    0x1000u
 #define RDATA_VA   0x2000u
 #define DATA_VA    0x3000u
+#define IDATA_VA   0x4000u   /* only present when g_with_imports is set */
 
 /* The guest code, laid out so that the reachable graph is exactly five blocks
  * and the gaps between them are padding that nothing jumps to:
@@ -91,6 +92,12 @@ static int g_big_exports;
  * under test. */
 static int g_call_entry;
 
+/* Test-only knob: add a fourth section holding one function that makes a single
+ * import call, plus the import descriptor and IAT that call goes through. The
+ * section is marked CODE|EXECUTE|READ - deliberately, because that is what real
+ * linkers do and it is the shape that made an IAT slot look like a function. */
+static int g_with_imports;
+
 #define VA_CALLER  (IMAGE_BASE + 0x1023u)   /* call VA_CALLEE; ret */
 #define VA_CALLEE  (IMAGE_BASE + 0x1029u)   /* ret - reached only by that call */
 
@@ -134,7 +141,12 @@ static size_t btell(const buf *f) { return f->len; }
 static buf build_guest(int with_exports)
 {
     buf  out, rd;
-    size_t e_lfanew = 0x80, hdr = 0x200;
+    /* With three sections the header area is exactly 0x200 bytes - DOS stub 0x80,
+     * PE signature 4, COFF 20, optional header 240, three section headers 120 - so
+     * there is no room for a fourth. SizeOfHeaders has to be a multiple of
+     * FileAlignment, which is 0x200, so a fourth section moves every raw pointer
+     * down by a whole 0x200 rather than by 40 bytes. */
+    size_t e_lfanew = 0x80, hdr = g_with_imports ? 0x400u : 0x200u;
     size_t exp_dir = 0, aof = 0, aon = 0, aoo = 0, nmA = 0, nmB = 0, nmDll = 0;
     int  i;
 
@@ -182,7 +194,7 @@ static buf build_guest(int with_exports)
 
     bu32(&out, 0x00004550u);                       /* "PE\0\0" */
     bu16(&out, PE_MACHINE_AMD64);
-    bu16(&out, 3);                                 /* sections */
+    bu16(&out, g_with_imports ? 4 : 3);            /* sections */
     bu32(&out, 0x60000000u); bu32(&out, 0); bu32(&out, 0);
     bu16(&out, 240);                               /* SizeOfOptionalHeader */
     bu16(&out, with_exports ? 0x2022u : 0x0022u);  /* DLL | EXECUTABLE | LARGE */
@@ -190,14 +202,15 @@ static buf build_guest(int with_exports)
     bu16(&out, PE_MAGIC_PE32PLUS);
     bu8(&out, 14); bu8(&out, 0);
     bu32(&out, 0x200); bu32(&out, (uint32_t)rd.len); bu32(&out, 0);
-    bu32(&out, g_call_entry ? 0x1023u : TEXT_VA);   /* AddressOfEntryPoint */
+    bu32(&out, g_with_imports ? IDATA_VA :
+               (g_call_entry ? 0x1023u : TEXT_VA));  /* AddressOfEntryPoint */
     bu32(&out, TEXT_VA);                           /* BaseOfCode */
     bu64(&out, IMAGE_BASE);
     bu32(&out, 0x1000u); bu32(&out, 0x200u);       /* section / file alignment */
     bu16(&out, 6); bu16(&out, 0); bu16(&out, 0); bu16(&out, 0);
     bu16(&out, 6); bu16(&out, 0);
     bu32(&out, 0);
-    bu32(&out, 0x4000u);                           /* SizeOfImage */
+    bu32(&out, g_with_imports ? 0x5000u : 0x4000u); /* SizeOfImage */
     bu32(&out, (uint32_t)hdr);                     /* SizeOfHeaders */
     bu32(&out, 0);                                 /* CheckSum */
     bu16(&out, PE_SUBSYS_GUI); bu16(&out, 0x0160u);
@@ -207,6 +220,9 @@ static buf build_guest(int with_exports)
     bu32(&out, PE_DIR_COUNT);
     for (i = 0; i < PE_DIR_COUNT; i++) {
         if (i == PE_DIR_EXPORT && with_exports) { bu32(&out, RDATA_VA); bu32(&out, 40); }
+        else if (i == PE_DIR_IMPORT && g_with_imports) {
+            bu32(&out, IDATA_VA + 0x40u); bu32(&out, 40);
+        }
         else { bu32(&out, 0); bu32(&out, 0); }
     }
 
@@ -228,6 +244,14 @@ static buf build_guest(int with_exports)
     bu32(&out, 0x200u); bu32(&out, (uint32_t)(hdr + 0x400u));
     bu32(&out, 0); bu32(&out, 0); bu16(&out, 0); bu16(&out, 0);
     bu32(&out, PE_SCN_CNT_INITIALIZED_DATA | PE_SCN_MEM_READ | PE_SCN_MEM_WRITE);
+    if (g_with_imports) {
+        /* .idata */
+        bput(&out, ".idata\0\0", 8);
+        bu32(&out, 0x200u); bu32(&out, IDATA_VA);
+        bu32(&out, 0x200u); bu32(&out, (uint32_t)(hdr + 0x600u));
+        bu32(&out, 0); bu32(&out, 0); bu16(&out, 0); bu16(&out, 0);
+        bu32(&out, PE_SCN_CNT_CODE | PE_SCN_MEM_EXECUTE | PE_SCN_MEM_READ);
+    }
 
     bzero(&out, hdr - btell(&out));
     bput(&out, CODE, sizeof(CODE));
@@ -238,6 +262,31 @@ static buf build_guest(int with_exports)
      * sweep is scanning data, which is exactly what it must not do. */
     bu8(&out, 0xC3);
     bzero(&out, 0x200u - 1u);
+
+    if (g_with_imports) {
+        /* Raw .idata, at file offset hdr + 0x600. The IAT sits in section offset
+         * 0x100, so from the byte after the six-byte call at offset 0 the
+         * displacement is 0x100 - 0x06. The thunk is an ordinal (top bit set) so
+         * the loader does not chase a name RVA through a section that has none. */
+        /* btell is already hdr + 0x600 here: .text, .rdata and .data each pad
+         * themselves out to a full 0x200, so .idata's raw starts exactly here. */
+        bu8(&out, 0xFF); bu8(&out, 0x15);
+        bu32(&out, 0x100u - 0x06u);                   /* call [rip+0xFA] */
+        bu8(&out, 0xC3);
+        bzero(&out, 0x40u - 0x07u);
+        bu32(&out, 0);                                /* OriginalFirstThunk */
+        bu32(&out, 0);                                /* TimeDateStamp    */
+        bu32(&out, 0);                                /* ForwarderChain   */
+        bu32(&out, IDATA_VA + 0x80u);                 /* Name             */
+        bu32(&out, IDATA_VA + 0x100u);                /* FirstThunk (IAT) */
+        bzero(&out, 20);                              /* null descriptor  */
+        bzero(&out, 0x80u - 0x68u);
+        bstr(&out, "test.dll");
+        bzero(&out, 0x100u - 0x89u);
+        bu64(&out, 0x8000000000000001ULL);            /* one ordinal thunk */
+        bu64(&out, 0);                                /* terminator        */
+        bzero(&out, 0x200u - 0x110u);
+    }
 
     free(rd.b);
     return out;
@@ -772,6 +821,120 @@ static void test_guest_call_gets_a_slot(void)
     g_call_entry = 0;
 }
 
+/* An FF /2 import call is the other question the resolver gets asked, and answering
+ * it with the call-table shape is what put a tag into a branch target: the sweep
+ * handed TR_GUEST_CALL to a site that strips only the host-ABI bits, so bit 61 was
+ * materialised into X16 and BLR jumped to the slot offset alone. Sixteen records on
+ * a real 19-module bundle died exactly that way. The fixture here is built the way
+ * real linkers build it - the IAT inside a section marked executable - because
+ * "in an executable section" is what made an import slot look like a function. */
+static void test_import_slot_is_data_not_a_callee(void)
+{
+    rig r;
+    sweep_progress p;
+    size_t slot, slots, found = 0;
+    int saw_host_indirect = 0, saw_table_form = 0, imm_ok = 0;
+    uint32_t iat_rva = IDATA_VA + 0x100u;
+    int iat_in_exec_section = 0;
+    unsigned i;
+
+    printf("an import slot resolves as a host-ABI cell and consumes no call-table slot\n");
+    g_with_imports = 1;
+    rig_setup(&r, 0, "with an import table");
+
+    /* The precondition first. If the fixture did not actually parse an import
+     * directory, every assertion below would pass for the wrong reason - the
+     * resolver would simply never be asked about a slot. */
+    CHECK(r.pe.num_dlls == 1,
+          "the fixture must carry exactly one imported DLL, got %u (%s)",
+          r.pe.num_dlls, r.pe.detail ? r.pe.detail : "no detail");
+    if (r.pe.num_dlls != 1) { rig_teardown(&r); g_with_imports = 0; return; }
+    CHECK(r.pe.dlls[0].iat_rva == iat_rva,
+          "and its IAT must be at RVA 0x%X, got 0x%X", iat_rva, r.pe.dlls[0].iat_rva);
+    CHECK(r.pe.dlls[0].func_count == 1,
+          "with one imported function, got %u", r.pe.dlls[0].func_count);
+
+    /* And the shape that made this a bug at all: the IAT lives in a section the
+     * linker marked executable, so an address test alone cannot tell a thunk from
+     * a function. Stating it is what makes the test about classification rather
+     * than about this fixture happening to put data somewhere non-executable. */
+    for (i = 0; i < r.pe.num_sections; i++) {
+        const pe_section *sc = &r.pe.sections[i];
+        if (iat_rva >= sc->virtual_addr &&
+            iat_rva < sc->virtual_addr + sc->virtual_size &&
+            (sc->characteristics & PE_SCN_MEM_EXECUTE))
+            iat_in_exec_section = 1;
+    }
+    CHECK(iat_in_exec_section,
+          "the IAT must sit in a section marked executable, which is the case that "
+          "made find_exec alone answer 'function' for an import slot");
+
+    CHECK(sweep_add_module(r.job, "test.exe", r.module_id, r.img.b, r.img.len,
+                           &r.pe) == 1,
+          "the module offers exactly one entry point, the import caller");
+    CHECK(sweep_run(r.job, NULL, NULL) == 1, "the sweep should finish uninterrupted");
+    sweep_get_progress(r.job, &p);
+
+    CHECK(p.functions_attempted == 1, "one function, got %u", p.functions_attempted);
+    CHECK(p.functions_translated == 1,
+          "an import call through a known IAT slot is translatable, not a refusal: "
+          "translated %u of %u attempted", p.functions_translated, p.functions_attempted);
+
+    /* The core of it: the slot consumed nothing. A slot here is a promise that
+     * somebody will translate a function at that address, and an import slot is
+     * data - so it would stay empty forever and every call to it would trap. */
+    CHECK(ptc_calltab_count(r.cache) == 0,
+          "an import slot must not be given a call-table slot, got %zu",
+          ptc_calltab_count(r.cache));
+    CHECK(ptc_calltab_find(r.cache, r.module_id, IMAGE_BASE + iat_rva) ==
+              PTC_CALLTAB_NONE,
+          "and the slot address itself must not be findable as a call target");
+
+    /* What the emitted code must do instead: reach the cell through the image
+     * base and branch to whatever the loader put there. MOVZ X17,#rva /
+     * ADD X17,X19,X17 / LDUR X16,[X17] / BLR X16. The MOVZ immediate is decoded
+     * rather than compared against a hand-computed word, so this asserts that the
+     * displacement is the slot's RVA and carries no tag bits. */
+    slots = ptc_record_slots(r.cache);
+    for (slot = 0; slot < slots; slot++) {
+        uint64_t mid = 0, gpc = 0;
+        const void *code = NULL;
+        const uint32_t *ws;
+        uint32_t clen = 0, nw, w;
+        if (!ptc_record_at(r.cache, slot, &mid, &gpc, &code, &clen)) continue;
+        if (mid != r.module_id || gpc != IMAGE_BASE + IDATA_VA) continue;
+        found = 1;
+        ws = (const uint32_t *)code;
+        nw = clen / 4u;
+        for (w = 0; w + 3u <= nw; w++) {
+            /* ADD X17,X19,X17: the table form is 0x8B1102B1 with Rn=21 in bits
+             * 9..5; the import form is the same instruction with Rn=19. */
+            if (ws[w] == 0x8B110271u && ws[w + 1u] == 0xF8400230u &&
+                ws[w + 2u] == 0xD63F0200u) {
+                saw_host_indirect = 1;
+                if (w > 0u && (ws[w - 1u] & 0xFFE0001Fu) == 0xD2800011u &&
+                    ((ws[w - 1u] >> 5) & 0xFFFFu) == iat_rva)
+                    imm_ok = 1;
+            }
+            if (ws[w] == 0x8B1102B1u)
+                saw_table_form = 1;   /* ADD X17,X21,X17: the call-table shape */
+        }
+    }
+    CHECK(found, "the import caller is in the cache");
+    CHECK(saw_host_indirect,
+          "the caller's words must load the cell through the image base "
+          "(ADD X17,X19,X17 / LDUR X16,[X17] / BLR X16)");
+    CHECK(imm_ok,
+          "and the displacement must be the slot's RVA 0x%X with no tag bits in it",
+          iat_rva);
+    CHECK(!saw_table_form,
+          "the caller must not consult the call table for an import: that is the "
+          "shape whose tag ended up inside the branch target");
+
+    rig_teardown(&r);
+    g_with_imports = 0;
+}
+
 int main(int argc, char **argv)
 {
     /* Writes a guest image to disk so prewarm can be run over a real file. The
@@ -779,7 +942,9 @@ int main(int argc, char **argv)
      * tested surface instead of being a program that merely compiles. */
     if (argc >= 3 && strcmp(argv[1], "--write-fixture") == 0) {
         int  with_exports = (argc >= 4 && strcmp(argv[3], "--exports") == 0);
-        buf  f = build_guest(with_exports);
+        buf  f;
+        if (argc >= 5 && strcmp(argv[4], "--imports") == 0) g_with_imports = 1;
+        f = build_guest(with_exports);
         FILE *fp = fopen(argv[2], "wb");
         if (!fp) { perror(argv[2]); free(f.b); return 1; }
         if (fwrite(f.b, 1, f.len, fp) != f.len) {
@@ -787,8 +952,8 @@ int main(int argc, char **argv)
             fclose(fp); free(f.b); return 1;
         }
         fclose(fp);
-        printf("wrote %zu bytes to %s (exports=%d)\n", f.len, argv[2],
-               with_exports);
+        printf("wrote %zu bytes to %s (exports=%d imports=%d)\n", f.len, argv[2],
+               with_exports, g_with_imports);
         free(f.b);
         return 0;
     }
@@ -807,6 +972,7 @@ int main(int argc, char **argv)
     test_exports_past_section();
     test_refusals();
     test_guest_call_gets_a_slot();
+    test_import_slot_is_data_not_a_callee();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

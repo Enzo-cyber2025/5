@@ -444,7 +444,12 @@ void sweep_set_resolver(tr_resolve_fn resolve, void *user)
  *
  * The lookup tables are excluded as well: both are equally data, and a call rel32 into
  * either would be a bug in discovery rather than a function. */
-static int is_import_slot(const smod *m, uint64_t va)
+/* If `va` is one of this module's import thunk slots, report its offset from the
+ * module's own base - which is exactly the displacement the emitted code needs to
+ * reach the slot through X19, since X19 holds the base of the module doing the
+ * calling and an import table belongs to its importer. Returns 0 when `va` is not
+ * a thunk slot; offset 0 is never one, because that is where the DOS header is. */
+static int import_slot_rva(const smod *m, uint64_t va, uint32_t *out_rva)
 {
     uint64_t rva, span;
     size_t   d;
@@ -458,10 +463,11 @@ static int is_import_slot(const smod *m, uint64_t va)
          * so a large iat_rva near the top of the RVA space cannot wrap and make the
          * range test pass for an address that is not in it. */
         span = (uint64_t)dl->func_count * 8u;
-        if (dl->iat_rva && rva >= dl->iat_rva && rva < (uint64_t)dl->iat_rva + span)
+        if ((dl->iat_rva && rva >= dl->iat_rva && rva < (uint64_t)dl->iat_rva + span) ||
+            (dl->ilt_rva && rva >= dl->ilt_rva && rva < (uint64_t)dl->ilt_rva + span)) {
+            *out_rva = (uint32_t)rva;
             return 1;
-        if (dl->ilt_rva && rva >= dl->ilt_rva && rva < (uint64_t)dl->ilt_rva + span)
-            return 1;
+        }
     }
     return 0;
 }
@@ -489,16 +495,31 @@ static uint64_t sweep_resolve_any(uint64_t va, void *user)
         if (!in_span(m, va))
             continue;
         rva = (uint32_t)(va - m->base);
+        /* The resolver answers two different questions through one callback, and
+         * which one is being asked is visible only in the address. An FF /2 import
+         * asks about a thunk slot; a call rel32 asks about a function. Answering the
+         * first with the second's shape is what puts a tag into a branch target.
+         *
+         * Checked before find_exec, because "inside a section marked executable" is
+         * necessary and nowhere near sufficient: real linkers put import tables in
+         * executable sections, so an IAT slot is indistinguishable from a call target
+         * by address alone. Answering it as a function assigned ~498 slots that could
+         * never be filled and, worse, handed the import site a TR_GUEST_CALL that the
+         * emitted code materialised into the branch register.
+         *
+         * The right answer for a thunk slot is the host-ABI indirect form: load the
+         * cell at X19 + rva and branch to whatever the loader put there. That is the
+         * same shape shim_resolve returns for the imports it implements, so an
+         * unimplemented one lands on the BRK stub - a trap, counted and honest -
+         * instead of refusing the whole caller. */
+        if (import_slot_rva(m, va, &rva))
+            return (uint64_t)rva | TR_ABI_HOST | TR_ABI_INDIRECT;
+
         sec = find_exec(m->pe, rva, &within);
         /* A call into a non-executable section is not a call to a function, and
          * giving it a slot would put a trap stub where the caller expects code.
          * Refusing it keeps the reason honest: the target is not code. */
         if (!sec)
-            continue;
-        /* Inside an executable section is necessary and not sufficient. The resolver is
-         * also asked about import slots by the FF /2 path, and those are data whatever
-         * section the linker put them in. See is_import_slot. */
-        if (is_import_slot(m, va))
             continue;
 
         slot = ptc_calltab_find(j->cache, m->module_id, va);
