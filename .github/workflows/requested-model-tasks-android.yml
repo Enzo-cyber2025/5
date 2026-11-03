@@ -14,6 +14,16 @@ on:
       - 'ci/gemma4-models.sh'
       - 'tests/android-text-binary/**'
   workflow_dispatch:
+    inputs:
+      variant:
+        description: Model variant to test (use both for the full matrix)
+        required: true
+        type: choice
+        options:
+          - both
+          - gemma4-e2b
+          - gemma3-270m
+        default: both
 permissions:
   contents: write
 jobs:
@@ -23,13 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - variant: gemma4-e2b
-            ram: 12288M
-            disk: 16384M
-          - variant: gemma3-270m
-            ram: 6144M
-            disk: 8192M
+        variant: ${{ inputs.variant == 'gemma3-270m' && fromJSON('["gemma3-270m"]') || inputs.variant == 'gemma4-e2b' && fromJSON('["gemma4-e2b"]') || fromJSON('["gemma4-e2b","gemma3-270m"]') }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
@@ -112,9 +116,9 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_5
-          ram-size: ${{ matrix.ram }}
+          ram-size: ${{ matrix.variant == 'gemma4-e2b' && '12288M' || '6144M' }}
           heap-size: 1024M
-          disk-size: ${{ matrix.disk }}
+          disk-size: ${{ matrix.variant == 'gemma4-e2b' && '16384M' || '8192M' }}
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated -camera-front emulated
           script: python3 scripts/test_requested_model_tasks_android.py

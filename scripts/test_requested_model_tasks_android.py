@@ -99,6 +99,13 @@ def confirm_in_app_termux_command(device, command, stage):
             "confirmation_driver": "CI tapped the explicit confirmation controls"}
 
 
+def bridge_log_tail(device):
+    log = device.adb("logcat", "-d", check=False)
+    relevant = [line for line in log.splitlines()
+                if re.search(r"Termux|RUN_COMMAND|RunCommand|GGUFTermux|SecurityException|Permission Denial", line, re.I)]
+    return "\n".join(relevant[-60:])[-9000:]
+
+
 def ask_for_command(device, model, prompt, expected, stage, summary):
     """Execute only an exact command proposed by the latest assistant message."""
     summary["checks"][stage] = {"prompt": prompt, "expected_command": expected,
@@ -134,17 +141,18 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
     record["confirmation"] = confirm_in_app_termux_command(device, selected, stage)
     record["in_app_termux_review_dialog"] = True
     record["execution_invoked"] = True
-    bridge = summary["checks"].setdefault("app_mediated_termux_handoff", {
-        "status": "PASS", "review_and_confirmation_required": True,
-        "stdout_automatically_returned_to_model": False, "validated_stages": []})
-    bridge["status"] = "PASS"
-    bridge["validated_stages"].append(stage)
 
     completion = (TERMUX_HOME + "/model-audit-output.txt" if stage == "folder_termux_access"
                   else TERMUX_HOME + "/box64-install.status" if stage == "box64_install_attempt"
                   else TERMUX_HOME + "/text-binary/build.exit")
+    started = (completion if stage == "folder_termux_access"
+               else TERMUX_HOME + "/box64-install.started" if stage == "box64_install_attempt"
+               else TERMUX_HOME + "/text-binary/build.started")
+    record["started_file"] = started
     record["completion_file"] = completion
     try:
+        device.wait(lambda: device.shell("test -f " + shlex.quote(started) + " && echo started", check=False) == "started",
+                    "execução iniciada no Termux: " + stage, timeout=90)
         completion_timeout = 2400 if stage == "termux_compile_text_to_binary_apk" else 900
         device.wait(lambda: device.shell("test -f " + shlex.quote(completion) + " && echo done", check=False) == "done",
                     "resultado do comando no Termux: " + stage, timeout=completion_timeout)
@@ -153,6 +161,20 @@ def ask_for_command(device, model, prompt, expected, stage, summary):
     except AssertionError as exc:
         record["status"] = "TERMUX_OUTPUT_FILE_NOT_CREATED"
         record["execution_error"] = str(exc)
+        record["run_command_logcat_tail"] = bridge_log_tail(device)
+    bridge = summary["checks"].setdefault("app_mediated_termux_handoff", {
+        "status": "PENDING", "review_and_confirmation_required": True,
+        "stdout_automatically_returned_to_model": False, "validated_stages": [],
+        "failed_stages": []})
+    if record["executed"]:
+        bridge["status"] = "PASS"
+        if stage not in bridge["validated_stages"]:
+            bridge["validated_stages"].append(stage)
+    else:
+        bridge["failed_stages"].append(stage)
+        if not bridge["validated_stages"]:
+            bridge["status"] = "FAIL"
+        bridge["failure_log_tail"] = record.get("run_command_logcat_tail", "")
     summary["checks"][stage] = record
     return record if record["executed"] else None
 
@@ -376,7 +398,8 @@ def main():
         device.shell(f"pm revoke {PACKAGE} com.termux.permission.RUN_COMMAND", check=False)
         summary["checks"]["app_mediated_termux_handoff"] = {
             "status": "PENDING", "review_and_confirmation_required": True,
-            "stdout_automatically_returned_to_model": False, "validated_stages": []
+            "stdout_automatically_returned_to_model": False,
+            "validated_stages": [], "failed_stages": []
         }
 
         folder = prepare_termux_folder(device)
@@ -391,9 +414,9 @@ def main():
             output = device.shell("cat " + shlex.quote(TERMUX_HOME + "/model-audit-output.txt")).strip()
             assert output == folder["file_content"], {"expected": folder["file_content"], "actual": output}
             record["shell_output"] = output
-            description_prompt = ("This folder has only one file, only-note.txt. Exact file text: " + output
-                                  + ". Describe what is inside, include the filename, and copy the identifier exactly.")
-            description_chat = device.new_chat(model, 0, context_size=1024, threads=2, n_predict=32)
+            description_prompt = ("The only file is only-note.txt. Its text is exactly: " + output
+                                  + " In one sentence, name the file and repeat the full identifier BLUE-LANTERN-5831.")
+            description_chat = device.new_chat(model, 0, context_size=1024, threads=2, n_predict=96)
             try:
                 description = reply(device, description_chat, description_prompt,
                                     VARIANT + "-describe-folder-output", timeout=1200)
@@ -435,6 +458,7 @@ def main():
         summary["checks"]["text_to_binary_project_staged_in_termux_home"] = "PASS"
         box_script = TERMUX_HOME + "/install-box64.sh"
         box_script_body = ("#!/data/data/com.termux/files/usr/bin/bash\n"
+                           "printf 'started\\n' > \"$HOME/box64-install.started\"\n"
                            "pkg install -y box64 > \"$HOME/box64-install.log\" 2>&1\n"
                            "status=$?\n"
                            "printf '%s\\n' \"$status\" > \"$HOME/box64-install.status\"\n"
