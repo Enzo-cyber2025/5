@@ -614,6 +614,13 @@ typedef enum {
     FC_IN_STACK,        /* inside the arena's usable pages */
     FC_IN_GUARD,        /* the arena's PROT_NONE guard: walked off the guest stack */
     FC_IN_CODE,         /* inside emitted code: a branch or a load went to the wrong place */
+    /* The stub every unfilled call-table slot points at. Its own region because it is
+     * the one fault here that is a feature working: the sweep found a callee, nobody
+     * translated it, and the call stopped on a deliberate trap instead of branching to
+     * whatever the slot happened to hold. Without this category those faults land in
+     * FC_ELSEWHERE - the stub is a separate mmap that no placed body covers - and read
+     * as "the emitted words invented a pointer", which is the opposite conclusion. */
+    FC_UNTRANSLATED,
     FC_ELSEWHERE,       /* none of the above: the emitted words invented this pointer */
     FC_COUNT
 } fault_class;
@@ -626,6 +633,7 @@ static const char *fault_class_name(fault_class c)
     case FC_IN_STACK:  return "inside the guest stack";
     case FC_IN_GUARD:  return "on the guest stack's guard page";
     case FC_IN_CODE:   return "inside emitted code";
+    case FC_UNTRANSLATED: return "on the untranslated-call stub";
     case FC_ELSEWHERE: return "nowhere this process mapped for the guest";
     case FC_COUNT:     break;
     }
@@ -651,13 +659,17 @@ typedef struct {
 static fault_class classify_addr(uint64_t addr, void *const *bases,
                                  const size_t *bsizes, int nmods,
                                  const gs_arena *a,
-                                 const placed_fn *pf, size_t nplaced)
+                                 const placed_fn *pf, size_t nplaced,
+                                 const void *trap, size_t trap_len)
 {
     int    i;
     size_t q;
+    uint64_t tb = (uint64_t)(uintptr_t)trap;
 
     if (addr < 0x10000u)
         return FC_NULLISH;
+    if (trap && addr >= tb && addr < tb + trap_len)
+        return FC_UNTRANSLATED;
     for (i = 0; i < nmods; i++) {
         uint64_t b;
         if (!bases[i]) continue;
@@ -854,7 +866,7 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
              * CI assertion greps for, which takes the LAST match of each pattern. */
             if (fm.magic == FAULT_MAGIC) {
                 fault_class fc = classify_addr(fm.addr, bases, bsizes, nmods, &a,
-                                               pf, nplaced);
+                                               pf, nplaced, trap, trap_len);
                 fc_hist[fc]++;
                 if (fm.signo == SIGTRAP) fc_trap[fc]++;
                 else                     fc_other[fc]++;
