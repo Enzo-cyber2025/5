@@ -963,6 +963,23 @@ static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods
         }
     }
 
+    /* A PE's declared image base is a preference, and two modules are free to
+     * declare the same one - then their guest VA ranges coincide exactly, and every
+     * test that asks "which module owns this address" answers with whichever module
+     * came first. The translator no longer depends on that answer for a module's own
+     * import cells, but the sweep's span tests and this harness's cell lookup still
+     * do, so the collision is reported rather than left to be inferred from a fault. */
+    {   int a2, b2, colliding = 0, pairs = 0;
+        for (a2 = 0; a2 < nmods; a2++)
+            for (b2 = a2 + 1; b2 < nmods; b2++)
+                if (pes[a2].image_base == pes[b2].image_base) { pairs++; colliding = 1; }
+        if (colliding)
+            printf("  modules declaring a colliding image base: %d pair(s) - guest VAs "
+                   "are not unique across modules\n", pairs);
+        else
+            printf("  modules declaring a colliding image base: none\n");
+    }
+
     /* After every module is mapped, because a cell in one module can be called by
      * code translated from another, and stubbing needs the mapping to write into. */
     {   size_t orphan = 0, claimed = 0, over = sweep_import_cell_overflow(job);
@@ -977,6 +994,37 @@ static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods
         if (orphan)
             printf("  a recorded cell mapped to no module: the sweep only answers cells "
                    "inside a module, so this is a bug in one of the two\n");
+        /* Read the cells back. Writing a stub and having a stub are not the same
+         * statement, and the only thing standing between a reachable import call and
+         * a branch to whatever the file left in the cell is the value actually in it
+         * now. Counted rather than assumed, with the first few offenders named. */
+        {   size_t c, unsafe = 0, shown = 0;
+            uint64_t stubval = (uint64_t)(uintptr_t)trap;
+            for (c = 0; c < sweep_import_cell_count(job); c++) {
+                uint64_t va = sweep_import_cell_at(job, c);
+                int      m, ok = 0;
+                for (m = 0; m < nmods; m++) {
+                    uint64_t ib = pes[m].image_base;
+                    uint64_t got;
+                    if (va < ib || va - ib + 8u > (uint64_t)bsizes[m]) continue;
+                    memcpy(&got, (const uint8_t *)bases[m] + (va - ib), sizeof got);
+                    if (got == stubval ||
+                        shim_resolve(va, TR_Q_IMPORT_CELL, NULL) != 0)
+                        ok = 1;
+                    break;
+                }
+                if (ok) continue;
+                unsafe++;
+                if (shown++ < 4u)
+                    printf("  cell still holds file data: guest VA 0x%llX\n",
+                           (unsigned long long)va);
+            }
+            printf("  import cells verified safe: %zu of %zu recorded",
+                   sweep_import_cell_count(job) - unsafe,
+                   sweep_import_cell_count(job));
+            if (unsafe) printf(", %zu NOT SAFE", unsafe);
+            printf("\n");
+        }
     }
 
     ct_n = ptc_calltab_count(cache);

@@ -3781,6 +3781,81 @@ static void test_nop(void)
     }
 }
 
+/* An import cell inside the caller's own image needs no resolver at all. This is the
+ * property the 128 refusals on a real bundle were missing: they were refused because
+ * no resolver answered, and no resolver answered because the cell was in no import
+ * range the loader parses. But the displacement is knowable at the call site - it is
+ * the cell's offset from the image base, which is exactly what X19 will hold - and a
+ * RIP-relative FF /2 landing inside this module is an import call by construction.
+ *
+ * It is also the only version of this that is unambiguous. "Which module owns this
+ * address" cannot be answered from the address when two modules declare the same
+ * preferred image base, because then their guest VA ranges coincide exactly; the
+ * caller's own image base has no such problem. */
+static void test_import_cell_needs_no_resolver(void)
+{
+    /* call [rip+0xFFA] ; ret - from IMAGE_BASE+0x1006 that reaches IMAGE_BASE+0x2000 */
+    static const uint8_t in_img[] = { 0xFF,0x15, 0xFA,0x0F,0,0, 0xC3 };
+    /* call [rip+0x4000] ; ret - from IMAGE_BASE+0x1006 that reaches IMAGE_BASE+0x5006,
+     * past the 0x3000-byte image this test supplies. The displacement is written out
+     * rather than derived: an earlier version of this control meant to land outside
+     * the image and actually landed at RVA 0x2100, comfortably inside it, so the
+     * control passed by testing the in-image path twice. */
+    static const uint8_t out_img[] = { 0xFF,0x15, 0x00,0x40,0,0, 0xC3 };
+    tr_func   f;
+    tr_status st;
+    size_t    k;
+    int       saw_indirect = 0, imm_ok = 0;
+
+    printf("an import cell inside the caller's own image needs no resolver\n");
+
+    st = tr_translate_function_img(in_img, sizeof(in_img), IMAGE_BASE + 0x1000u, 0u,
+                                   IMAGE_BASE, 0x3000u, NULL, NULL, &f);
+    CHECK(st == TR_OK,
+          "a cell inside the caller's image is translatable with no resolver installed, "
+          "got %s (%s)", tr_status_name(st), f.detail ? f.detail : "?");
+    if (st != TR_OK) return;
+
+    /* The displacement must be the cell's offset from the image base and nothing else:
+     * MOVZ X17,#0x2000 / ADD X17,X19,X17 / LDUR X16,[X17] / BLR X16. Decoded rather
+     * than compared against a hand-computed word, because the point is the number and
+     * not its encoding. */
+    for (k = 0; k + 3u <= f.n; k++) {
+        if (f.words[k] == 0x8B110271u && f.words[k + 1u] == 0xF8400230u &&
+            f.words[k + 2u] == 0xD63F0200u) {
+            saw_indirect = 1;
+            if (k > 0u && (f.words[k - 1u] & 0xFFE0001Fu) == 0xD2800011u &&
+                ((f.words[k - 1u] >> 5) & 0xFFFFu) == 0x2000u)
+                imm_ok = 1;
+        }
+    }
+    CHECK(saw_indirect,
+          "the cell must be reached through the image base (ADD X17,X19,X17 / "
+          "LDUR X16,[X17] / BLR X16), not called directly");
+    CHECK(imm_ok, "and the displacement must be the cell's RVA 0x2000");
+
+    /* Control one: without an image base there is nothing to reach the cell through,
+     * so this must stay a refusal. Without it, "always emit the indirect form" would
+     * pass the checks above and emit a load through a register holding nothing. */
+    st = tr_translate_function(in_img, sizeof(in_img), IMAGE_BASE + 0x1000u,
+                               NULL, NULL, &f);
+    CHECK(st != TR_OK,
+          "with no image base supplied the cell is unreachable and must be refused, "
+          "got %s", tr_status_name(st));
+
+    /* Control two: a cell outside the image is not the caller's own, so the same
+     * reasoning does not apply and the refusal must stand. This is what keeps the
+     * in-image case from becoming a blanket rule that loads from anywhere. */
+    st = tr_translate_function_img(out_img, sizeof(out_img), IMAGE_BASE + 0x1000u, 0u,
+                                   IMAGE_BASE, 0x3000u, NULL, NULL, &f);
+    CHECK(st != TR_OK,
+          "a cell outside the image must not be reached through the image base, got %s",
+          tr_status_name(st));
+    CHECK(st == TR_OK || f.iat_va == IMAGE_BASE + 0x5006u,
+          "and the refusal must name the cell it could not reach, got 0x%llX",
+          (unsigned long long)f.iat_va);
+}
+
 static void test_mov_imm_to_stack(void)
 {
     /* mov qword [rsp+0x10], 0x1234 ; ret */
@@ -4043,6 +4118,7 @@ int main(void)
     test_mov_imm_to_stack();
     test_nop();
     test_resolver_tag_mismatch();
+    test_import_cell_needs_no_resolver();
     test_guest_to_guest_call();
     test_pipeline();
 #if defined(__aarch64__)

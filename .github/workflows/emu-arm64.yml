@@ -834,6 +834,9 @@ jobs:
           why=$(grep -E 'stopped because:|distinct reason' /tmp/game.log \
                 | head -12 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1400)
           echo "::notice title=game-refusalreasons::${why}"
+          cells=$(grep -E 'import cells|colliding image base|cell still holds' /tmp/game.log \
+                  | head -10 | tr '\n' '|' | tr -d '%\r' | tr -s ' ' | cut -c1-1400)
+          echo "::notice title=game-importcells::${cells}"
           # The call table is the number that says whether guest-to-guest calls work
           # on a real binary rather than in a test. "slots" is how many call rel32
           # targets the sweep resolved, "filled" how many of them ended up with

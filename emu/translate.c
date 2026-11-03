@@ -765,23 +765,49 @@ static tr_status plan_one(const uint8_t *code, size_t code_len, uint32_t off,
             return TR_UNSUPPORTED;
         }
         host = resolve ? resolve(iat_va, TR_Q_IMPORT_CELL, user) : 0;
-        if (host == 0) {
-            out->iat_va = iat_va;
-            out->reason = TRR_NEEDS_TARGET; out->detail = "no host address known for this import slot yet";
-            return TR_NEEDS_TARGET;
-        }
-        /* Refuse an answer carrying a tag this site does not handle. It used to strip
-         * the two it knew and emit whatever was left, so a resolver that answered an
-         * import question with a call-table slot produced a branch to
-         * TR_GUEST_CALL | slot_offset - the tag surviving the mask as part of the
-         * address. Written against TR_ABI_TAG_MASK rather than against TR_GUEST_CALL so
-         * that a fourth tag added later is refused here instead of emitted. */
-        if (host & ((uint64_t)TR_ABI_TAG_MASK &
-                    ~((uint64_t)TR_ABI_HOST | (uint64_t)TR_ABI_INDIRECT))) {
-            out->reason = TRR_NEEDS_TARGET;
-            out->detail = "the resolver answered an import slot with a tag this call "
-                          "site does not handle";
-            return TR_UNSUPPORTED;
+
+        /* Whether the cell is the caller's own. A RIP-relative FF /2 that lands
+         * inside this module's image is an import call by construction, and its
+         * offset from the image base is knowable right here without asking anybody.
+         * That matters for a reason no resolver can fix: "which module owns this
+         * address" is not answerable from the address alone, because a PE's declared
+         * image base is a preference and two modules are free to declare the same
+         * one - then their guest VA ranges coincide exactly and any span test picks
+         * whichever module came first. The caller's own image_base_va has no such
+         * ambiguity, and it is the value the emitted code will have in X19. */
+        {
+            int      own_cell = image_base_va != 0 && image_size != 0 &&
+                                iat_va >= image_base_va &&
+                                (iat_va - image_base_va) + 8u <= image_size;
+            uint64_t own_rva  = iat_va - image_base_va;
+
+            if (host == 0) {
+                if (!own_cell) {
+                    out->iat_va = iat_va;
+                    out->reason = TRR_NEEDS_TARGET;
+                    out->detail = "no host address known for this import slot yet";
+                    return TR_NEEDS_TARGET;
+                }
+                /* Nobody answered, and nobody has to. The cell is this module's own,
+                 * so load it through X19 and call whatever the loader put there. */
+                host = own_rva | TR_ABI_HOST | TR_ABI_INDIRECT;
+            }
+            if (host & ((uint64_t)TR_ABI_TAG_MASK &
+                        ~((uint64_t)TR_ABI_HOST | (uint64_t)TR_ABI_INDIRECT))) {
+                out->reason = TRR_NEEDS_TARGET;
+                out->detail = "the resolver answered an import slot with a tag this call "
+                              "site does not handle";
+                return TR_UNSUPPORTED;
+            }
+            if ((host & TR_ABI_INDIRECT) != 0u && own_cell) {
+                /* For an indirect cell the constant is a displacement from X19, so
+                 * only the caller-relative offset can be correct. A resolver that
+                 * computed it against some other module's declared base - which is
+                 * what a colliding preferred base makes it do - is not wrong about
+                 * the tags and is unreachably wrong about the number. */
+                host = own_rva | (host & ((uint64_t)TR_ABI_HOST |
+                                          (uint64_t)TR_ABI_INDIRECT));
+            }
         }
         p->host_abi  = (host & TR_ABI_HOST) != 0u;
         p->indirect  = (host & TR_ABI_INDIRECT) != 0u;
