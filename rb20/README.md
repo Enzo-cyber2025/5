@@ -12,9 +12,18 @@ Mod de carro de F1 2024 inspirado no **RB20**, com modelo 3D original feito em
 
 ## 📦 Download
 
-`rb20/download/RB20_AssettoCorsa.zip` — veja o link direto na resposta final /
-na Release do GitHub. O ZIP contém `content/cars/arb_rb20/` pronta para extrair
-na raiz do Assetto Corsa, mais `LEIA-ME.txt`, `VALIDACAO.md` e `REFERENCIAS.md`.
+**Link direto (Release, gerado pelo runner do GitHub Actions):**
+
+https://github.com/Enzo-cyber2025/5/releases/download/rb20-v1.0/RB20_AssettoCorsa.zip
+
+Espelho no branch: `rb20/download/RB20_AssettoCorsa.zip` (609.500 bytes,
+SHA-256 `7d4a2453e2958758111f377a37dfcb5e1a378c6aad7aee61801014e2866e636f`).
+
+O ZIP contém `content/cars/arb_rb20/` pronta para extrair na raiz do Assetto
+Corsa, mais `LEIA-ME.txt`, `VALIDACAO.md` e `REFERENCIAS.md`. O KN5 entregue
+tem 32.604 triângulos (o Bevel/WeightedNormal do Blender aumentou a malha de
+9.336 triângulos da geometria base), 127 objetos, 9 texturas DDS DXT1 e apenas
+o shader vanilla `ksPerPixel`.
 
 ## 🎮 Instalação
 
