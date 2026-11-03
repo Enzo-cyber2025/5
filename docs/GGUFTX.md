@@ -56,23 +56,9 @@ funcional.
   `RUN_COMMAND`/“Allow external apps” habilitado; a
   saída fica no próprio Termux e não é devolvida automaticamente à IA. Comandos
   simples sem fence são limitados a uma linha; scripts multilinha devem vir num
-  bloco de código e continuam sujeitos à revisão humana. Os runs [41544525019](https://github.com/Enzo-cyber2025/5/actions/runs/41544525019)
-  e [41554605496](https://github.com/Enzo-cyber2025/5/actions/runs/41554605496)
-  agora exercitam o candidato atual com Gemma 4 E2B e Gemma 3 270M, respectivamente,
-  por texto e sem exigir chamadas nativas de ferramentas. Para ambos, o CI observou
-  a revisão do comando, a confirmação de permissão Android e execução do build do
-  APK no Termux; o APK de teste instalou e converteu `A` em `01000001`. Gemma 4
-  também executou o comando de leitura da pasta; Gemma 3 não chegou a esse comando
-  porque a inferência expirou. O instalador Box64 foi tentado por ambos, mas o
-  Termux x86_64 não encontrou o pacote (`exit 100`). Como Box64 é um emulador de
-  x86_64 sobre ARM64, foi acrescentado um workflow separado para testar em
-  Termux/Android ARM64 o release comunitário `v0.4.5-termux.1`; o script reduzido
-  foi revisado, fixa o SHA-256 `0dae8257ac7396db4766721e5e4f317679b2080752d32e90d4e6e6fdfee467cf`
-  e instala apenas `box64` (não o launcher comercial `dragon`). A primeira
-  tentativa com imagem ARM64 sobre host x86 expirou antes do boot do emulador; o
-  workflow foi transferido para um host macOS ARM64, aguardando nova execução.
-  Até ela concluir, isso é apenas uma tentativa pendente — não prova de instalação.
-  Esse teste arquitetural separado não será apresentado como ação feita pelo modelo.
+  bloco de código e continuam sujeitos à revisão humana. No rerun [41691161767](https://github.com/Enzo-cyber2025/5/actions/runs/41691161767), Gemma 4 E2B e Gemma 3 270M usaram texto simples, sem chamadas nativas de ferramentas; ambos passaram pelo diálogo de revisão/permissão, leram a pasta isolada de um TXT e descreveram seu identificador. Os dois builds no Termux terminaram com `exit 0`, instalaram o APK de teste e converteram `A` em `01000001`. Os relatórios funcionais continuam `PARTIAL` porque `pkg install box64` falhou com `exit 100` em Termux x86_64. Os zeros não são infinitos: contexto observado finito de 131.072 tokens (Gemma 4) e 32.768 (Gemma 3); orçamento de saída restante também finito. O histórico/configuração do chat sobreviveu ao reinício, mas não há opção de armazenamento explícito do contexto nem prova de persistência do KV cache.
+
+  Box64 precisa de host ARM64 para emular x86_64. O workflow separado fixa o release comunitário ARM64 `v0.4.5-termux.1` e SHA-256 `0dae8257ac7396db4766721e5e4f317679b2080752d32e90d4e6e6fdfee467cf`, depois executa apenas `box64 --version` (não instala o launcher comercial `dragon`). As tentativas [41688469902](https://github.com/Enzo-cyber2025/5/actions/runs/41688469902) (host x86) e [41692500040](https://github.com/Enzo-cyber2025/5/actions/runs/41692500040) (host macOS ARM64) expiraram antes do boot do emulador Android ARM64; não comprovam instalação. Esse teste arquitetural separado não será apresentado como ação feita pelo modelo.
   Uma atualização de espelho Termux trouxe `aapt2` antigo (13.x) no job Gemma 4,
   que recusou o `android.jar` API 35; o script de build agora fixa o endpoint oficial
   `packages-cf.termux.dev` e atualiza os índices antes de instalar, aguardando nova
