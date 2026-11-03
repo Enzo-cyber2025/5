@@ -60,8 +60,15 @@ verifica a busca ao vivo em português e inglês, mas ainda aguarda CI.
   APK no Termux; o APK de teste instalou e converteu `A` em `01000001`. Gemma 4
   também executou o comando de leitura da pasta; Gemma 3 não chegou a esse comando
   porque a inferência expirou. O instalador Box64 foi tentado por ambos, mas o
-  Termux x86_64 não encontrou o pacote (`exit 100`). O CI automatiza os toques nos
-  controles explícitos de confirmação; isso não é uma ação silenciosa. Os APKs
+  Termux x86_64 não encontrou o pacote (`exit 100`). Como Box64 é um emulador de
+  x86_64 sobre ARM64, foi acrescentado um workflow separado para testar em
+  Termux/Android ARM64 o release comunitário `v0.4.5-termux.1`; o script reduzido
+  foi revisado, fixa o SHA-256 `0dae8257ac7396db4766721e5e4f317679b2080752d32e90d4e6e6fdfee467cf`
+  e instala apenas `box64` (não o launcher comercial `dragon`). Até o workflow
+  concluir, isso é apenas uma tentativa pendente — não prova de instalação. Esse
+  teste arquitetural separado não será apresentado como ação feita pelo modelo.
+  O CI automatiza os toques nos controles explícitos de confirmação; isso não é
+  uma ação silenciosa. Os APKs
   testados foram candidatos unsigned com assinatura descartável só para emulador,
   não atualizações assinadas para instalação pública. A saída do Termux continua
   sem retorno automático ao modelo. A execução irrestrita continua desativada:

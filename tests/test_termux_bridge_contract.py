@@ -51,6 +51,19 @@ def test_requested_folder_command_and_description_retry_without_bypassing_the_mo
     assert 'github.event_name == \'push\' && fromJSON(\'["gemma4-e2b","gemma3-270m"]\')' in workflow
 
 
+def test_box64_arm64_smoke_test_pins_reviewed_third_party_payload_and_uses_termux_ui():
+    installer = (ROOT / "tests/box64-termux/install-box64-arm64.sh").read_text()
+    smoke = (ROOT / "scripts/test_box64_termux_arm64.py").read_text()
+    workflow = (ROOT / ".github/workflows/box64-termux-arm64.yml").read_text()
+    assert 'TAG="v0.4.5-termux.1"' in installer
+    assert 'SHA256="0dae8257ac7396db4766721e5e4f317679b2080752d32e90d4e6e6fdfee467cf"' in installer
+    assert '"$(uname -m)" != "aarch64"' in installer
+    assert '"input", "text", "bash%strun-box64-arm64-test.sh"' in smoke
+    assert '"app_mediated_model_handoff": False' in smoke
+    assert "arch: arm64-v8a" in workflow
+    assert "system-images;android-35;google_apis;arm64-v8a" in workflow
+
+
 def test_android_harness_runs_app_before_termux_bootstrap_and_recovers_launcher_anr():
     script = (ROOT / "scripts/test_tool_integrations_android.py").read_text()
     main = script[script.index("def main():"):]
