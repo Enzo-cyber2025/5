@@ -1,0 +1,96 @@
+name: RB20 AC mod - Blender + telemetry physics
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/f4e7ed77-5]
+    paths:
+      - 'rb20/**'
+      - '.github/workflows/rb20-mod.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Model in Blender, calibrate, build KN5 and ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: System libraries required by headless Blender (bpy)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libxrender1 libxi6 libsm6 libice6 libxfixes3 libxt6 \
+            libgl1 libglx0 libopengl0 libxkbcommon0 libegl1 libgl1-mesa-dri
+
+      - name: Install Blender (bpy) and Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install bpy==4.5.4 pillow numpy matplotlib
+          python -c "import bpy; print('Blender', bpy.app.version_string)"
+
+      - name: MODEL THE CAR IN BLENDER (headless bpy)
+        run: python rb20/tools/blender_model.py --out rb20/out
+
+      - name: Calibrate physics from real 2024 F1 telemetry
+        run: |
+          python rb20/tools/calibrate.py \
+            --telemetry rb20/telemetry/VER_2024_Bahrain_Q.csv \
+            --car-dir rb20/out/content/cars/arb_rb20
+
+      - name: Build vanilla KN5 models and DXT1 textures
+        run: |
+          python rb20/tools/make_kn5.py \
+            --mesh rb20/out/mesh.json \
+            --car-dir rb20/out/content/cars/arb_rb20 \
+            --skins-dir rb20/out/content/cars/arb_rb20/skins/default
+
+      - name: Render skin preview and UI badge (CPU)
+        run: |
+          python rb20/tools/render_preview.py \
+            --mesh rb20/out/mesh.json \
+            --car-dir rb20/out/content/cars/arb_rb20
+
+      - name: Offline physics validation against telemetry
+        run: |
+          python rb20/tools/physics_sim.py \
+            --car-dir rb20/out/content/cars/arb_rb20 \
+            --telemetry rb20/telemetry/VER_2024_Bahrain_Q.csv \
+            --out rb20/out/validation
+
+      - name: Package installable ZIP
+        run: |
+          python rb20/tools/make_package.py \
+            --car-dir rb20/out/content/cars/arb_rb20 \
+            --validation rb20/out/validation/validation_report.json \
+            --references rb20/references/REFERENCES.md \
+            --zip rb20/download/RB20_AssettoCorsa.zip
+
+      - name: Gate - structure, vanilla headers, no CSP, physics checks
+        run: |
+          python rb20/tools/validate.py \
+            --car-dir rb20/out/content/cars/arb_rb20 \
+            --validation rb20/out/validation/validation_report.json \
+            --zip rb20/download/RB20_AssettoCorsa.zip \
+            --out rb20/out/validate_report.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rb20-mod
+          if-no-files-found: error
+          path: |
+            rb20/download/RB20_AssettoCorsa.zip
+            rb20/download/RB20_AssettoCorsa.sha256
+            rb20/out/mesh.json
+            rb20/out/arb_rb20.blend
+            rb20/out/arb_rb20.fbx
+            rb20/out/validation/validation.png
+            rb20/out/validation/validation_report.json
+            rb20/out/validate_report.json

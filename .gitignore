@@ -17,3 +17,15 @@ node_modules/
 
 # Private persistent signing material; never upload it.
 .signing/
+
+# RB20 mod build outputs (the shipped ZIP in rb20/download IS committed)
+rb20/out/
+rb20/**/*.blend
+rb20/**/*.fbx
+*.sha256
+
+# Local scratch: downloaded references, venv, format-study repos
+.work/
+image-search/
+__pycache__/
+*.pyc
