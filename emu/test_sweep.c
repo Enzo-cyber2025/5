@@ -1090,6 +1090,62 @@ static void test_call_rel32_at_an_import_slot_gets_no_slot(void)
     g_call_the_slot = 0;
 }
 
+/* Two modules that declare the same image base - which is what a PE's ImageBase is,
+ * a preference, and nineteen modules in a real bundle produced 120 colliding pairs.
+ * Their guest VA ranges then coincide exactly, so "which module owns this address"
+ * has no answer from the address, and a span search returns whichever module was
+ * registered first. That is wrong most of the time rather than occasionally, and it
+ * is invisible unless the slot's module id is checked: with identical images the
+ * translation is identical too, so the wrong attribution still produces working code
+ * in a test and broken code in a bundle where the modules differ.
+ *
+ * The module being translated is the one thing that does know, so attribution starts
+ * there. */
+static void test_colliding_image_bases_attribute_to_the_caller(void)
+{
+    rig a, b;
+    sweep_progress p;
+    uint64_t mid2 = 0, sa, sb;
+
+    printf("colliding image bases attribute a call target to the calling module\n");
+    g_call_entry = 1;
+    rig_setup(&a, 0, "first.dll");
+    rig_setup(&b, 0, "second.dll");
+    CHECK(a.pe.image_base == b.pe.image_base,
+          "the fixture must collide on purpose: 0x%llX vs 0x%llX",
+          (unsigned long long)a.pe.image_base, (unsigned long long)b.pe.image_base);
+    CHECK(ptc_add_module(a.cache, "second.dll", b.img.len, 1u,
+                         ptc_hash_bytes(b.img.b, b.img.len), &mid2) == 0,
+          "the second module registers");
+    CHECK(mid2 != a.module_id, "and gets its own id");
+    CHECK(sweep_add_module(a.job, "first.dll", a.module_id, a.img.b, a.img.len,
+                           &a.pe) == 1, "first module offers the caller");
+    CHECK(sweep_add_module(a.job, "second.dll", mid2, b.img.b, b.img.len, &b.pe) == 1,
+          "second module offers the caller");
+    CHECK(sweep_run(a.job, NULL, NULL) == 1, "the sweep should finish uninterrupted");
+    sweep_get_progress(a.job, &p);
+
+    /* Each module's callee is its own: same guest VA, different module id, so two
+     * slots. Attributing both to the first module registered collapses them into one
+     * and leaves the second module's caller pointing at a slot keyed to a module it
+     * does not belong to - which is a slot no record of that module ever fills. */
+    sa = ptc_calltab_find(a.cache, a.module_id, VA_CALLEE);
+    sb = ptc_calltab_find(a.cache, mid2, VA_CALLEE);
+    CHECK(sa != PTC_CALLTAB_NONE, "the first module's callee has a slot");
+    CHECK(sb != PTC_CALLTAB_NONE,
+          "the second module's callee must have its own slot, attributed to the "
+          "module that called it");
+    CHECK(sa != sb, "and the two slots must be distinct, both got %llu",
+          (unsigned long long)sa);
+    CHECK(ptc_calltab_count(a.cache) == 2,
+          "two callees in two modules is two slots, got %zu",
+          ptc_calltab_count(a.cache));
+
+    rig_teardown(&a);
+    rig_teardown(&b);
+    g_call_entry = 0;
+}
+
 int main(int argc, char **argv)
 {
     /* Writes a guest image to disk so prewarm can be run over a real file. The
@@ -1130,6 +1186,7 @@ int main(int argc, char **argv)
     test_import_slot_is_data_not_a_callee();
     test_call_rel32_at_an_import_slot_gets_no_slot();
     test_refusal_details_are_counted_exactly();
+    test_colliding_image_bases_attribute_to_the_caller();
     printf("\n%d checks, %d failure(s)\n", checks, failures);
     return failures ? 1 : 0;
 }

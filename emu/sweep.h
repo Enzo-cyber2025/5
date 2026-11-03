@@ -168,8 +168,8 @@ uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
  * world than the one it measured. */
 #define SWEEP_DETAIL_MAX 48u
 
-/* Every import cell a translated function was made to call through, as a guest VA,
- * in the order the sweep met them. The emitted code loads the target out of the cell
+/* Every import cell a translated function was made to call through, as a module id
+ * and an offset within it, in the order the sweep met them. The emitted code loads the target out of the cell
  * at run time and that load is safe - the cell is inside the mapped image - but
  * nothing checks what the cell holds. A cell the loader never filled still contains
  * the file's raw value, an RVA or a name pointer, and branching to it is a fault in
@@ -177,13 +177,20 @@ uint32_t sweep_top_opcode(const sweep_job *j, uint32_t rank,
  * of hoping for it: every cell reachable from translated code holds either a known
  * host function or a trap stub.
  *
+ * Not a guest VA, because a guest VA cannot be turned back into a module: a declared
+ * image base is a preference, two modules may declare the same one, and then their
+ * guest VA ranges coincide exactly. A module id is the one unambiguous handle on a
+ * mapping, and it is what the harness that stubs these cells selects by - it has to
+ * write into the same mapping the executing code will read, and that code gets its
+ * base from the record's module.
+ *
  * Entries repeat when several functions call the same import, which they usually do.
  * Stubbing is idempotent, so deduplicating here would cost a lookup on every resolve
- * to save a redundant store. sweep_import_cell_at returns 0 past the end; a real cell
- * is never at guest VA 0. */
+ * to save a redundant store. sweep_import_cell_at returns 0 past the end. */
 #define SWEEP_CELL_MAX 65536u
 size_t   sweep_import_cell_count(const sweep_job *j);
-uint64_t sweep_import_cell_at(const sweep_job *j, size_t i);
+int      sweep_import_cell_at(const sweep_job *j, size_t i,
+                              uint64_t *out_module_id, uint64_t *out_rva);
 size_t   sweep_import_cell_overflow(const sweep_job *j);
 uint32_t    sweep_detail_kinds(const sweep_job *j);
 uint32_t    sweep_detail_overflow(const sweep_job *j);

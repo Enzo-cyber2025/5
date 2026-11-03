@@ -78,7 +78,18 @@ struct sweep_job {
      * translated code holds either a known host function or the trap stub.
      * Duplicates are kept, because writing a stub is idempotent and deduplicating
      * here would cost a lookup on the hot path to save a redundant store. */
-    uint64_t   *cells;  size_t ncells, capcells, cell_overflow;
+    struct { uint64_t module_id, rva; } *cells;
+    size_t ncells, capcells, cell_overflow;
+
+    /* Which module is being translated right now, so a resolve can attribute an
+     * address to it. A declared image base is a preference and modules collide:
+     * nineteen modules in a real bundle produced 120 colliding pairs, so "which
+     * module owns this guest VA" has no answer from the address alone and a span
+     * search returns whichever module was registered first. The translator is the
+     * one thing that does know, and its own image base is what the emitted code
+     * will have in X19 - so attribution starts there and only falls back to a
+     * search for an address genuinely outside it. */
+    size_t cur_mod; int cur_mod_valid;
     uint32_t    refused_at_first_insn;
     uint32_t    refused_deeper;
     uint32_t    deepest_refusal;
@@ -519,79 +530,73 @@ static void detail_note(sweep_job *j, const char *text)
  * rather than dropped: the harness stubs what is on this list, so a silent cap
  * would leave reachable cells holding whatever the file had, and the failure would
  * arrive as a fault in a child process with no connection to the reason. */
-static void cell_push(sweep_job *j, uint64_t va)
+static void cell_push(sweep_job *j, const smod *m, uint64_t rva)
 {
     if (j->ncells >= j->capcells) {
-        size_t   want = j->capcells ? j->capcells * 2 : 256;
-        uint64_t *n = (uint64_t *)realloc(j->cells, want * sizeof(*n));
+        size_t want = j->capcells ? j->capcells * 2 : 256;
+        void  *n = realloc(j->cells, want * sizeof(*j->cells));
         if (!n) { j->cell_overflow++; return; }
         j->cells = n;
         j->capcells = want;
     }
     if (j->ncells >= SWEEP_CELL_MAX) { j->cell_overflow++; return; }
-    j->cells[j->ncells++] = va;
+    /* Recorded as (module, offset), not as a guest VA. A guest VA cannot be turned
+     * back into a module when bases collide, and the harness that stubs these cells
+     * has to write into the mapping the executing code will actually read - which it
+     * selects by module id, the one unambiguous handle on a mapping. */
+    j->cells[j->ncells].module_id = m->module_id;
+    j->cells[j->ncells].rva       = rva;
+    j->ncells++;
 }
 
-static uint64_t sweep_resolve_any(uint64_t va, tr_question q, void *user)
+/* Answer one question about one candidate module, or return 0 when this module has
+ * nothing to say about the address. Kept per-module so the caller can decide the
+ * order modules are asked in, which is the part that matters: with colliding image
+ * bases every module whose span contains the address is a plausible answer and only
+ * one of them is the module whose X19 the emitted code will run with. */
+static uint64_t answer_from(sweep_job *j, size_t i, uint64_t va, tr_question q)
 {
-    sweep_job *j = (sweep_job *)user;
-    uint64_t   ans;
-    size_t     i;
+    const smod *m = &j->mods[i];
+    uint64_t    rva;
 
-    if (sweep_resolve) {
-        ans = sweep_resolve(va, q, sweep_resolve_user);
-        if (ans)
-            return ans;
-    }
-    if (!j || !j->cache)
+    if (!in_span(m, va))
         return 0;
+    rva = va - m->base;
 
-    /* The import question gets its own answer, and it does not go through find_exec
-     * at all. A cell is data by definition; whether the linker put it in a section
-     * marked executable is irrelevant to what the emitted code has to do with it,
-     * which is load from X19 + rva and branch. Requiring executability here is what
-     * made the answer depend on a section flag, and requiring membership of a
-     * parsed IAT is what left 128 functions on a real bundle refused - their cells
-     * are inside the image but in no import range this loader parses, and the cell
-     * form is still the correct answer for them.
+    /* The import question does not go through find_exec at all. A cell is data by
+     * definition; whether the linker put it in a section marked executable is
+     * irrelevant to what the emitted code does with it, which is load from X19 + rva
+     * and branch. Requiring executability made the answer depend on a section flag,
+     * and requiring membership of a parsed IAT left 128 functions on a real bundle
+     * refused - their cells are inside the image but in no import range this loader
+     * parses, and the cell form is still the correct answer for them.
      *
-     * Bounded to the image, because the emitted load is not bounds-checked and
-     * X19 + rva has to be mapped. */
+     * Bounded to the image, because the emitted load is not bounds-checked. */
     if (q == TR_Q_IMPORT_CELL) {
-        for (i = 0; i < j->nmods; i++) {
-            const smod *m = &j->mods[i];
-            if (!in_span(m, va))
-                continue;
-            cell_push(j, va);
-            return (uint64_t)(va - m->base) | TR_ABI_HOST | TR_ABI_INDIRECT;
-        }
-        return 0;
+        cell_push(j, m, rva);
+        return rva | TR_ABI_HOST | TR_ABI_INDIRECT;
     }
 
-    for (i = 0; i < j->nmods; i++) {
-        const smod *m = &j->mods[i];
+    /* A `call rel32` aimed at an import slot is malformed guest code, but a
+     * malformed binary is input rather than a licence: giving eight bytes of pointer
+     * a call-table slot promises a translation that cannot exist and leaves the slot
+     * on the trap stub forever, which reads in the report as a coverage gap. */
+    {
+        uint32_t srva = (uint32_t)rva;
+        if (import_slot_rva(m, va, &srva))
+            return 0;
+    }
+
+    {
         const pe_section *sec;
-        uint32_t within = 0, rva;
+        uint32_t within = 0;
         uint64_t slot;
 
-        if (!in_span(m, va))
-            continue;
-        rva = (uint32_t)(va - m->base);
-        /* Still guarded, even though the import question is answered above and never
-         * reaches here. A `call rel32` aimed at an import slot is malformed guest
-         * code, but a malformed guest binary is input, not a licence: giving that
-         * address a call-table slot would promise a translation of a function that
-         * is eight bytes of pointer, and the slot would stay on the trap stub
-         * forever while looking like a coverage gap. */
-        if (import_slot_rva(m, va, &rva))
-            continue;
-
-        sec = find_exec(m->pe, rva, &within);
+        sec = find_exec(m->pe, (uint32_t)rva, &within);
         /* A call into a non-executable section is not a call to a function, and
-         * giving it a slot would put a trap stub where the caller expects code.
-         * Refusing it keeps the reason honest: the target is not code. */
+         * giving it a slot would put a trap stub where the caller expects code. */
         if (!sec)
-            continue;
+            return 0;
 
         slot = ptc_calltab_find(j->cache, m->module_id, va);
         if (slot != PTC_CALLTAB_NONE)
@@ -612,6 +617,40 @@ static uint64_t sweep_resolve_any(uint64_t va, tr_question q, void *user)
         if (!entry_push(j, (uint32_t)i, va))
             return 0;
         return slot * 8u | TR_GUEST_CALL;
+    }
+}
+
+static uint64_t sweep_resolve_any(uint64_t va, tr_question q, void *user)
+{
+    sweep_job *j = (sweep_job *)user;
+    uint64_t   ans;
+    size_t     i;
+
+    if (sweep_resolve) {
+        ans = sweep_resolve(va, q, sweep_resolve_user);
+        if (ans)
+            return ans;
+    }
+    if (!j || !j->cache)
+        return 0;
+
+    /* The module being translated is asked first, and only it can be right about an
+     * address inside its own span: the RVA the emitted code uses is relative to the
+     * base that module's records run with, and a slot is keyed by module id, so an
+     * address attributed to the wrong module produces a slot no record ever fills.
+     * With nineteen modules producing 120 colliding pairs, "first registered" was
+     * wrong most of the time rather than occasionally. */
+    if (j->cur_mod_valid && j->cur_mod < j->nmods) {
+        ans = answer_from(j, j->cur_mod, va, q);
+        if (ans)
+            return ans;
+    }
+    for (i = 0; i < j->nmods; i++) {
+        if (j->cur_mod_valid && i == j->cur_mod)
+            continue;
+        ans = answer_from(j, i, va, q);
+        if (ans)
+            return ans;
     }
     return 0;
 }
@@ -651,10 +690,12 @@ static int translate_entry(sweep_job *j, uint32_t mi, uint64_t va)
      * module reaches its own globals - resolve to an RVA at translation time and
      * get bounded against the image. size_of_image of 0, from a malformed header,
      * leaves them refused rather than unbounded. */
+    j->cur_mod = mi; j->cur_mod_valid = 1;
     st = tr_translate_function_img(m->image + sec->raw_ptr, (size_t)sec->raw_size,
                                    m->base + sec->virtual_addr, within,
                                    m->base, m->pe ? m->pe->size_of_image : 0u,
                                    sweep_resolve_any, j, &f);
+    j->cur_mod_valid = 0;
     if (st != TR_OK) {
         tr_reason r = (f.reason < TRR_COUNT) ? f.reason : TRR_INTERNAL;
         j->reason_hist[r]++;
@@ -762,10 +803,13 @@ size_t sweep_import_cell_count(const sweep_job *j)
     return j->ncells < SWEEP_CELL_MAX ? j->ncells : SWEEP_CELL_MAX;
 }
 
-uint64_t sweep_import_cell_at(const sweep_job *j, size_t i)
+int sweep_import_cell_at(const sweep_job *j, size_t i,
+                         uint64_t *out_module_id, uint64_t *out_rva)
 {
     if (!j || i >= j->ncells) return 0;
-    return j->cells[i];
+    if (out_module_id) *out_module_id = j->cells[i].module_id;
+    if (out_rva)       *out_rva       = j->cells[i].rva;
+    return 1;
 }
 
 size_t sweep_import_cell_overflow(const sweep_job *j)

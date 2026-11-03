@@ -763,7 +763,8 @@ static size_t stub_unknown_iat(const pe_image *im, uint8_t *base, size_t sz,
  * Cells the sweep could not record because the list was full are counted and
  * reported, because those are reachable calls left holding file data and the number
  * says how much of the invariant this does not actually cover. */
-static size_t stub_recorded_cells(const sweep_job *job, const pe_image *pes,
+static size_t stub_recorded_cells(const sweep_job *job, const uint64_t *mids,
+                                  const pe_image *pes,
                                   void *const *bases, const size_t *bsizes,
                                   int nmods, const void *stub,
                                   size_t *out_orphan, size_t *out_claimed)
@@ -773,27 +774,37 @@ static size_t stub_recorded_cells(const sweep_job *job, const pe_image *pes,
 
     cells = sweep_import_cell_count(job);
     for (i = 0; i < cells; i++) {
-        uint64_t va = sweep_import_cell_at(job, i);
-        int      m;
-        int      placed = 0;
+        uint64_t mid = 0, rva = 0, va;
+        int      m, placed = 0;
 
-        if (shim_resolve(va, TR_Q_IMPORT_CELL, NULL) != 0) {
-            claimed++;          /* shim_fill_iat already wrote a host address here */
+        if (!sweep_import_cell_at(job, i, &mid, &rva))
             continue;
-        }
+        /* The mapping is selected by module id, the only unambiguous handle on one.
+         * Selecting it by asking which declared image base contains a guest VA is
+         * what made the previous version of this write its stub into a different
+         * module's mapping and then read it back from the same wrong place - a
+         * verification that agreed with itself and with nothing that executed. */
         for (m = 0; m < nmods; m++) {
-            uint64_t ib = pes[m].image_base;
-            uint64_t rva;
-            if (va < ib || va - ib + 8u > (uint64_t)bsizes[m])
+            if (mids[m] != mid || !bases[m])
                 continue;
-            rva = va - ib;
+            va = pes[m].image_base + rva;
+            if (shim_resolve(va, TR_Q_IMPORT_CELL, NULL) != 0) {
+                claimed++;      /* shim_fill_iat already wrote a host address here */
+                placed = 1;
+                break;
+            }
+            if (rva + 8u > (uint64_t)bsizes[m]) {
+                orphan++;       /* the sweep only answers cells inside the image */
+                placed = 1;
+                break;
+            }
             memcpy((uint8_t *)bases[m] + rva, &stubval, sizeof stubval);
             n++;
             placed = 1;
             break;
         }
         if (!placed)
-            orphan++;   /* the sweep only answers cells inside a module, so this is a bug */
+            orphan++;   /* no mapping for a module the sweep translated: a real bug */
     }
     if (out_orphan)  *out_orphan  = orphan;
     if (out_claimed) *out_claimed = claimed;
@@ -983,8 +994,8 @@ static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods
     /* After every module is mapped, because a cell in one module can be called by
      * code translated from another, and stubbing needs the mapping to write into. */
     {   size_t orphan = 0, claimed = 0, over = sweep_import_cell_overflow(job);
-        cells_stubbed = stub_recorded_cells(job, pes, (void *const *)bases, bsizes,
-                                            nmods, trap, &orphan, &claimed);
+        cells_stubbed = stub_recorded_cells(job, mids, pes, (void *const *)bases,
+                                            bsizes, nmods, trap, &orphan, &claimed);
         printf("  import cells translated code calls through: %zu recorded, %zu stubbed, "
                "%zu owned by a shim", sweep_import_cell_count(job), cells_stubbed,
                claimed);
@@ -1001,23 +1012,26 @@ static void execute_translated(ptc_cache *cache, const sweep_job *job, int nmods
         {   size_t c, unsafe = 0, shown = 0;
             uint64_t stubval = (uint64_t)(uintptr_t)trap;
             for (c = 0; c < sweep_import_cell_count(job); c++) {
-                uint64_t va = sweep_import_cell_at(job, c);
+                uint64_t mid = 0, rva = 0, got = 0;
                 int      m, ok = 0;
+                if (!sweep_import_cell_at(job, c, &mid, &rva)) continue;
                 for (m = 0; m < nmods; m++) {
-                    uint64_t ib = pes[m].image_base;
-                    uint64_t got;
-                    if (va < ib || va - ib + 8u > (uint64_t)bsizes[m]) continue;
-                    memcpy(&got, (const uint8_t *)bases[m] + (va - ib), sizeof got);
+                    if (mids[m] != mid || !bases[m]) continue;
+                    if (rva + 8u > (uint64_t)bsizes[m]) break;
+                    memcpy(&got, (const uint8_t *)bases[m] + rva, sizeof got);
                     if (got == stubval ||
-                        shim_resolve(va, TR_Q_IMPORT_CELL, NULL) != 0)
+                        shim_resolve(pes[m].image_base + rva, TR_Q_IMPORT_CELL,
+                                     NULL) != 0)
                         ok = 1;
                     break;
                 }
                 if (ok) continue;
                 unsafe++;
                 if (shown++ < 4u)
-                    printf("  cell still holds file data: guest VA 0x%llX\n",
-                           (unsigned long long)va);
+                    printf("  cell still holds file data: module 0x%llX rva 0x%llX, "
+                           "holds 0x%llX\n",
+                           (unsigned long long)mid, (unsigned long long)rva,
+                           (unsigned long long)got);
             }
             printf("  import cells verified safe: %zu of %zu recorded",
                    sweep_import_cell_count(job) - unsafe,
