@@ -851,7 +851,7 @@ jobs:
           # bytes, and an aggregate cannot support it - the 86 above-the-stack faults
           # were explained as a runaway stack pointer for exactly that long.
           od=$(grep -aE '^  non-trap fault detail:' /tmp/game.log | tr '\n' ' ' | tr -s ' ' | cut -c1-1400)
-          echo "::notice title=game-n trapdetail::${od:-no non-trap faults, so nothing to detail}"
+          echo "::notice title=game-trapdetail::${od:-no non-trap faults, so nothing to detail}"
           exit 0
 
   api-surface:
