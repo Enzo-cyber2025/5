@@ -398,6 +398,18 @@ typedef struct {
     uint32_t pad;
     uint64_t addr;      /* si_addr: what the faulting instruction tried to reach */
     uint64_t pc;        /* the faulting instruction itself */
+    /* The registers the emitted call sequence actually uses. Added because reasoning
+     * about this ran out of things to distinguish: sixteen records faulted with pc
+     * equal to addr equal to 0x380, 0x388, 0x390, 0x398, 0x3A0, 0x3A8 and 0x3B0 -
+     * seven consecutive multiples of eight, which are call-table SLOT BYTE OFFSETS
+     * (slots 112 to 118), not import RVAs as they first looked. Control was arriving
+     * at the offset itself, so either the table base register was zero and the offset
+     * was used as an address, or the slot load read somewhere unintended. Those are
+     * different bugs and no amount of looking at the address alone separates them,
+     * while one register dump does: X21 is the table base, X17 the computed slot
+     * address, X16 the value loaded out of it and the branch target, X30 the return
+     * address the caller's BLR set. */
+    uint64_t x16, x17, x21, x30, sp;
 } fault_msg;
 
 /* Written from a signal handler, so only async-signal-safe calls: write and _exit.
@@ -422,7 +434,15 @@ static void fault_handler(int signo, siginfo_t *si, void *uc)
      * A compiler defining __aarch64__ genuinely never defines __x86_64__, so the pair
      * separates "the aarch64 code path" from "an aarch64 toolchain". */
 #if defined(__aarch64__) && !defined(__x86_64__)
-    if (uc) m.pc = (uint64_t)((ucontext_t *)uc)->uc_mcontext.pc;
+    if (uc) {
+        const mcontext_t *mc = &((ucontext_t *)uc)->uc_mcontext;
+        m.pc  = (uint64_t)mc->pc;
+        m.x16 = (uint64_t)mc->regs[16];
+        m.x17 = (uint64_t)mc->regs[17];
+        m.x21 = (uint64_t)mc->regs[21];
+        m.x30 = (uint64_t)mc->regs[30];
+        m.sp  = (uint64_t)mc->sp;
+    }
 #endif
     if (fd >= 0) {
         ssize_t w = write(fd, &m, sizeof m);
@@ -1002,10 +1022,15 @@ static void execute_translated(ptc_cache *cache, int nmods, const uint64_t *mids
                         else
                             other_len += (size_t)snprintf(other_detail + other_len,
                                         sizeof other_detail - other_len,
-                                        "%spc=%llX (no body) addr=%llX",
+                                        "%spc=%llX(no body) X21=%llX X17=%llX X16=%llX "
+                                        "X30=%llX sp=%llX",
                                         other_n ? " | " : "",
                                         (unsigned long long)fm.pc,
-                                        (unsigned long long)fm.addr);
+                                        (unsigned long long)fm.x21,
+                                        (unsigned long long)fm.x17,
+                                        (unsigned long long)fm.x16,
+                                        (unsigned long long)fm.x30,
+                                        (unsigned long long)fm.sp);
                         other_n++;
                     }
                 } else {
