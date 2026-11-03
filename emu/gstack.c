@@ -41,6 +41,18 @@ int gs_alloc(size_t bytes, gs_arena *a)
         snprintf(errbuf, sizeof errbuf, "arena size %zu overflowed when rounded", bytes);
         return 0;
     }
+    /* Added ON TOP of what was asked for, not taken out of it. The headroom is the
+     * caller's frame, which is not part of the guest's stack, so charging it against the
+     * request would shrink the stack the caller asked for - and for a one-page request
+     * it would leave none at all, putting top on the first usable byte so that the first
+     * push faulted on the low guard. That is what happened when the headroom grew to a
+     * page: two arena tests failed on "the first slot below the top", which is the
+     * assertion catching a real consequence rather than a stale expectation. */
+    if (usable + GS_TOP_HEADROOM < usable) {
+        snprintf(errbuf, sizeof errbuf, "arena size %zu overflowed with headroom", bytes);
+        return 0;
+    }
+    usable += GS_TOP_HEADROOM;
     /* One guard page on each side. The low guard is the one that matters: a
      * stack grows down, so a runaway guest function walks off the bottom. The
      * high guard catches a pop or a positive displacement past the top, which
@@ -84,6 +96,8 @@ int gs_alloc(size_t bytes, gs_arena *a)
      * 16 preserves it, and the mask states the invariant instead of relying on it. */
     a->top         = ((uint64_t)(uintptr_t)(p + pg + usable) - GS_TOP_HEADROOM)
                      & ~(uint64_t)15u;
+    /* usable already includes the headroom, so top sits exactly that far below the high
+     * end and every byte the caller asked for is below top. */
     a->guards      = 1;
     errbuf[0] = '\0';
     return 1;

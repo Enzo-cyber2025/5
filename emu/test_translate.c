@@ -1260,6 +1260,15 @@ static void test_guest_stack_arena(void)
           "return address its caller pushed, so this address must be readable");
     CHECK(gs_contains(&a, a.top + 8u) == 1,
           "[rsp+8] must be readable too: that is the caller's argument home space");
+    /* The displacement that actually faulted on a real module: eleven functions read
+     * their fifth argument at a positive displacement from the initial RSP and died on
+     * the first byte past a 64-byte window. Arguments past the fourth are pushed by the
+     * caller, so a callee reads them above its own RSP on entry. */
+    CHECK(gs_contains(&a, a.top + 0x40u) == 1,
+          "[rsp+0x40] must be readable: that is where a callee finds a fifth argument, "
+          "and 11 functions on a real module faulted there");
+    CHECK(gs_contains(&a, a.top + GS_TOP_HEADROOM - 8u) == 1,
+          "the whole headroom must be readable, not just its first slots");
     CHECK(gs_contains(&a, a.top + GS_TOP_HEADROOM) == 0,
           "the headroom above the initial RSP must end before the guard page does, or "
           "it is not headroom");

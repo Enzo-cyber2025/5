@@ -34,10 +34,28 @@
 #ifndef GSTACK_H
 #define GSTACK_H
 
-/* Bytes of readable stack left above the initial guest RSP. 64 covers the return
- * address plus the 32-byte argument home space a callee may reach above it, rounded
- * up to a multiple of 16 so the initial RSP stays aligned. */
-#define GS_TOP_HEADROOM 64u
+/* Bytes of readable stack left above the initial guest RSP - the caller's frame, which
+ * this harness does not have. A page rather than the 64 bytes it started at, and the
+ * measurement is what chose the number.
+ *
+ * 64 covers the return address plus the 32-byte home space for the four register
+ * arguments, which is everything a callee can reach when its caller passed four
+ * arguments or fewer. It does not cover a fifth. In the x86-64 convention arguments
+ * past the fourth are pushed by the caller and read by the callee at positive
+ * displacements from its own RSP, so a function taking five or more arguments reads
+ * above that 64-byte window on entry - before executing a single one of its own
+ * instructions. On a real game module, eleven separate functions faulted at the very
+ * same address, the first byte past the window, which is what a fixed displacement
+ * like [rsp+0x40] looks like when eleven callers all read their fifth argument.
+ *
+ * A page covers those reads and any plausible incoming-argument displacement. The bytes
+ * are whatever the mapping holds - zero, for a fresh anonymous mmap - so such a function
+ * reads a null incoming argument and proceeds instead of dying on its prologue. That is
+ * not the argument it would really have been passed, and it is not claimed to be: the
+ * alternative is a fault that reports nothing about the function. Marshalling real
+ * arguments onto the guest stack is a separate, larger piece of work; this stops the
+ * absence of it from looking like a crash. */
+#define GS_TOP_HEADROOM 4096u
 
 #include <stddef.h>
 #include <stdint.h>
