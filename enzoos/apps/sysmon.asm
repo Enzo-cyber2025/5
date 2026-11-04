@@ -144,6 +144,7 @@ label_at:                       ; edi=x esi=y rdx=str r8d=cor (comprimento fixo)
         push rsi
         push rdx
         push r8
+        mov rdi, rdx              ; slen mede a STRING (rdx), não a coordenada
         call slen
         mov ecx, eax
         pop r8

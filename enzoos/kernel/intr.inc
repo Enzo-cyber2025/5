@@ -115,6 +115,18 @@ IRQ_STUB 14
 IRQ_STUB 15
 
 int80_stub:
+        ; ABI Linux-like: rax entra com o nº e sai com o retorno; TODOS os
+        ; demais registradores são preservados (o syscall real só cloberra
+        ; rcx/r11, mas binários traduzidos assumem o mínimo garantido)
+        push rax
+        push rcx
+        push rdx
+        push rsi
+        push rdi
+        push r8
+        push r9
+        push r10
+        push r11
         push rbx
         push rbp
         push r12
@@ -123,12 +135,22 @@ int80_stub:
         push r15
         cld
         call sys_int80
+        xchg rax, [rsp + 14*8]     ; guarda o retorno no slot do rax antigo
         pop r15
         pop r14
         pop r13
         pop r12
         pop rbp
         pop rbx
+        pop r11
+        pop r10
+        pop r9
+        pop r8
+        pop rdi
+        pop rsi
+        pop rdx
+        pop rcx
+        pop rax                     ; rax = retorno do syscall
         iretq
 
 isr_ignore:
@@ -320,6 +342,96 @@ exc_handler:
         ; call r12 — como se o app tivesse retornado normalmente
         cmp dword [app_dispatching], 0
         je .not_app
+        ; ---- diagnóstico no serial: frame completo ----
+        push rdi
+        push rbx
+        mov rax, rdi
+        mov [exc_d_frame], rax
+        mov rax, [rdi + 14*8]
+        mov [exc_d_vec], rax
+        mov rax, [rdi + 15*8]
+        mov [exc_d_err], rax
+        mov rax, [rdi + 16*8]
+        mov [exc_d_rip], rax
+        mov rax, cr2
+        mov [exc_d_cr2], rax
+        mov rax, [rdi + 10*8]
+        mov [exc_d_r12], rax
+        mov rax, [rdi + 1*8]
+        mov [exc_d_rbx], rax
+        mov rax, [rdi + 11*8]
+        mov [exc_d_r13], rax
+        lea rbx, [rel s_xd0]
+        call k_log_str
+        mov rdi, [exc_d_frame]
+        call k_log_hex
+        lea rbx, [rel s_xd1]
+        call k_log_str
+        mov rdi, [exc_d_vec]
+        call k_log_hex
+        lea rbx, [rel s_xd2]
+        call k_log_str
+        mov rdi, [exc_d_rip]
+        call k_log_hex
+        lea rbx, [rel s_xd7]
+        call k_log_str
+        mov rdi, [exc_d_err]
+        call k_log_hex
+        lea rbx, [rel s_xd3]
+        call k_log_str
+        mov rdi, [exc_d_cr2]
+        call k_log_hex
+        lea rbx, [rel s_xd4]
+        call k_log_str
+        mov rdi, [exc_d_r12]
+        call k_log_hex
+        lea rbx, [rel s_xd5]
+        call k_log_str
+        mov rdi, [exc_d_rbx]
+        call k_log_hex
+        lea rbx, [rel s_xd6]
+        call k_log_str
+        mov rdi, [exc_d_r13]
+        call k_log_hex
+        ; slots 5..9 (rdi, r8, r9, r10, r11)
+        lea rbx, [rel s_xd8]
+        call k_log_str
+        mov rdi, [exc_d_frame]
+        mov rdi, [rdi + 5*8]
+        call k_log_hex
+        mov rdi, [exc_d_frame]
+        mov rdi, [rdi + 6*8]
+        call k_log_hex
+        mov rdi, [exc_d_frame]
+        mov rdi, [rdi + 9*8]
+        call k_log_hex
+        ; ---- pilha do app no instante da exceção (cadeia de retornos) ----
+        ; o caminho de app troca para a pilha de emergência e só replica
+        ; vec/err/rip no frame — o rsp REAL do momento da falta está em
+        ; [exc_rsp0] (salvo pelo exc_common antes da troca). Acima dele:
+        ; rip+rflags empurrados pela CPU; acima ainda, os pushes do app.
+        mov rsi, [exc_rsp0]
+        test rsi, rsi
+        jz .stkdone
+        lea rbx, [rel s_xd9]
+        call k_log_str
+        mov rdi, rsi
+        call k_log_hex
+        xor ecx, ecx
+.stkloop:
+        cmp ecx, 20
+        jae .stkdone
+        push rcx
+        push rsi
+        mov rdi, [rsi + 16 + rcx*8]
+        call k_log_hex
+        pop rsi
+        pop rcx
+        inc ecx
+        jmp .stkloop
+.stkdone:
+        pop rbx
+        pop rdi
         mov edi, [cur_slot]
         mov esi, s_app_crash
         call app_diag_kill
@@ -590,6 +702,25 @@ rtc_hour:  dd 0
 rtc_day:   dd 0
 rtc_month: dd 0
 rtc_year:  dd 0
+
+s_xd0: db "[exc] frame=", 0
+s_xd1: db "[exc] vec=", 0
+s_xd2: db "[exc] rip=", 0
+s_xd3: db "[exc] cr2=", 0
+s_xd4: db "[exc] r12=", 0
+s_xd5: db "[exc] rbx=", 0
+s_xd6: db "[exc] r13=", 0
+s_xd7: db "[exc] err=", 0
+s_xd8: db "[exc] rdi/r8/r11=", 0
+s_xd9: db "[exc] stk=", 0
+exc_d_frame: dq 0
+exc_d_err: dq 0
+exc_d_vec: dq 0
+exc_d_rip: dq 0
+exc_d_cr2: dq 0
+exc_d_r12: dq 0
+exc_d_rbx: dq 0
+exc_d_r13: dq 0
 
 align 8
 exc_table:

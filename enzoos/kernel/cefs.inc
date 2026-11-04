@@ -476,8 +476,26 @@ app_dispatch:
         mov rsp, APP_STACK_TOP
         sub rsp, rcx
         inc dword [app_dispatching]   ; contador: dispatch aninhado (exec)
+        mov eax, [app_drew_seq]       ; snapshot: desenhos antes do app
+        mov [app_drew_snap], eax
         call r12
         dec dword [app_dispatching]
+        ; o app desenhou (api_use_win incrementou)? -> danifica a janela:
+        ; sem isto o buffer era atualizado mas o compose nunca recompunha
+        ; a região na tela — só a criação da janela aparecia (bug da LOJA
+        ; / FOX: teclas mudavam o conteúdo e a tela ficava congelada)
+        mov eax, [app_drew_seq]
+        cmp eax, [app_drew_snap]
+        je .nodraw
+        mov edi, [cur_slot]
+        imul rdi, rdi, A_SIZEOF
+        lea rax, [app_slots]
+        add rdi, rax
+        mov rbx, [rdi + A_WND]
+        test rbx, rbx
+        jz .nodraw
+        call wnd_damage
+.nodraw:
         mov eax, [app_rsp_depth]
         dec eax
         mov [app_rsp_depth], eax
@@ -720,6 +738,7 @@ api_use_win:
         mov eax, [rbx + W_H]
         dec eax
         mov [api_ch], eax
+        inc dword [app_drew_seq]          ; o app desenhou nesta passada
         mov rax, rbx
         pop rbx
         pop r11
@@ -1292,6 +1311,8 @@ APP_NEST_MAX  equ 4                        ; app -> exec -> app -> exec
 app_rsp_depth:  dd 0
 app_rsp_stack:  times APP_NEST_MAX dq 0
 app_dispatching: dd 0                      ; >0 = dentro de call r12 (excecao = kill do app)
+app_drew_seq:  dd 0                       ; contador de draws (api_use_win)
+app_drew_snap: dd 0                       ; valor no início do dispatch
 
 align 8
 ; registro imutável de launch: (img, npages) por slot — usado no
