@@ -16,8 +16,8 @@ Mod de F1 2024 inspirado no **RB20**, com modelo 3D original feito em
 
 https://github.com/Enzo-cyber2025/5/releases/download/rb20-v1.0/RB20_AssettoCorsa.zip
 
-Espelho no branch: `rb20/download/RB20_AssettoCorsa.zip` (2.074.869 bytes,
-SHA-256 `3c945a00da1f4650d73ca041263a0dd3e60e73fd2df00b37e43df11ee34ed995`).
+Espelho no branch: `rb20/download/RB20_AssettoCorsa.zip` (2.258.269 bytes,
+SHA-256 `4cac80fc0969ab02d88a4580603c24240c3cd0081f4be9fad60d8bf5806a429c`).
 O asset da Release é sempre o ZIP reconstruído pelo Actions (modelado no
 Blender). O ZIP contém `content/cars/arb_rb20/` pronta para extrair na raiz do
 AC, mais `LEIA-ME.txt`, `VALIDACAO.md` e `REFERENCIAS.md`.
@@ -143,8 +143,8 @@ checkout → setup-python 3.11 → apt (libs X/GL) → pip install bpy==4.5.4
 
 `tools/features.py` é chamado ao final de `calibrate.py` e escreve todos os
 arquivos nativos de ERS/DRS/compostos de chuva, além de atualizar `ui_car.json`
-e `calibration.json`. O KN5 é gerado a partir da saída do Blender (33.252
-triângulos com Bevel/WeightedNormal, 133 objetos, 10 texturas DXT1) e o
+e `calibration.json`. O KN5 é gerado a partir da saída do Blender (33.684
+triângulos com Bevel/WeightedNormal, 137 objetos, 10 texturas DXT1) e o
 build deriva os três LODs reduzidos a partir da mesma malha.
 
 ---
