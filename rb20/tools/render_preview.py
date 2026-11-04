@@ -160,6 +160,10 @@ def main():
     small.thumbnail((320, 180))
     small.save(os.path.join(ui, "preview_small.png"))
     print("wrote", os.path.join(ui, "preview_small.png"))
+    # Standard Kunos UI variants are derived from our own badge/preview only
+    # after those exist (this step runs after calibrate).
+    import vanilla_extras
+    vanilla_extras.write_ui_extras(args.car_dir)
 
 
 if __name__ == "__main__":

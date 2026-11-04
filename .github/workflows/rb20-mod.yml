@@ -98,7 +98,7 @@ jobs:
           else
             echo "ZIP unchanged, nothing to commit"
           fi
-          NOTES="Original model built by Blender in GitHub Actions, physics calibrated with real 2024 Bahrain GP qualifying telemetry, official published 805 kW power unit (685 kW ICE + 120 kW MGU-K), native ERS/DRS and wet compounds, functional DRS with a vanilla .ksanim flap animation and steering-wheel DRS LEDs, real-F1 rear light (brake / wet / MGU-K harvest flash), standard Kunos car folder structure (4 LOD KN5 files, driver3d/cameras/dash/sfx/skins/texture/animations), vanilla Assetto Corsa with zero CSP dependency. See rb20/README.md and LEIA-ME.txt inside the ZIP."
+          NOTES="Original model built by Blender in GitHub Actions, physics calibrated with real 2024 Bahrain GP qualifying telemetry, official published 805 kW power unit (685 kW ICE + 120 kW MGU-K), native ERS/DRS and wet compounds, functional DRS with a vanilla .ksanim flap animation and steering-wheel DRS LEDs, real-F1 rear light (brake / wet / MGU-K harvest flash), complete vanilla Kunos car folder (4 LOD KN5, driver3d/cameras/dash/sfx/skins/texture/animations, generated KNH/flame DDS/WAV/rto/LUTs; only the proprietary FMOD bank is absent), vanilla Assetto Corsa with zero CSP dependency. See rb20/README.md and LEIA-ME.txt inside the ZIP."
           if gh release view rb20-v1.0 >/dev/null 2>&1; then
             gh release upload rb20-v1.0 rb20/download/RB20_AssettoCorsa.zip --clobber
             gh release edit rb20-v1.0 --notes "$NOTES"

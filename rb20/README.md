@@ -224,10 +224,12 @@ content/cars/arb_rb20/
 ├── arb_rb20_LOD_D.kn5              ┘
 ├── collider.kn5
 ├── logo.png                        (também em ui/)
+├── driver_base_pos.knh             rig mínimo gerado (formato vanilla)
 ├── body_shadow.png
 ├── tyre_0_shadow.png … tyre_3_shadow.png
 ├── animations/
 │   ├── steer.ksanim                volante (driver3d.ini)
+│   ├── shift.ksanim, car_shift.ksanim
 │   └── rb20_drs.ksanim             flap do DRS (wing_animations.ini)
 ├── data/
 │   ├── car.ini, engine.ini, drivetrain.ini, suspensions.ini, brakes.ini
@@ -239,25 +241,37 @@ content/cars/arb_rb20/
 │   ├── fuel_cons.ini, blurred_objects.ini, proview_nodes.ini
 │   ├── suspension_graphics.ini, sounds.ini, damage.ini, colliders.ini
 │   ├── mirrors.ini, ambient_shadows.ini, lods.ini
-│   ├── *.lut                       curvas de potência/aero/pneu/ERS
+│   ├── flames.ini, flame_presets.ini, analog_instruments.ini
+│   ├── ratios.rto, final.rto       opções de câmbio (telemetria)
+│   ├── *.lut                       curvas de potência/aero/pneu/ERS,
+│   │                               wing_controller_*, analog_speed_curve
 │   └── calibration.json            metadado do build (não é lido pelo AC)
 ├── sfx/
 │   ├── GUIDs.txt                   banco comum do AC
+│   ├── backfire_1..11.wav, backfireEXT_1..9.wav  (sintéticos, originais)
 │   └── LEIA-ME-SOM.txt
 ├── skins/default/
-│   ├── preview.jpg, livery.png, ui_skin.json
+│   ├── preview.jpg, livery.png, ui_skin.json, skin.ini
 │   └── *.dds                       texturas repintáveis
-├── texture/                        display.png / display_off.png
+├── texture/                        display.png, display_off.png,
+│                                   flames/*.dds + 7.png / 8.png
 ├── ui/                             ui_car.json, badge.png, logo.png,
-│                                   preview_small.png
+│                                   preview_small.png, old_badge.png,
+│                                   upgrade.png, dlc_preview.png
 ├── LEIA-ME.txt, VALIDACAO.md, REFERENCIAS.md
 ```
 
 Referência de layout: o template open-wheel da Kunos `formula_k`
-(`javirs200/acCar`, GPL-3.0) e `ks_mazda_mx5_nd2`. Não copiamos nenhum
-arquivo binário de terceiros — todos os INIs, LUTs, `.ksanim` e PNGs acima
-são gerados pelo build. `driver_base_pos.knh`, bancos FMOD próprios e
-pastas `texture/flames/` são opcionais e permanecem ausentes (documentado).
+(`javirs200/acCar`, GPL-3.0) e `ks_mazda_mx5_nd2`. **Nenhum arquivo binário de
+terceiros é copiado**: o `.knh` (árvore nome + matriz 4×4), os `.dds` das chamas
+(A8R8G8B8), os `.wav` (PCM sintético), os `.ksanim` (v2), `.rto`, `.lut`,
+`.ini` e PNGs são **gerados pelo build** a partir dos nossos próprios dados.
+
+O único item que continua ausente é o **banco FMOD `.bank` proprietário**:
+o formato é fechado e exige o FMOD Studio, então não pode ser gerado nem
+redistribuído. O carro usa `sfx/GUIDs.txt` com o banco comum do AC e o fallback
+de áudio do jogo — sem CSP. Fora isso, todos os arquivos vanilla não
+proprietários dos carros padrão estão presentes.
 
 Árvore do repositório (código-fonte, **não** o carro instalado):
 

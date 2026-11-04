@@ -92,19 +92,26 @@ ESTRUTURA DO CARRO (PADRAO KUNOS)
 content/cars/arb_rb20/
   arb_rb20.kn5 + arb_rb20_LOD_B/C/D.kn5 + collider.kn5
   logo.png, body_shadow.png, tyre_0..3_shadow.png
-  animations/  steer.ksanim, rb20_drs.ksanim
+  animations/  steer.ksanim, shift.ksanim, car_shift.ksanim,
+               rb20_drs.ksanim
   data/        todos os INIs/LUTs (inclui driver3d.ini, cameras.ini,
                dash_cam.ini, escmode.ini, fuel_cons.ini, blurred_objects.ini,
                proview_nodes.ini, suspension_graphics.ini, lights.ini,
                digital_instruments.ini, wing_animations.ini)
-  sfx/         GUIDs.txt (banco comum) + LEIA-ME-SOM.txt
+  sfx/         GUIDs.txt (banco comum), backfire*.wav sinteticos
+               e LEIA-ME-SOM.txt
   skins/       default/preview.jpg, livery.png, ui_skin.json, *.dds
-  texture/     display.png, display_off.png
-  ui/          ui_car.json, badge.png, logo.png, preview_small.png
+  texture/     display.png, display_off.png, flames/*.dds
+  ui/          ui_car.json, badge.png, logo.png, preview_small.png,
+               old_badge.png, upgrade.png, dlc_preview.png
+  driver_base_pos.knh (rig gerado, formato vanilla)
 O ZIP contem SOMENTE content/; este LEIA-ME, VALIDACAO.md e REFERENCIAS.md
 ficam dentro da pasta do carro, sem espalhar arquivos na raiz do AC.
-Layout espelhado no template F1 da Kunos (formula_k). Faltam apenas os
-opcionais driver_base_pos.knh e banco FMOD proprietario.
+Layout espelhado no template F1 da Kunos (formula_k). Todos os arquivos
+vanilla NAO proprietarios foram gerados pelo build (KNH, DDS de chamas,
+WAV sinteticos, ksanim, rto, lut, PNGs). Unica ausencia: o banco FMOD
+.bank proprietario, que exige FMOD Studio e nao pode ser gerado; o AC usa
+o banco comum via GUIDs.txt. Nada disso depende de CSP.
 
 O QUE ESTA INCLUSO
 ------------------

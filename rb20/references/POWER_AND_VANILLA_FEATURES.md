@@ -156,3 +156,36 @@ realmente tenha material.
 banco FMOD próprio, `texture/flames/*.dds`, `flames.ini`, `flame_presets.ini`,
 `ratios.rto`/`final.rto` e `wing_controller_*.lut`. Nada disso é necessário
 para o AC vanilla carregar o carro.
+
+
+---
+
+## Completando os arquivos vanilla não proprietários (v1.4)
+
+O `.knh` da Kunos foi decodificado por parsing até o EOF: `int32 nameLen`,
+`char name[nameLen]`, `16 floats` (matriz 4×4), `int32 childCount` e filhos
+recursivos. O `driver_base_pos.knh` entregue é **gerado** com essa estrutura e
+uma árvore mínima original — nenhum dado de rig de terceiros é copiado.
+
+Os DDS de chama do `formula_k` são DXT5 64×64 com mipmaps; para manter tudo
+original e legível pelo AC vanilla, geramos `texture/flames/*.dds` em
+**A8R8G8B8 não comprimido** (header DirectX padrão de 128 bytes, máscaras
+RGBA, um nível de mip), com gradientes de chama procedurais. `flames.ini` e
+`flame_presets.ini` usam apenas chaves vanilla.
+
+`ratios.rto` / `final.rto`, `wing_controller_speed.lut` /
+`wing_controller_brake.lut` e `analog_speed_curve.lut` são tabelas de texto
+vanilla; as primeiras são derivadas das relações de câmbio ajustadas por
+telemetria no próprio `drivetrain.ini`. `wing_controller.ini` (CSP) continua
+proibido pelo gate — as **LUTs** `wing_controller_*.lut` são Kunos vanilla e
+foram liberadas separadamente.
+
+`sfx/backfire_*.wav` são PCM RIFF mono 16-bit sintéticos (ruído com decaimento
+exponencial), `animations/shift.ksanim` e `car_shift.ksanim` são `.ksanim` v2
+gerados, e os PNGs de UI (`old_badge.png`, `upgrade.png`, `dlc_preview.png`)
+são derivados dos nossos próprios `badge.png`/`preview_small.png`.
+
+**Único item não entregue:** o banco FMOD `.bank`. É um formato proprietário
+produzido pelo FMOD Studio; não é gerável nem redistribuível. O carro referencia
+apenas `bank:/common` em `sfx/GUIDs.txt`. Continua sem CSP, sem Lua, sem
+`data.acd`, sem física estendida.

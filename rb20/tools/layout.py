@@ -313,5 +313,8 @@ def apply(car_dir):
     if os.path.exists(src):
         shutil.copyfile(src, os.path.join(car_dir, "logo.png"))
 
+    import vanilla_extras
+    vanilla_extras.apply(car_dir)
+
     print("  layout: Kunos-standard folders/files (driver3d, cameras, "
           "sfx/GUIDs, ui_skin, steer.ksanim, LOD-ready shadows)")

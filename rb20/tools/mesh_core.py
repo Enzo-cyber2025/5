@@ -416,6 +416,13 @@ def build_car_raw():
     # template: the dash display is a real mesh so ITEM_n readouts can render.
     display = M("DASH_DISPLAY", "RB20_GLASS")
     display.box((0.0, 0.558, 1.014), (0.100, 0.034, 0.004))
+    # Vanilla analog_instruments.ini needles. Their geometry is local to their
+    # own origin so AC can rotate each dummy without swinging it around the
+    # car origin. They sit inside the dark display and are effectively hidden.
+    for i, tag in enumerate(("RPM", "SPEED", "WATER", "FUEL")):
+        x = (i - 1.5) * 0.022
+        needle = M("ARROW_" + tag, "RB20_LED", origin=(x, 0.560, 1.017))
+        needle.box((0.0, 0.0, 0.0), (0.003, 0.010, 0.002))
 
     # ---- front wing: mainplane, 3 flaps, endplates -------------------------
     fw = M("WING_FRONT", "RB20_CARBON", smooth=180)
