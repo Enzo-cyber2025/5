@@ -301,9 +301,9 @@ louvres nas endplates, dutos de freio, *fences*, asa de borda de assoalho e
 [`rb20/references/EXTERNAL_MOD_STRUCTURE.md`](references/EXTERNAL_MOD_STRUCTURE.md)
 no branch. Ele **tenta** baixar
 `https://modsfire.com/RcgUC30KVzcd5Nr?rf=39204` (`redbull-rb20-f1.zip`,
-126 MB, **exige CSP**). Ele gera `reference_report.json` /
-`REFERENCE_MOD.md` como **artifact**: lista de pastas, arquivos em `data/`,
-KN5 e marcadores CSP encontrados. **Nada do mod é copiado, commitado ou
+126 MB, **exige CSP**). Ele publica o relatório de estrutura no branch e o
+`reference_report.json` como **artifact**: lista de pastas, arquivos em
+`data/`, KN5 e marcadores CSP encontrados. **Nada do mod é copiado, commitado ou
 empacotado** — não há licença para redistribuir esses assets. O passo é
 `continue-on-error`: o ModsFire usa "Generate Link"/premium e, nos runs
 feitos, **não entregou o ZIP** (a URL é uma página de primeiro passo, sem link
@@ -320,11 +320,36 @@ e `RainFX`.
 ```
 rb20/
 ├── README.md
-├── references/         REFERENCES.md + POWER_AND_VANILLA_FEATURES.md
+├── references/         REFERENCES.md, POWER_AND_VANILLA_FEATURES.md,
+│                       EXTERNAL_MOD_STRUCTURE.md (relatório do Actions)
 ├── telemetry/          VER_2024_Bahrain_Q.csv + SOURCES.md
 ├── tools/              mesh_core, blender_model, kn5format, textures,
 │                       make_kn5, render_preview, calibrate, features,
-│                       layout, physics_sim, make_package, validate
+│                       layout, physics_sim, make_package, validate,
+│                       vanilla_extras, fetch_reference
 ├── download/RB20_AssettoCorsa.zip   ← ENTREGÁVEL
 └── out/                gerado (ignorado)
 ```
+
+---
+
+## 🔐 Build publicado (v1.5 — correção de crash + malha subdividida)
+
+| Item | Valor |
+| --- | --- |
+| Arquivo | `RB20_AssettoCorsa.zip` |
+| Tamanho | **18.415.964 bytes** |
+| SHA-256 | `e9af2a5a85fc7aba63b0bb4d85e9ab653a2c776251167df1593a7bb3c9fe2077` |
+| Entradas | 143 (raiz apenas `content/`) |
+| KN5 | v5, 331 nós, **225.504 triângulos**, 10 texturas DXT1 256×256, `ksPerPixel` |
+| LODs | 4 KN5 **idênticos** (sem perda de dummies `WHEEL_*` / luzes / painel) |
+| Run do Actions | `41833060248` — **success** |
+| CSP | nenhum arquivo CSP no ZIP; gate anti-CSP passou |
+
+> ⚠️ **Não temos o Assetto Corsa real neste ambiente**, então não pudemos
+> abrir o jogo para confirmar o crash foi resolvido. O que fizemos foi
+> remover todos os arquivos que o AC carrega automaticamente e que tínhamos
+> gerado sem poder validar, igualar os 4 LODs e tornar os `.ksanim`
+> idênticos ao padrão Kunos. Se ainda crashar, o log
+> `Documents/Assetto Corsa/logs/log.txt` diz exatamente qual arquivo o jogo
+> rejeitou — me mande esse trecho que eu corrijo o ponto específico.
