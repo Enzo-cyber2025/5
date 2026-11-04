@@ -440,18 +440,15 @@ def write_ksanim(path, node_name, frames):
 def drs_frames():
     """13 keyframes: wing angle 12 deg (DRS closed) -> 0 deg (DRS open).
 
-    The flap's KN5 dummy sits at the origin and its vertices are in car space,
-    so a rotation about the hinge H is stored as R plus t = H - R*H.
+    The flap's KN5 dummy sits at the hinge and its vertices are LOCAL to it,
+    so every frame is a pure quaternion rotation with a constant translation,
+    exactly like Kunos .ksanim files. No per-frame world-space offsets.
     """
     frames = []
     for angle in range(13):
         theta = math.radians(12 - angle)
-        c, sn = math.cos(theta), math.sin(theta)
         q = (math.sin(theta / 2.0), 0.0, 0.0, math.cos(theta / 2.0))
-        hy, hz = FLAP_HINGE_Y, FLAP_HINGE_Z
-        ty = hy * (1.0 - c) + hz * sn
-        tz = hz * (1.0 - c) - hy * sn
-        frames.append((q, (0.0, ty, tz), (1.0, 1.0, 1.0)))
+        frames.append((q, (0.0, 0.0, 0.0), (1.0, 1.0, 1.0)))
     return frames
 
 

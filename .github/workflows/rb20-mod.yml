@@ -38,6 +38,17 @@ jobs:
           python -m pip install bpy==4.5.4 pillow numpy matplotlib
           python -c "import bpy; print('Blender', bpy.app.version_string)"
 
+      - name: Inspect external RB20 reference mod (CSP, reference ONLY)
+        continue-on-error: true
+        run: |
+          python rb20/tools/fetch_reference.py \
+            --url 'https://modsfire.com/RcgUC30KVzcd5Nr?rf=39204' \
+            --out rb20/out/reference_report.json \
+            --markdown rb20/out/REFERENCE_MOD.md
+          test -f rb20/out/reference_report.json || echo '{"status":"unavailable","copied_into_mod":false}' > rb20/out/reference_report.json
+          test -f rb20/out/REFERENCE_MOD.md || echo '# Referencia externa indisponivel neste run' > rb20/out/REFERENCE_MOD.md
+          cat rb20/out/REFERENCE_MOD.md || true
+
       - name: MODEL THE CAR IN BLENDER (headless bpy)
         run: python rb20/tools/blender_model.py --out rb20/out
 
@@ -98,7 +109,7 @@ jobs:
           else
             echo "ZIP unchanged, nothing to commit"
           fi
-          NOTES="Original model built by Blender in GitHub Actions, physics calibrated with real 2024 Bahrain GP qualifying telemetry, official published 805 kW power unit (685 kW ICE + 120 kW MGU-K), native ERS/DRS and wet compounds, functional DRS with a vanilla .ksanim flap animation and steering-wheel DRS LEDs, real-F1 rear light (brake / wet / MGU-K harvest flash), complete vanilla Kunos car folder (4 LOD KN5, driver3d/cameras/dash/sfx/skins/texture/animations, generated KNH/flame DDS/WAV/rto/LUTs; only the proprietary FMOD bank is absent), vanilla Assetto Corsa with zero CSP dependency. See rb20/README.md and LEIA-ME.txt inside the ZIP."
+          NOTES="Original model built by Blender in GitHub Actions, physics calibrated with real 2024 Bahrain GP qualifying telemetry, official published 805 kW power unit (685 kW ICE + 120 kW MGU-K), native ERS/DRS and wet compounds, functional DRS with a vanilla .ksanim flap animation and steering-wheel DRS LEDs, real-F1 rear light (brake / wet / MGU-K harvest flash), subdivided Blender model, crash-safe Kunos car folder (4 identical full LOD KN5, constant-translation ksanim, no unverifiable auto-loaded files), vanilla Assetto Corsa with zero CSP dependency. See rb20/README.md and LEIA-ME.txt inside the ZIP."
           if gh release view rb20-v1.0 >/dev/null 2>&1; then
             gh release upload rb20-v1.0 rb20/download/RB20_AssettoCorsa.zip --clobber
             gh release edit rb20-v1.0 --notes "$NOTES"
@@ -124,3 +135,5 @@ jobs:
             rb20/out/validation/validation.png
             rb20/out/validation/validation_report.json
             rb20/out/validate_report.json
+            rb20/out/reference_report.json
+            rb20/out/REFERENCE_MOD.md

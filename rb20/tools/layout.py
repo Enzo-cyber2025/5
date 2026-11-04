@@ -33,19 +33,6 @@ POSITION=0,0,0
 NAME=steer.ksanim
 LOCK=200
 
-[SHIFT_ANIMATION]
-BLEND_TIME=100
-POSITIVE_TIME=150
-STATIC_TIME=10
-NEGATIVE_TIME=150
-PRELOAD_RPM=6000
-INVERT_SHIFTING_HANDS=0
-
-[HIDE_OBJECT_0]
-NAME=DRIVER:HELMET
-
-[HIDE_OBJECT_1]
-NAME=DRIVER:GEO_Driver_FACE
 """
 
 # Camera positions adapted from the Kunos formula_k F1 template.
@@ -157,46 +144,7 @@ SUSP_GRAPHICS = """; No overrides: vanilla suspension graphics are used.
 
 # Standard dash sections appended to the DRS LED configuration. DISPLAY_0
 # points at a real mesh; ITEM_n are vanilla text readouts parented to STEER_HR.
-DASH_EXTRA = """
-[DISPLAY_0]
-NAME=DASH_DISPLAY_MESH
-EMISSIVE=2.1,6.0,2.1
-INTENSITY=2.4
-
-[ITEM_0]
-PARENT=STEER_HR
-POSITION=0.02,0.05,-0.125
-TYPE=GEAR
-SIZE=0.025
-COLOR=10,10,10,255
-INTENSITY=3.0
-FONT=e92_big
-VERSION=2
-ALIGN=RIGHT
-
-[ITEM_1]
-PARENT=STEER_HR
-POSITION=0.00,0.0485,-0.125
-TYPE=RPM
-SIZE=0.015
-COLOR=11,11,11,255
-INTENSITY=3.0
-FONT=e92_big
-VERSION=2
-ALIGN=CENTER
-
-[ITEM_2]
-PARENT=STEER_HR
-POSITION=-0.02,0.05,-0.125
-TYPE=SPEED
-SIZE=0.014
-COLOR=10,10,10,255
-INTENSITY=3.0
-FONT=e92_big
-VERSION=2
-ALIGN=LEFT
-UNITS=KMH
-"""
+DASH_EXTRA = ""  # vanilla dash extras removed: AC auto-loads ITEM_n.
 
 # Standard skin metadata (Kunos formula_k skins/<skin>/ui_skin.json).
 UI_SKIN = """{
@@ -229,19 +177,14 @@ STEER_HINGE_Z = 1.002
 def steer_frames(count=101, lock_deg=100.0):
     """Kunos-style steer animation: centre pose at the middle keyframe.
 
-    Rotation about the column (Z) around the wheel centre H is stored as
-    R plus t = H - R*H, because the mesh vertices live in car space.
+    STEER_HR has its vertices local to its own centre, so frames are pure
+    quaternion rotations with constant translation (no world-space offsets).
     """
-    import features
     frames = []
     for i in range(count):
         theta = math.radians(-lock_deg + 2.0 * lock_deg * i / (count - 1))
-        c, s = math.cos(theta), math.sin(theta)
         q = (0.0, 0.0, math.sin(theta / 2.0), math.cos(theta / 2.0))
-        hy = STEER_HINGE_Y
-        # R about Z: (x*c-y*s, x*s+y*c, z); H=(0,hy,hz)
-        t = (hy * s, hy * (1.0 - c), 0.0)
-        frames.append((q, t, (1.0, 1.0, 1.0)))
+        frames.append((q, (0.0, 0.0, 0.0), (1.0, 1.0, 1.0)))
     return frames
 
 

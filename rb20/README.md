@@ -224,12 +224,10 @@ content/cars/arb_rb20/
 ├── arb_rb20_LOD_D.kn5              ┘
 ├── collider.kn5
 ├── logo.png                        (também em ui/)
-├── driver_base_pos.knh             rig mínimo gerado (formato vanilla)
 ├── body_shadow.png
 ├── tyre_0_shadow.png … tyre_3_shadow.png
 ├── animations/
 │   ├── steer.ksanim                volante (driver3d.ini)
-│   ├── shift.ksanim, car_shift.ksanim
 │   └── rb20_drs.ksanim             flap do DRS (wing_animations.ini)
 ├── data/
 │   ├── car.ini, engine.ini, drivetrain.ini, suspensions.ini, brakes.ini
@@ -241,10 +239,9 @@ content/cars/arb_rb20/
 │   ├── fuel_cons.ini, blurred_objects.ini, proview_nodes.ini
 │   ├── suspension_graphics.ini, sounds.ini, damage.ini, colliders.ini
 │   ├── mirrors.ini, ambient_shadows.ini, lods.ini
-│   ├── flames.ini, flame_presets.ini, analog_instruments.ini
 │   ├── ratios.rto, final.rto       opções de câmbio (telemetria)
-│   ├── *.lut                       curvas de potência/aero/pneu/ERS,
-│   │                               wing_controller_*, analog_speed_curve
+│   ├── *.lut                       curvas de potência/aero/pneu/ERS
+│   │                               e wing_controller_* (Kunos vanilla)
 │   └── calibration.json            metadado do build (não é lido pelo AC)
 ├── sfx/
 │   ├── GUIDs.txt                   banco comum do AC
@@ -253,8 +250,7 @@ content/cars/arb_rb20/
 ├── skins/default/
 │   ├── preview.jpg, livery.png, ui_skin.json, skin.ini
 │   └── *.dds                       texturas repintáveis
-├── texture/                        display.png, display_off.png,
-│                                   flames/*.dds + 7.png / 8.png
+├── texture/                        display.png, display_off.png
 ├── ui/                             ui_car.json, badge.png, logo.png,
 │                                   preview_small.png, old_badge.png,
 │                                   upgrade.png, dlc_preview.png
@@ -262,16 +258,54 @@ content/cars/arb_rb20/
 ```
 
 Referência de layout: o template open-wheel da Kunos `formula_k`
-(`javirs200/acCar`, GPL-3.0) e `ks_mazda_mx5_nd2`. **Nenhum arquivo binário de
-terceiros é copiado**: o `.knh` (árvore nome + matriz 4×4), os `.dds` das chamas
-(A8R8G8B8), os `.wav` (PCM sintético), os `.ksanim` (v2), `.rto`, `.lut`,
-`.ini` e PNGs são **gerados pelo build** a partir dos nossos próprios dados.
+(`javirs200/acCar`, GPL-3.0) e `ks_mazda_mx5_nd2`. **Nenhum arquivo binário de terceiros é copiado**: os `.wav` (PCM sintético),
+os `.ksanim` (v2), `.rto`, `.lut`, `.ini`, DDS de textura e PNGs são **gerados
+pelo build** a partir dos nossos próprios dados.
 
-O único item que continua ausente é o **banco FMOD `.bank` proprietário**:
-o formato é fechado e exige o FMOD Studio, então não pode ser gerado nem
-redistribuído. O carro usa `sfx/GUIDs.txt` com o banco comum do AC e o fallback
-de áudio do jogo — sem CSP. Fora isso, todos os arquivos vanilla não
-proprietários dos carros padrão estão presentes.
+O **banco FMOD `.bank` proprietário** não é entregue (formato fechado, exige
+FMOD Studio). Também **removemos**, por segurança after a reported crash, os
+arquivos que o AC carrega automaticamente e cujo formato não podemos validar
+sem o jogo: `driver_base_pos.knh`, `flames.ini`/`flame_presets.ini` + DDS de
+chamas, `analog_instruments.ini`, `shift.ksanim`/`car_shift.ksanim` e as seções
+`DISPLAY_0`/`ITEM_n` do `digital_instruments.ini`. Permanecem apenas arquivos
+inertes (`.rto`, LUTs, WAVs, `skin.ini`, PNGs de UI) e os arquivos vanilla
+comprovados. Ver **"Correção de crash"** abaixo.
+
+## 🛡️ Correção de crash (o que mudou)
+
+1. **LODs idênticos**: `lods.ini` tem 4 níveis, mas os 4 KN5 são cópias
+   integrais do modelo. Antes o `LOD_D` continha só 6 objetos — sem
+   `WHEEL_*`, luzes ou painel — e o AC falha ao trocar de LOD a ~201 m.
+2. **`.ksanim` sem translação variável**: o flap e o volante agora têm
+   geometria **local ao próprio pivô**; os keyframes são só quaternions com
+   translação constante, iguais aos `.ksanim` da Kunos.
+3. **Removidos os arquivos auto-carregados não validáveis** listados acima.
+4. **Sem `ITEM_n`/fontes externas no painel** — restam apenas as seções
+   nativas `DRS_AVAILABLE_0` e `DRS_ENABLED_0`.
+
+## 🧊 Modelo 3D (Blender no Actions)
+
+O `blender_model.py` aplica **SUBSURF Catmull-Clark** (nível 1), sombreamento
+suave, `BEVEL` com 3 segmentos e `WEIGHTED_NORMAL` em 33 superfícies curvas
+(monocoque, nariz, sidepods, airbox, halo, asas, pneus e aros). A malha-base
+foi densificada: 21 estações longitudinais com superelipses de 28 pontos,
+halo curvo de 25 estações, aerofólios de 18 segmentos, 12 raios por roda,
+louvres nas endplates, dutos de freio, *fences*, asa de borda de assoalho e
+*undercut* dos sidepods. As texturas procedurais subiram de 64×64 para
+**256×256** DXT1. Nenhum asset de terceiros entra no KN5.
+
+## 🔎 Mod de referência externo (CSP) — só inspeção
+
+`fetch_reference.py` roda no Actions e tenta baixar
+`https://modsfire.com/RcgUC30KVzcd5Nr?rf=39204` (`redbull-rb20-f1.zip`,
+126 MB, **exige CSP**). Ele gera `reference_report.json` /
+`REFERENCE_MOD.md` como **artifact**: lista de pastas, arquivos em `data/`,
+KN5 e marcadores CSP encontrados. **Nada do mod é copiado, commitado ou
+empacotado** — não há licença para redistribuir esses assets. O passo é
+`continue-on-error`: o ModsFire usa "Generate Link"/premium e pode não
+entregar o ZIP ao runner; nesse caso o build segue normalmente com o nosso
+modelo. O gate anti-CSP continua proibindo `ext_config.ini`, `.lua`,
+`extension/`, `data.acd`, `extended-*`, `_emissive` e `RainFX`.
 
 Árvore do repositório (código-fonte, **não** o carro instalado):
 

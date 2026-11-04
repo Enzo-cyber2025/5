@@ -77,16 +77,29 @@ def build_scene(raw_objects):
         bpy.context.collection.objects.link(obj)
         ox, oy, oz = to_blender(src.origin)
         obj.location = (ox, oy, oz)
-        # Hard-surface detailing done by Blender itself (not baked by Python).
+
+        # Real Blender sculpting pass. Curved panels (body, nose, sidepods,
+        # wings, halo, wheels) get a Catmull-Clark SUBSURF so the lofted
+        # superellipses become smooth F1 surfaces instead of faceted boxes.
+        # Everything else keeps a small ANGLE-limited bevel for crisp carbon
+        # edges. Smooth shading + weighted normals are applied to all objects.
+        if src.subdiv:
+            for poly in bm.polygons:
+                poly.use_smooth = True
+            sub = obj.modifiers.new("Surface subdivision", "SUBSURF")
+            sub.subdivision_type = "CATMULL_CLARK"
+            sub.levels = 1
+            sub.render_levels = 1
+            sub.show_only_control_edges = True
         if src.smooth >= 30:
             bev = obj.modifiers.new("Edge bevel", "BEVEL")
-            bev.width = 0.004
-            bev.segments = 2
+            bev.width = 0.0035 if src.subdiv else 0.004
+            bev.segments = 3
             bev.limit_method = "ANGLE"
-            bev.angle_limit = math.radians(35)
+            bev.angle_limit = math.radians(32)
         wn = obj.modifiers.new("Weighted normals", "WEIGHTED_NORMAL")
         wn.keep_sharp = True
-        wn.weight = 40
+        wn.weight = 50
         created.append((src, obj))
     # A little studio setup for whoever opens the .blend.
     cam_data = bpy.data.cameras.new("Camera")
@@ -96,6 +109,14 @@ def build_scene(raw_objects):
     cam.rotation_euler = (math.radians(72), 0, math.radians(34))
     cam_data.lens = 55
     bpy.context.scene.camera = cam
+    # A neutral studio floor makes the saved .blend useful for inspection.
+    floor_mesh = bpy.data.meshes.new("StudioFloor")
+    floor_mesh.from_pydata([(-9, -9, -0.002), (9, -9, -0.002),
+                            (9, 9, -0.002), (-9, 9, -0.002)], [],
+                           [(0, 1, 2, 3)])
+    floor_mesh.update()
+    floor_obj = bpy.data.objects.new("StudioFloor", floor_mesh)
+    bpy.context.collection.objects.link(floor_obj)
     for name, loc, energy in (("Key", (-3, -4, 6), 1800),
                               ("Fill", (4, 3, 4), 900),
                               ("Rim", (0, 5, 5), 1400)):

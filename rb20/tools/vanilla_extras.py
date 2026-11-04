@@ -388,19 +388,20 @@ def write_ui_extras(car_dir):
 
 
 def apply(car_dir):
+    """Write ONLY inert vanilla files.
+
+    Everything AC auto-loads at car-spawn (driver_base_pos.knh, flames.ini +
+    DDS, analog_instruments.ini, shift/car_shift .ksanim) was removed: those
+    formats cannot be validated without a real AC install and were the likely
+    cause of the reported crash. Ratios/LUTs/PCM samples/skin metadata are
+    plain data that AC reads only on demand and are safe to keep.
+    """
     data = os.path.join(car_dir, "data")
-    write_knh(os.path.join(car_dir, "driver_base_pos.knh"))
-    write_flames(car_dir)
-    w(os.path.join(data, "flames.ini"), FLAMES_INI)
-    w(os.path.join(data, "flame_presets.ini"), FLAME_PRESETS)
     write_ratios(car_dir)
     w(os.path.join(data, "wing_controller_speed.lut"), WING_SPEED_LUT)
     w(os.path.join(data, "wing_controller_brake.lut"), WING_BRAKE_LUT)
-    w(os.path.join(data, "analog_instruments.ini"), ANALOG_INI)
-    w(os.path.join(data, "analog_speed_curve.lut"), ANALOG_SPEED_LUT)
     w(os.path.join(car_dir, "skins", "default", "skin.ini"), SKIN_INI)
     nwav = write_wavs(car_dir)
-    nks = extra_ksanims(car_dir)
     write_ui_extras(car_dir)
-    print("  vanilla_extras: KNH, flames DDS/INI, ratios.rto, wing LUTs, "
-          "analog dash, skin.ini, %d WAVs, %d ksanim, UI PNGs" % (nwav, nks))
+    print("  vanilla_extras: inert vanilla files (ratios.rto, wing LUTs, "
+          "skin.ini, %d synthetic WAVs, UI PNGs)" % nwav)

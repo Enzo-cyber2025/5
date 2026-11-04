@@ -105,7 +105,7 @@ def texture_name(material):
     return material.lower() + ".dds"
 
 
-def build_textures(used_materials, size=64):
+def build_textures(used_materials, size=256):
     out = []
     for name in used_materials:
         if name not in MATERIALS:

@@ -71,13 +71,14 @@ class Mesh:
     """Triangle soup builder with smooth/hard edge splitting and UVs."""
 
     def __init__(self, name, material, origin=(0.0, 0.0, 0.0),
-                 cast_shadows=1, visible=1, smooth=45.0):
+                 cast_shadows=1, visible=1, smooth=45.0, subdiv=0):
         self.name = name
         self.material = material
         self.origin = tuple(origin)
         self.cast_shadows = cast_shadows
         self.visible = visible
         self.smooth = smooth
+        self.subdiv = subdiv          # Blender SUBSURF levels (CI build only)
         self.v: list[tuple[float, float, float]] = []
         self.uv: list[tuple[float, float]] = []
         self.f: list[tuple[int, int, int]] = []
@@ -179,7 +180,7 @@ class Mesh:
                 self.quad(outer0[j], outer0[j2], inner0[j2], inner0[j])
                 self.quad(outer1[j2], outer1[j], inner1[j], inner1[j2])
 
-    def aerofoil(self, centre, span, chord, thickness, angle_deg=0.0, seg=7):
+    def aerofoil(self, centre, span, chord, thickness, angle_deg=0.0, seg=14):
         """Simple cambered wing: closed aerofoil section extruded along X."""
         cx, cy, cz = centre
         a = math.radians(angle_deg)
@@ -263,6 +264,7 @@ class Mesh:
             "name": self.name,
             "material": self.material,
             "origin": self.origin,
+            "subdiv": self.subdiv,
             "cast_shadows": self.cast_shadows,
             "visible": self.visible,
             "positions": positions,
@@ -272,7 +274,7 @@ class Mesh:
         }
 
 
-def _superellipse(z, half_w, y0, y1, n=14, exponent=0.62):
+def _superellipse(z, half_w, y0, y1, n=28, exponent=0.62):
     """Rounded-rectangle cross-section ring at longitudinal position z."""
     cy = (y0 + y1) / 2.0
     hy = (y1 - y0) / 2.0
@@ -302,8 +304,8 @@ def build_car_raw():
         return m
 
     # ---- monocoque / engine cover: lofted superellipse sections -------------
-    body = M("BODY", "RB20_BODY")
-    sections = [
+    body = M("BODY", "RB20_BODY", smooth=180, subdiv=1)
+    base_sections = [
         (2.72, 0.085, 0.145, 0.225),
         (2.40, 0.135, 0.115, 0.300),
         (1.95, 0.205, 0.095, 0.410),
@@ -316,11 +318,19 @@ def build_car_raw():
         (-2.02, 0.135, 0.135, 0.340),
         (-2.22, 0.080, 0.170, 0.285),
     ]
-    body.loft([_superellipse(*s) for s in sections], cap=True)
+    # Catmull-like densification: one midpoint between every pair of stations
+    # gives the SUBSURF modifier enough longitudinal topology to stay smooth.
+    sections = []
+    for a, b in zip(base_sections, base_sections[1:]):
+        sections.append(a)
+        sections.append(tuple((x + y) / 2.0 for x, y in zip(a, b)))
+    sections.append(base_sections[-1])
+    body.loft([_superellipse(*st) for st in sections], cap=True)
 
     # nose tip + front bulkhead accent
-    nose = M("NOSE", "RB20_CARBON")
+    nose = M("NOSE", "RB20_CARBON", smooth=180, subdiv=1)
     nose.loft([_superellipse(2.72, 0.085, 0.145, 0.225),
+               _superellipse(2.80, 0.065, 0.155, 0.215),
                _superellipse(2.88, 0.045, 0.165, 0.205)], cap=True)
 
     # ---- floor + venturi tunnels + diffuser --------------------------------
@@ -354,7 +364,7 @@ def build_car_raw():
             _sidepod(s, -1.10, 0.360, 0.600, 0.110, 0.305),
             _sidepod(s, -1.45, 0.330, 0.420, 0.135, 0.255),
         ], cap=True)
-        inlet = M("INLET_" + tag, "RB20_CARBON")
+        inlet = M("INLET_" + tag, "RB20_CARBON", smooth=180, subdiv=1)
         inlet.box((s * 0.430, 0.340, 1.025), (0.245, 0.205, 0.045))
         bar = M("BARGEBOARD_" + tag, "RB20_CARBON")
         bar.box((s * 0.760, 0.245, 1.48), (0.035, 0.30, 0.65), taper=0.5)
@@ -364,13 +374,13 @@ def build_car_raw():
         mirror_stalk.tube((s * 0.515, 0.500, 0.72), (s * 0.655, 0.535, 0.72), 0.016, 8)
 
     # ---- airbox, shark fin, engine cover accents ---------------------------
-    airbox = M("AIRBOX", "RB20_CARBON")
+    airbox = M("AIRBOX", "RB20_CARBON", smooth=180, subdiv=1)
     airbox.loft([
         [(x, y, z) for x, y in ((-0.13, 0.63), (0.13, 0.63), (0.13, 0.83), (-0.13, 0.83))]
         for z in (0.42, 0.10)],
         cap=True)
     for k in range(3):
-        fin = M("SHARK_FIN_%d" % k, "RB20_CARBON")
+        fin = M("SHARK_FIN_%d" % k, "RB20_CARBON", smooth=180, subdiv=1)
         fin.box((0.0, 0.72 - 0.055 * k, -0.25 - 0.55 * k),
                 (0.028, 0.24 - 0.045 * k, 1.05), taper=0.55)
     # red/gold accent stripes along the engine cover and nose (no logos)
@@ -381,17 +391,17 @@ def build_car_raw():
     nosestripe.box((0.0, 0.222, 2.34), (0.105, 0.014, 0.72), taper=0.55)
 
     # ---- halo + cockpit ----------------------------------------------------
-    halo = M("HALO", "RB20_CARBON")
+    halo = M("HALO", "RB20_CARBON", smooth=180, subdiv=1)
     # main hoop: arc from left rear to right rear over the cockpit
     hoop = []
-    for k in range(13):
-        t = math.pi * k / 12.0
+    for k in range(25):
+        t = math.pi * k / 24.0
         hoop.append((-0.335 * math.cos(t), 0.665 + 0.115 * math.sin(t), 0.86))
     for a, b in zip(hoop, hoop[1:]):
-        halo.tube(a, b, 0.027, 8)
-    halo.tube((0.0, 0.780, 0.86), (-0.02, 0.500, 1.48), 0.026, 8)
-    halo.tube((-0.335, 0.665, 0.86), (-0.335, 0.520, 0.42), 0.022, 8)
-    halo.tube((0.335, 0.665, 0.86), (0.335, 0.520, 0.42), 0.022, 8)
+        halo.tube(a, b, 0.027, 12)
+    halo.tube((0.0, 0.780, 0.86), (-0.02, 0.500, 1.48), 0.026, 12)
+    halo.tube((-0.335, 0.665, 0.86), (-0.335, 0.520, 0.42), 0.022, 12)
+    halo.tube((0.335, 0.665, 0.86), (0.335, 0.520, 0.42), 0.022, 12)
 
     cockpit = M("COCKPIT_HR", "RB20_GLASS")
     cockpit.box((0.0, 0.315, 0.68), (0.50, 0.20, 0.72), taper=0.45)   # seat
@@ -399,12 +409,17 @@ def build_car_raw():
     cockpit.box((0.0, 0.430, 0.34), (0.42, 0.20, 0.24))              # driver back
     for s in (-1, 1):
         cockpit.box((s * 0.255, 0.465, 0.70), (0.055, 0.19, 0.70))    # side padding
-    steer = M("STEER_HR", "RB20_CARBON")
-    steer.cylinder_x((0.0, 0.545, 1.02), 0.135, 0.032, seg=20)
-    steer.box((0.0, 0.585, 1.002), (0.155, 0.070, 0.012))             # display
-    steer.box((0.0, 0.505, 1.002), (0.185, 0.030, 0.012))
+    STEER_ORIGIN = (0.0, 0.545, 1.002)
+    steer = M("STEER_HR", "RB20_CARBON", origin=STEER_ORIGIN,
+              smooth=180, subdiv=1)
+    steer.cylinder_x((0.0, 0.0, 0.018), 0.135, 0.032, seg=28)
+    steer.box((0.0, 0.040, 0.0), (0.155, 0.070, 0.012))               # display
+    steer.box((0.0, -0.040, 0.0), (0.185, 0.030, 0.012))
     for s in (-1, 1):
-        steer.box((s * 0.105, 0.545, 1.002), (0.065, 0.130, 0.022))
+        steer.box((s * 0.105, 0.0, 0.0), (0.065, 0.130, 0.022))
+        # thumb grips make the wheel read as a real F1 wheel, not a disc.
+        steer.tube((s * 0.125, 0.030, 0.010), (s * 0.125, -0.030, 0.010),
+                   0.012, 10)
     # Steering-wheel DRS LEDs, like the real RB20 wheel: one for "DRS
     # available" and one for "DRS enabled". digital_instruments.ini (vanilla
     # ACD DRS_AVAILABLE_n / DRS_ENABLED_n) switches their emissive.
@@ -425,12 +440,13 @@ def build_car_raw():
         needle.box((0.0, 0.0, 0.0), (0.003, 0.010, 0.002))
 
     # ---- front wing: mainplane, 3 flaps, endplates -------------------------
-    fw = M("WING_FRONT", "RB20_CARBON", smooth=180)
+    fw = M("WING_FRONT", "RB20_CARBON", smooth=180, subdiv=1)
     fw.aerofoil((0.0, 0.078, 2.865), 1.94, 0.30, 0.038, 2.0)
     for k in range(3):
-        flap = M("FW_FLAP_%d" % k, "RB20_RED" if k == 2 else "RB20_CARBON", smooth=180)
+        flap = M("FW_FLAP_%d" % k, "RB20_RED" if k == 2 else "RB20_CARBON",
+                       smooth=180, subdiv=1)
         flap.aerofoil((0.0, 0.115 + 0.072 * k, 2.735 - 0.070 * k),
-                      1.88, 0.17, 0.022, 12.0 + 8.0 * k)
+                      1.88, 0.17, 0.022, 12.0 + 8.0 * k, seg=18)
     for s, tag in ((-1, "L"), (1, "R")):
         ep = M("FW_ENDPLATE_" + tag, "RB20_BODY")
         ep.box((s * 0.975, 0.175, 2.805), (0.022, 0.275, 0.40), taper=0.35)
@@ -438,17 +454,51 @@ def build_car_raw():
         nosecone.tube((s * 0.06, 0.215, 2.78), (s * 0.10, 0.090, 2.86), 0.020, 8)
 
     # ---- rear wing + beam wing + endplates --------------------------------
-    rw = M("WING_REAR", "RB20_CARBON", smooth=180)
-    rw.aerofoil((0.0, 0.845, -2.330), 1.045, 0.30, 0.040, 14.0)
-    rwf = M("WING_REAR_FLAP", "RB20_RED", smooth=180)
-    rwf.aerofoil((0.0, 0.985, -2.415), 1.045, 0.215, 0.026, 26.0)
-    beam = M("BEAM_WING", "RB20_CARBON", smooth=180)
-    beam.aerofoil((0.0, 0.455, -2.290), 0.90, 0.22, 0.028, 10.0)
+    rw = M("WING_REAR", "RB20_CARBON", smooth=180, subdiv=1)
+    rw.aerofoil((0.0, 0.845, -2.330), 1.045, 0.30, 0.040, 14.0, seg=18)
+    FLAP_HINGE = (0.0, 0.940, -2.320)
+    rwf = M("WING_REAR_FLAP", "RB20_RED", origin=FLAP_HINGE,
+            smooth=180, subdiv=1)
+    rwf.aerofoil((0.0, 0.985 - FLAP_HINGE[1], -2.415 - FLAP_HINGE[2]),
+                 1.045, 0.215, 0.026, 26.0, seg=18)
+    beam = M("BEAM_WING", "RB20_CARBON", smooth=180, subdiv=1)
+    beam.aerofoil((0.0, 0.455, -2.290), 0.90, 0.22, 0.028, 10.0, seg=18)
     for s, tag in ((-1, "L"), (1, "R")):
         ep = M("RW_ENDPLATE_" + tag, "RB20_BODY")
         ep.box((s * 0.525, 0.845, -2.365), (0.020, 0.44, 0.50), taper=0.18)
         sup = M("RW_SUPPORT_" + tag, "RB20_CARBON")
         sup.tube((s * 0.14, 0.36, -2.12), (s * 0.14, 0.82, -2.34), 0.026, 8)
+
+    # ---- fine aero detailing (keeps the model from reading as boxes) ------
+    # Rear-wing endplate louvres, front-wing fences, floor-edge wing,
+    # sidepod undercut, brake-duct scoops and a rounded exhaust surround.
+    for s, tag in ((-1, "L"), (1, "R")):
+        for k in range(5):
+            louvre = M("RW_LOUVRE_%s%d" % (tag, k), "RB20_CARBON", smooth=180)
+            louvre.box((s * 0.537, 0.735 + 0.052 * k, -2.365),
+                       (0.006, 0.016, 0.34 - 0.035 * k), taper=0.30)
+        fence = M("FW_FENCE_" + tag, "RB20_CARBON", smooth=180)
+        fence.box((s * 0.855, 0.155, 2.800), (0.010, 0.155, 0.30), taper=0.45)
+        edge = M("EDGE_WING_" + tag, "RB20_RED", smooth=180, subdiv=1)
+        edge.aerofoil((s * 0.945, 0.115, 0.20), 0.055, 1.90, 0.020, 6.0, seg=16)
+        duct = M("BRAKE_DUCT_" + tag + "F", "RB20_CARBON", smooth=180, subdiv=1)
+        duct.tube((s * 0.60, 0.30, 1.86), (s * 0.70, 0.34, 1.94),
+                  0.075, 14, r1=0.055)
+        duct_r = M("BRAKE_DUCT_" + tag + "R", "RB20_CARBON", smooth=180, subdiv=1)
+        duct_r.tube((s * 0.58, 0.30, -1.58), (s * 0.68, 0.34, -1.66),
+                    0.068, 14, r1=0.050)
+    undercut = M("SIDEPOD_UNDERCUT", "RB20_BODY", smooth=180, subdiv=1)
+    undercut.loft([
+        [(-0.72, 0.13, 1.10), (0.72, 0.13, 1.10),
+         (0.72, 0.30, 1.10), (-0.72, 0.30, 1.10)],
+        [(-0.66, 0.12, 0.40), (0.66, 0.12, 0.40),
+         (0.66, 0.36, 0.40), (-0.66, 0.36, 0.40)],
+        [(-0.52, 0.14, -0.60), (0.52, 0.14, -0.60),
+         (0.52, 0.42, -0.60), (-0.52, 0.42, -0.60)],
+    ], cap=True)
+    exhaust_ring = M("EXHAUST_RING", "RB20_RIM", smooth=180, subdiv=1)
+    exhaust_ring.tube((0.0, 0.330, -2.30), (0.0, 0.330, -2.36),
+                      0.070, 18, r1=0.060)
 
     # ---- rear crash structure, exhaust, rain light, T-cam -----------------
     rear = M("REAR_STRUCTURE", "RB20_CARBON")
@@ -481,19 +531,21 @@ def build_car_raw():
     for tag, x, z, width, outward in wheel_defs:
         origin = (x, TYRE_R, z)
         # dummy translate: geometry is local to the wheel centre
-        w = M("WHEEL_" + tag, "RB20_TYRE", origin=origin)
-        w.cylinder_x((0, 0, 0), TYRE_R, width, seg=32, inner=RIM_R - 0.004)
+        w = M("WHEEL_" + tag, "RB20_TYRE", origin=origin,
+              smooth=180, subdiv=1)
+        w.cylinder_x((0, 0, 0), TYRE_R, width, seg=40, inner=RIM_R - 0.004)
         # rounded shoulders (two thin rings slightly smaller than R)
         for s in (-1, 1):
             w.cylinder_x((s * (width / 2 - 0.018), 0, 0), TYRE_R - 0.012,
                          0.036, seg=32, inner=RIM_R - 0.004)
-        rim = M("RIM_" + tag, "RB20_RIM", origin=origin)
+        rim = M("RIM_" + tag, "RB20_RIM", origin=origin,
+                smooth=180, subdiv=1)
         rim.cylinder_x((0, 0, 0), RIM_R - 0.006, width - 0.070, seg=28, inner=0.055)
         cover = M("COVER_" + tag, "RB20_BODY", origin=origin)
         cover.cylinder_x((outward * (width / 2 - 0.012), 0, 0), RIM_R - 0.012,
                          0.014, seg=28, inner=0.075)
-        for k in range(10):
-            a = 2 * math.pi * k / 10
+        for k in range(12):
+            a = 2 * math.pi * k / 12
             spoke = M("SPOKE_%s_%d" % (tag, k), "RB20_RIM", origin=origin)
             spoke.tube((outward * (width / 2 - 0.020), 0.060 * math.cos(a), 0.060 * math.sin(a)),
                        (outward * (width / 2 - 0.020), (RIM_R - 0.02) * math.cos(a),

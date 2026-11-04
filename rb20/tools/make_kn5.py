@@ -49,28 +49,22 @@ def main():
     texs = textures.build_textures(used)
     os.makedirs(args.car_dir, exist_ok=True)
 
-    # Kunos cars ship a four-step LOD chain referenced by data/lods.ini. Each
-    # level drops the smallest triangle soups; the KN5 format and vanilla
-    # shaders are identical, so no CSP or third-party mesh is involved.
-    def ntri(o):
-        return len(o["indices"]) // 3
-
-    biggest = max(objs, key=ntri)
-    lods = [
-        ("arb_rb20.kn5", objs, 0),
-        ("arb_rb20_LOD_B.kn5", [o for o in objs if ntri(o) >= 24], 24),
-        ("arb_rb20_LOD_C.kn5", [o for o in objs if ntri(o) >= 96], 96),
-        ("arb_rb20_LOD_D.kn5", [o for o in objs if ntri(o) >= 240], 240),
-    ]
-    kn5_paths = []
-    for name, subset, minimum in lods:
-        if not subset:
-            subset = [biggest]
-        p = os.path.join(args.car_dir, name)
-        size = kn5format.write_kn5(p, texs, mats, subset, root_name="ARB_RB20")
-        kn5_paths.append(p)
-        print("wrote %s (%d bytes, %d objects, %d triangles, min %d tri/obj)" %
-              (p, size, len(subset), sum(ntri(o) for o in subset), minimum))
+    # Kunos cars ship a four-step LOD chain referenced by data/lods.ini.
+    # IMPORTANT: every LOD is a byte-identical copy of the full model. A
+    # reduced LOD that omits WHEEL_* / light / dash dummies makes AC fail when
+    # it switches LODs at distance, so we never decimate the node tree.
+    import shutil
+    kn5_paths = [os.path.join(args.car_dir, "arb_rb20.kn5")]
+    size = kn5format.write_kn5(kn5_paths[0], texs, mats, objs,
+                               root_name="ARB_RB20")
+    print("wrote %s (%d bytes, %d objects, %d triangles)" %
+          (kn5_paths[0], size, len(objs), sum(len(o["indices"]) // 3 for o in objs)))
+    for name in ("arb_rb20_LOD_B.kn5", "arb_rb20_LOD_C.kn5",
+                 "arb_rb20_LOD_D.kn5"):
+        dst = os.path.join(args.car_dir, name)
+        shutil.copyfile(kn5_paths[0], dst)
+        kn5_paths.append(dst)
+        print("wrote %s (full LOD copy, %d bytes)" % (dst, size))
 
     col = mesh_core.build_collider()
     col_path = os.path.join(args.car_dir, "collider.kn5")

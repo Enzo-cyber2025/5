@@ -189,3 +189,44 @@ são derivados dos nossos próprios `badge.png`/`preview_small.png`.
 produzido pelo FMOD Studio; não é gerável nem redistribuível. O carro referencia
 apenas `bank:/common` em `sfx/GUIDs.txt`. Continua sem CSP, sem Lua, sem
 `data.acd`, sem física estendida.
+
+
+---
+
+## Correção de crash, modelo no Blender e referência externa (v1.5)
+
+Após o relato de crash no AC real, os arquivos que o jogo **carrega
+automaticamente** e que tínhamos gerado por engenharia reversa foram removidos:
+`driver_base_pos.knh` (rig mínimo), `flames.ini`/`flame_presets.ini` e DDS de
+chama A8R8G8B8, `analog_instruments.ini` + agulhas, `shift.ksanim`/
+`car_shift.ksanim` e as seções `[DISPLAY_0]`/`[ITEM_n]` de
+`digital_instruments.ini`. Sem uma instalação real do AC não há como validar
+esses formatos; preferimos um pacote conservador. Permanecem os arquivos
+inertes (`.rto`, LUTs `wing_controller_*`, WAVs PCM sintéticos, `skin.ini`,
+PNGs de UI), que o AC só lê sob demanda.
+
+Duas correções estruturais adicionais:
+- `LOD_B/C/D.kn5` agora são **cópias byte-a-byte** do KN5 principal. A versão
+  anterior reduzia o `LOD_D` a 6 objetos, sem nenhum nó `WHEEL_*`, luz ou
+  painel — o AC falha ao trocar de LOD a distância.
+- `WING_REAR_FLAP` e `STEER_HR` passaram a ter geometria **local ao pivô**
+  (origem na dobradiça / centro do volante). Assim os `.ksanim` têm translação
+  constante `(0,0,0)` e apenas quaternion variando — exatamente o padrão dos
+  `.ksanim` Kunos (`car_door_L.ksanim`, `car_wing.ksanim`).
+
+**Blender:** `blender_model.py` aplica `SUBSURF` Catmull-Clark nível 1,
+`use_smooth`, `BEVEL` (3 segmentos, limite de ângulo) e `WEIGHTED_NORMAL` às
+33 superfícies curvas. `mesh_core.py` densificou o monocoque (21 estações,
+superelipse de 28 pontos), o halo (25 estações), os aerofólios (18 segmentos),
+as rodas (12 raios, 40 segmentos) e acrescentou louvres, dutos de freio,
+*fences*, asa de borda de assoalho e *undercut*. Texturas DXT1 256×256.
+
+**Referência externa:** `https://modsfire.com/RcgUC30KVzcd5Nr?rf=39204`
+(`redbull-rb20-f1.zip`, 126,51 MB, página de "First Step / Generate Link",
+requer CSP). `tools/fetch_reference.py` roda no Actions com
+`continue-on-error: true`, tenta o download e produz `reference_report.json`
+contendo apenas nomes de arquivos, pastas de `data/`, versões de KN5 e
+marcadores CSP. **Nenhum mesh, textura, som ou config desse mod é copiado,
+commitado ou incluído no ZIP** — não há licença para redistribuição. O gate
+anti-CSP continua ativo. Se o ModsFire bloquear o runner, o build prossegue
+com o nosso próprio modelo.
