@@ -44,10 +44,10 @@ jobs:
           python rb20/tools/fetch_reference.py \
             --url 'https://modsfire.com/RcgUC30KVzcd5Nr?rf=39204' \
             --out rb20/out/reference_report.json \
-            --markdown rb20/out/REFERENCE_MOD.md
+            --markdown rb20/references/EXTERNAL_MOD_STRUCTURE.md
           test -f rb20/out/reference_report.json || echo '{"status":"unavailable","copied_into_mod":false}' > rb20/out/reference_report.json
-          test -f rb20/out/REFERENCE_MOD.md || echo '# Referencia externa indisponivel neste run' > rb20/out/REFERENCE_MOD.md
-          cat rb20/out/REFERENCE_MOD.md || true
+          test -f rb20/references/EXTERNAL_MOD_STRUCTURE.md || printf '# Referencia externa indisponivel neste run\n' > rb20/references/EXTERNAL_MOD_STRUCTURE.md
+          cat rb20/references/EXTERNAL_MOD_STRUCTURE.md || true
 
       - name: MODEL THE CAR IN BLENDER (headless bpy)
         run: python rb20/tools/blender_model.py --out rb20/out
@@ -101,7 +101,7 @@ jobs:
           set -e
           git config user.email "actions@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add rb20/download/RB20_AssettoCorsa.zip
+          git add rb20/download/RB20_AssettoCorsa.zip rb20/references/EXTERNAL_MOD_STRUCTURE.md
           if ! git diff --cached --quiet; then
             git commit -m "RB20: ZIP rebuilt by the Blender Actions runner [skip ci]"
             git push origin HEAD:arena/f4e7ed77-5
@@ -136,4 +136,4 @@ jobs:
             rb20/out/validation/validation_report.json
             rb20/out/validate_report.json
             rb20/out/reference_report.json
-            rb20/out/REFERENCE_MOD.md
+            rb20/references/EXTERNAL_MOD_STRUCTURE.md

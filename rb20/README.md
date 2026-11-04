@@ -296,7 +296,9 @@ louvres nas endplates, dutos de freio, *fences*, asa de borda de assoalho e
 
 ## 🔎 Mod de referência externo (CSP) — só inspeção
 
-`fetch_reference.py` roda no Actions e tenta baixar
+`fetch_reference.py` roda no Actions (o relatório também é publicado em
+[`rb20/references/EXTERNAL_MOD_STRUCTURE.md`](references/EXTERNAL_MOD_STRUCTURE.md))
+e tenta baixar
 `https://modsfire.com/RcgUC30KVzcd5Nr?rf=39204` (`redbull-rb20-f1.zip`,
 126 MB, **exige CSP**). Ele gera `reference_report.json` /
 `REFERENCE_MOD.md` como **artifact**: lista de pastas, arquivos em `data/`,
