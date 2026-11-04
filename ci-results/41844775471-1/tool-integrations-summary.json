@@ -1,0 +1,56 @@
+{
+  "status": "FAIL",
+  "scope": "live-web-search-model-proposed-termux-command-zero-context-and-output",
+  "checks": {
+    "live_web_search_en_and_pt": {
+      "status": "PASS",
+      "stages": [
+        {
+          "stage": "tool-search-pt",
+          "attempt": 1,
+          "prompt": "Pesquise na web: qual a capital do Brasil? Traga uma fonte.",
+          "web_search_enabled": true,
+          "results": [
+            5
+          ],
+          "prompt_citations": [
+            5
+          ]
+        },
+        {
+          "stage": "tool-search-en",
+          "attempt": 1,
+          "prompt": "Search the web for the capital of Brazil and cite a source.",
+          "web_search_enabled": true,
+          "results": [
+            5
+          ],
+          "prompt_citations": [
+            5
+          ]
+        }
+      ]
+    },
+    "zero_uses_model_context_and_remaining_output_budget": {
+      "status": "PASS",
+      "context_setting": 0,
+      "output_setting": 0,
+      "model_context_loaded": 8192,
+      "prompt_tokens": 62,
+      "output_budget": 8130,
+      "available_context": 8130,
+      "answer": "O que é o idioma menos que o usuário peça outro idioma?",
+      "meaning": "maximum finite model context, not infinity"
+    },
+    "termux_official_apk_bootstrapped": {
+      "status": "PASS",
+      "package": "com.termux",
+      "uid": "10210"
+    },
+    "model_proposed_command_confirmed_and_executed_in_official_termux": {
+      "status": "FAIL",
+      "error": "Timeout: diálogo de revisão antes da execução"
+    }
+  },
+  "environment": "Android emulator API 35; official Termux APK v0.118.3 x86_64"
+}
