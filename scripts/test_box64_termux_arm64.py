@@ -9,9 +9,11 @@ from pathlib import Path
 
 EVIDENCE = Path("evidence/box64-arm64")
 APK = Path(os.environ.get("BOX64_TERMUX_APK", ".cache/termux-app-arm64.apk"))
+X86_PROOF = Path(os.environ.get("BOX64_X86_PROOF", ".cache/box64/box64-x86_64-proof"))
 INSTALLER = Path("tests/box64-termux/install-box64-arm64.sh")
 HOME = "/data/data/com.termux/files/home"
 PREFIX = "/data/data/com.termux/files/usr"
+X86_MARKER = "BOX64_X86_64_OK"
 
 
 def adb(*args, timeout=120, check=True):
@@ -39,15 +41,19 @@ def wait_for(predicate, description, timeout=900):
 
 def main():
     EVIDENCE.mkdir(parents=True, exist_ok=True)
-    report = {"status": "FAIL", "scope": "pinned Box64 installation smoke test in ARM64 Termux",
+    report = {"status": "FAIL", "scope": "pinned Box64 installation and x86-64 Linux execution in ARM64 Termux",
               "official_termux_package": False,
               "box64_source": "third-party patched v0.4.5-termux.1 release; pinned SHA-256",
               "sha256": "0dae8257ac7396db4766721e5e4f317679b2080752d32e90d4e6e6fdfee467cf",
               "installer": str(INSTALLER), "app_mediated_model_handoff": False,
+              "x86_proof_source": str(X86_PROOF), "x86_proof_compiled_on": "x86_64 Ubuntu CI runner",
+              "x86_proof_execution": "Termux ARM64 via Box64; harmless write-to-stdout and exit syscall only",
               "limitations": ["This separate architecture smoke test does not claim that Gemma installed Box64.",
-                              "The release is a third-party Android ARM64 build, not an official Termux package."]}
+                              "The release is a third-party Android ARM64 build, not an official Termux package.",
+                              "The x86-64 fixture is a Linux ELF, not an Android APK or GUI app."]}
     try:
         assert APK.is_file() and APK.stat().st_size > 100_000, f"Missing Termux APK: {APK}"
+        assert X86_PROOF.is_file() and X86_PROOF.stat().st_size > 0, f"Missing x86-64 proof: {X86_PROOF}"
         assert INSTALLER.is_file()
         abi = adb("shell", "getprop", "ro.product.cpu.abi")
         report["android_abi"] = abi
@@ -68,20 +74,24 @@ def main():
         remote_installer = HOME + "/install-box64-arm64.sh"
         remote_runner = HOME + "/run-box64-arm64-test.sh"
         adb("push", INSTALLER, remote_installer)
+        remote_proof = HOME + "/box64-x86_64-proof"
+        adb("push", X86_PROOF, remote_proof)
         wrapper = ("#!/data/data/com.termux/files/usr/bin/bash\n"
                    f"printf 'started\\n' > {HOME}/box64-test.started\n"
                    f"bash {remote_installer} > {HOME}/box64-test.log 2>&1\n"
                    "status=$?\n"
                    f"printf '%s\\n' \"$status\" > {HOME}/box64-test.exit\n"
                    f"if [ \"$status\" = 0 ]; then {PREFIX}/bin/box64 --version >> {HOME}/box64-test.log 2>&1; fi\n"
+                   f"if [ \"$status\" = 0 ]; then {PREFIX}/bin/box64 {remote_proof} > {HOME}/box64-x86-proof.log 2>&1; printf '%s\\n' \"$?\" > {HOME}/box64-x86-proof.exit; else printf 'not-run\\n' > {HOME}/box64-x86-proof.exit; fi\n"
                    "exit 0\n")
         wrapper_local = EVIDENCE / "run-box64-arm64-test.sh"
         wrapper_local.write_text(wrapper)
         adb("push", wrapper_local, remote_runner)
-        adb("shell", "chown", f"{uid}:{uid}", remote_installer, remote_runner)
+        adb("shell", "chown", f"{uid}:{uid}", remote_installer, remote_runner, remote_proof)
         adb("shell", "chmod", "700", remote_installer, remote_runner)
+        adb("shell", "chmod", "700", remote_proof)
         adb("shell", "restorecon", remote_installer, remote_runner, check=False)
-        adb("shell", "rm", "-f", HOME + "/box64-test.started", HOME + "/box64-test.exit", HOME + "/box64-test.log", check=False)
+        adb("shell", "rm", "-f", HOME + "/box64-test.started", HOME + "/box64-test.exit", HOME + "/box64-test.log", HOME + "/box64-x86-proof.exit", HOME + "/box64-x86-proof.log", check=False)
 
         adb("shell", "am", "force-stop", "com.termux", check=False)
         adb("shell", "monkey", "-p", "com.termux", "1", check=False)
@@ -97,13 +107,19 @@ def main():
         exit_code = wait_for(lambda: (value if (value := adb("shell", "cat", HOME + "/box64-test.exit", check=False)).isdigit() else ""),
                              "Box64 install completion", timeout=1200)
         log = adb("shell", "cat", HOME + "/box64-test.log", check=False)
+        proof_exit = wait_for(lambda: (value if (value := adb("shell", "cat", HOME + "/box64-x86-proof.exit", check=False)).isdigit() else ""),
+                              "Box64 x86-64 proof completion", timeout=300)
         report["install_exit_code"] = int(exit_code)
         report["installer_log"] = log[-16000:]
         report["box64_version_output"] = adb("shell", "grep", "-m", "1", "-E", "Box64|box64", HOME + "/box64-test.log", check=False)
         report["box64_executable_exists"] = adb("shell", "test", "-x", PREFIX + "/bin/box64", "&&", "echo yes", check=False).strip() == "yes"
+        report["x86_proof_exit_code"] = proof_exit
+        report["x86_proof_output"] = adb("shell", "cat", HOME + "/box64-x86-proof.log", check=False)[-4000:]
         assert report["install_exit_code"] == 0, log[-6000:]
         assert report["box64_executable_exists"], "Pinned installer did not create $PREFIX/bin/box64"
         assert report["box64_version_output"], "box64 --version produced no identifying output"
+        assert report["x86_proof_exit_code"] == "0", report["x86_proof_output"]
+        assert X86_MARKER in report["x86_proof_output"], "Box64 did not run the x86-64 Linux proof program"
         report["status"] = "PASS"
     except Exception as exc:
         report["error"] = str(exc)

@@ -1,4 +1,4 @@
-name: Box64 Termux ARM64 installation smoke test
+name: Box64 Termux ARM64 installation and x86-64 execution test
 on:
   push:
     branches: [arena/10b3367a-5]
@@ -10,7 +10,26 @@ on:
 permissions:
   contents: read
 jobs:
+  build-x86-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build harmless x86-64 Linux proof executable
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/box64
+          gcc -nostdlib -static -no-pie -Wl,-e,_start \
+            tests/box64-termux/x86_64-proof.S \
+            -o .cache/box64/box64-x86_64-proof
+          file .cache/box64/box64-x86_64-proof
+          readelf -h .cache/box64/box64-x86_64-proof | grep -F 'Machine:                           Advanced Micro Devices X86-64'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: box64-x86-proof
+          path: .cache/box64/box64-x86_64-proof
+          retention-days: 30
   box64-arm64:
+    needs: build-x86-proof
     runs-on: macos-15
     timeout-minutes: 60
     steps:
@@ -22,6 +41,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: box64-x86-proof
+          path: .cache/box64
       - name: Install ARM64 Android system image and official Termux APK
         run: |
           set -euo pipefail
@@ -29,7 +52,7 @@ jobs:
           set +o pipefail
           yes | "$SDKMANAGER" --licenses > /tmp/android-licenses.log
           set -o pipefail
-          "$SDKMANAGER" 'platforms;android-35' 'system-images;android-35;google_apis;arm64-v8a'
+          "$SDKMANAGER" 'platforms;android-35' 'system-images;android-35;default;arm64-v8a'
           mkdir -p .cache
           version=v0.118.3
           asset="termux-app_${version}+github-debug_arm64-v8a.apk"
@@ -43,18 +66,19 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           BOX64_TERMUX_APK: .cache/termux-app-arm64.apk
+          BOX64_X86_PROOF: .cache/box64/box64-x86_64-proof
         with:
           api-level: 35
           arch: arm64-v8a
-          target: google_apis
+          target: default
           profile: pixel_5
           cores: 2
           ram-size: 3072M
           heap-size: 512M
           disk-size: 8192M
-          emulator-boot-timeout: 1200
+          emulator-boot-timeout: 2400
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
+          emulator-options: -accel off -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
           script: python3 scripts/test_box64_termux_arm64.py
       - uses: actions/upload-artifact@v4
         if: always()
