@@ -176,7 +176,12 @@ def write_kn5(path, textures, materials, objects, root_name="ARB_RB20"):
     children = []
     for obj in objects:
         mi = mat_index[obj["material"]]
-        mesh_node = {"kind": "mesh", "name": obj["name"], "obj": obj, "material": mi}
+        # Kunos convention: the dummy keeps the object name (physics/wheels/
+        # animations target it) while the renderable mesh gets a distinct name.
+        # lights.ini and digital_instruments.ini must point at a MESH node: with
+        # duplicate names AC resolves the dummy and no emissive light appears.
+        mesh_node = {"kind": "mesh", "name": obj["name"] + "_MESH", "obj": obj,
+                     "material": mi}
         children.append({"kind": "dummy", "name": obj["name"],
                          "matrix": _translation_matrix(obj.get("origin", (0, 0, 0))),
                          "children": [mesh_node]})

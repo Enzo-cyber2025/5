@@ -83,6 +83,34 @@ funcionar em **qualquer pista vanilla**, sem editar arquivos de circuito.
 Efeito medido: `CdA 1,727 → 1,509`, `CLA 2,849 → 2,413`, velocidade final
 **319,6 → 334,3 km/h** com deploy pleno.
 
+**DRS agora é funcional também no visual.** `data/wing_animations.ini` (formato
+vanilla Kunos, não CSP) liga `WING=4` a `animations/rb20_drs.ksanim`, um
+`.ksanim` v2 gerado pelo próprio build com 13 keyframes (quaternion x,y,z,w +
+posição + escala). O AC mapeia o ângulo da asa 12°→0° nos frames e o flap **gira
+de verdade** em torno da dobradiça. `data/digital_instruments.ini` usa as seções
+nativas `DRS_AVAILABLE_0` / `DRS_ENABLED_0` para acender os dois LEDs no volante,
+como no carro real. Os nós dummy e mesh do KN5 receberam nomes distintos — com
+nomes duplicados o `lights.ini` resolve o dummy e nenhuma luz aparece.
+
+## 🔴 Luz traseira — comportamento de F1 real
+
+`data/lights.ini` (`VERSION=3`, chaves vanilla) controla quatro emissores de
+malha independentes:
+
+| Seção | Malha | Comportamento |
+|---|---|---|
+| `[BRAKE_0]` | `RAIN_LIGHT_MESH` | luz central traseira, mais forte ao frear |
+| `[LIGHT_0]` | `RAIN_LIGHT_WET_MESH` | luz de chuva, acionada pelo interruptor de luzes |
+| `[LIGHT_1]` `[LIGHT_2]` | `RAIN_LIGHT_L_MESH` / `_R_MESH` | `KERS=1 SPECIAL=1`: **piscam no harvest do MGU-K/ERS** |
+
+`KERS_BLINKING=1`, `FLASHING_BLINK_TIME=0.15` e `FLASHING_REPEAT=8` são chaves
+do ACD vanilla. O regulamento desportivo **FIA 2024, art. 26.11** exige a luz
+traseira acesa **sempre** que se usam pneus Intermediate ou Full Wet. O AC
+vanilla não tem vínculo composto→luz (isso exigiria CSP/Lua), portanto a regra
+real é implementada como **ação documentada do piloto: ligar as luzes ao calçar
+pneus de chuva**. O piscar na recuperação de energia é automático e nativo.
+Sem shaders `_emissive`, sem `ext_config.ini`, sem `RainFX`.
+
 ## 🌧️ Pneus de chuva
 
 `tyres.ini` ganhou os compostos **3** e **4**: *2024 Cinturato Intermediate*
@@ -158,8 +186,8 @@ chuva com menos aderência.
 | Headers | `car.ini=1`, `tyres.ini=7`, `aero.ini=3`, `drs.ini=2`, `ers.ini=1`, `suspensions/drivetrain=2`, `ai.ini=4` |
 | Shaders / texturas | apenas `ksPerPixel`; DDS DXT1 |
 | `data/` | aberto, sem `data.acd` |
-| `ext_config.ini`, `extension/`, `wing_controller.ini`, `.lua`, `physics/extended`, `_emissive` | **ausentes** |
-| DRS / ERS / pneus de chuva | **nativos vanilla** (`drs.ini`, `ers.ini`, `tyres.ini`) |
+| `ext_config.ini`, `extension/`, `wing_controller.ini`, `.lua`, `physics/extended`, `_emissive` | **ausentes** (`wing_animations.ini` é vanilla e está presente) |
+| DRS / ERS / pneus de chuva / luz / flap | **nativos vanilla** (`drs.ini`, `ers.ini`, `tyres.ini`, `lights.ini`, `wing_animations.ini` + `.ksanim`, `digital_instruments.ini`) |
 | Chuva dinâmica / RainFX / física estendida | **ausentes** (exigiriam CSP) |
 
 ---
@@ -171,8 +199,9 @@ chuva com menos aderência.
    todos os INIs/LUTs, varredura anti-CSP, rasterização do preview e simulação
    numérica contra telemetria. A última palavra sobre o showroom é do seu AC.
 2. **Sem banco FMOD próprio** (`.bank` proprietário não redistribuído).
-3. **Sem animação visual do flap do DRS** — a aerodinâmica é nativa e real, mas
-   o flap não gira na malha (isso exigiria `.ksanim`/CSP).
+3. **A luz de chuva não é automática.** A FIA manda acendê-la com pneus de
+   chuva; no AC vanilla não há como ler o composto sem CSP, então o piloto liga
+   as luzes. O piscar no harvest do ERS é automático.
 4. **Sem chuva dinâmica.** Os compostos de chuva existem; a pista não fica
    molhada sozinha no AC vanilla.
 5. **É uma volta, um circuito, um piloto.** Não é mapa de motor de fábrica nem
@@ -194,7 +223,7 @@ rb20/
 │   ├── mesh_core.py / blender_model.py / kn5format.py / textures.py
 │   ├── make_kn5.py / render_preview.py
 │   ├── calibrate.py       telemetria → INIs/LUTs (potência oficial fixa)
-│   ├── features.py        ERS + DRS + pneus de chuva + UI/calibration
+│   ├── features.py        ERS + DRS + pneus de chuva + luz + .ksanim + UI
 │   ├── physics_sim.py / make_package.py / validate.py
 ├── download/RB20_AssettoCorsa.zip   ← ENTREGÁVEL
 └── out/                             gerado (ignorado)

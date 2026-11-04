@@ -20,7 +20,7 @@ import kn5format
 
 CSP_FORBIDDEN = [
     "extended-", "extendedV", "extension/ext_config.ini", "ext_config.ini",
-    "wing_controller.ini", "wing_animations.ini", "custom_shaders_patch",
+    "wing_controller.ini", "custom_shaders_patch",
     "data.acd", "ksPerPixelMultiMap_emissive", "ksWindscreen", "RainFX",
     "VERSION=10", "VERSION=extended", "[_EXTENSION]", "REQUIRED_VERSION",
     "csp_extra_options", "physics/extended", "SOL__", "AC_RAIN",
@@ -51,6 +51,10 @@ REQUIRED = [
     "content/cars/arb_rb20/data/aero_drs_CL.lut",
     "content/cars/arb_rb20/data/aero_drs_CD.lut",
     "content/cars/arb_rb20/data/lods.ini",
+    "content/cars/arb_rb20/data/lights.ini",
+    "content/cars/arb_rb20/data/digital_instruments.ini",
+    "content/cars/arb_rb20/data/wing_animations.ini",
+    "content/cars/arb_rb20/animations/rb20_drs.ksanim",
     "content/cars/arb_rb20/data/electronics.ini",
     "content/cars/arb_rb20/calibration.json",
     "LEIA-ME.txt",
@@ -63,6 +67,25 @@ def ini(path):
     cp.optionxform = str
     cp.read(path)
     return cp
+
+
+def read_ksanim(path):
+    """Parse a vanilla .ksanim v2; return (version, [(node, frames)], end, size)."""
+    import struct
+    with open(path, "rb") as f:
+        b = f.read()
+    ver, count = struct.unpack_from("<ii", b, 0)
+    off, nodes = 8, []
+    for _ in range(count):
+        (ln,) = struct.unpack_from("<i", b, off)
+        off += 4
+        name = b[off:off + ln].decode("ascii", "replace")
+        off += ln
+        (fc,) = struct.unpack_from("<i", b, off)
+        off += 4
+        off += fc * 40
+        nodes.append((name, fc))
+    return ver, nodes, off, len(b)
 
 
 def check_car_dir(car_dir):
@@ -106,10 +129,13 @@ def check_car_dir(car_dir):
     vanilla_shaders = {"ksPerPixel", "ksPerPixelAT", "ksPerPixelAlpha",
                        "ksPerPixelMultiMap", "ksPerPixel_nosdw", "ksTyres",
                        "ksBrakeDisc", "GL"}
+    mesh_names = set()
     for kn5 in ("arb_rb20.kn5", "collider.kn5"):
         p = os.path.join(car_dir, kn5)
         info = kn5format.read_kn5(p)
         nodes = list(kn5format.walk(info["root"]))
+        if kn5 == "arb_rb20.kn5":
+            mesh_names.update(n["name"] for n in nodes if n["class"] == 2)
         meshes = [n for n in nodes if n["class"] == 2]
         tris = sum(n["index_count"] // 3 for n in meshes)
         if not meshes:
@@ -189,6 +215,46 @@ def check_car_dir(car_dir):
     bhp = ui.get("specs", {}).get("bhp", "")
     if "1080" not in bhp or "805" not in bhp:
         problems.append("ui_car.json does not show the official 805 kW")
+    # 7. Real-F1 rear light, DRS dash LEDs and the visual flap animation.
+    lights = ini(os.path.join(data, "lights.ini"))
+    if lights.get("HEADER", "VERSION", fallback="") != "3":
+        problems.append("lights.ini must be vanilla VERSION=3")
+    if lights.get("HEADER", "KERS_BLINKING", fallback="0") != "1":
+        problems.append("lights.ini must enable vanilla KERS_BLINKING")
+    if "COLOR" not in (lights["BRAKE_0"] if lights.has_section("BRAKE_0") else {}):
+        problems.append("main rear light has no COLOR/OFF_COLOR")
+    light_secs = [x for x in lights.sections() if x.startswith("LIGHT_")]
+    if not any(lights.get(x, "KERS", fallback="0") == "1" for x in light_secs):
+        problems.append("no rear light flashes on MGU-K harvest (KERS=1)")
+    if not any(lights.get(x, "SPECIAL", fallback="0") == "1" for x in light_secs):
+        problems.append("ERS repeater lights must use SPECIAL=1")
+    wanim = ini(os.path.join(data, "wing_animations.ini"))
+    if wanim.get("ANIMATION_0", "WING", fallback="") != "4":
+        problems.append("wing_animations.ini must target WING_4 (the DRS flap)")
+    if wanim.get("ANIMATION_0", "FILE", fallback="") != "rb20_drs.ksanim":
+        problems.append("wing_animations.ini points at the wrong .ksanim")
+    ks = os.path.join(car_dir, "animations", "rb20_drs.ksanim")
+    if os.path.exists(ks):
+        ver, knodes, off, size = read_ksanim(ks)
+        if ver != 2 or off != size:
+            problems.append("rb20_drs.ksanim is not a well-formed vanilla v2 animation")
+        if len(knodes) != 1 or knodes[0] != ("WING_REAR_FLAP", 13):
+            problems.append("DRS animation must have 13 frames on WING_REAR_FLAP")
+    else:
+        problems.append("missing animations/rb20_drs.ksanim")
+    digi = ini(os.path.join(data, "digital_instruments.ini"))
+    for sec in ("DRS_AVAILABLE_0", "DRS_ENABLED_0"):
+        if sec not in digi:
+            problems.append("missing vanilla dash DRS section " + sec)
+    refs = [lights.get(x, "NAME", fallback="") for x in lights.sections()
+            if lights.has_option(x, "NAME")]
+    refs += [digi.get(x, "OBJECT_NAME", fallback="") for x in digi.sections()
+             if digi.has_option(x, "OBJECT_NAME")]
+    for r in refs:
+        if r and r not in mesh_names:
+            problems.append("lights/dash references missing KN5 mesh " + r)
+    notes.append("lights: vanilla VERSION=3 (brake / wet / KERS harvest flash), "
+                 "DRS: WING_4 13-frame flap animation + 2 dash LEDs")
     notes.append("features: ERS 120 kW/4 MJ, DRS WING_4, 5 compounds (2 wet), 805 kW official")
     return problems, notes
 

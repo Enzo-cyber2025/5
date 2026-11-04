@@ -48,12 +48,35 @@ data/kers_torque_coast.lut e as LUTs de controle.
 - Carga limitada a 33,33 s de deploy continuo (4 MJ por volta).
 - MGU-K recupera energia na frenagem (2 MJ/volta) com correcao no eixo traseiro.
 
-DRS (NATIVO, SEM CSP)
----------------------
-Arquivo: data/drs.ini (VERSION=2). O flap traseiro e a asa WING_4 de aero.ini.
-- Pressione o botao "DRS" mapeado nos controles para abrir o flap.
+DRS FUNCIONAL (NATIVO, SEM CSP)
+-------------------------------
+Arquivos: data/drs.ini (VERSION=2), data/wing_animations.ini (vanilla),
+animations/rb20_drs.ksanim (13 keyframes, formato binario vanilla v2),
+data/digital_instruments.ini (secoes DRS_AVAILABLE_0 / DRS_ENABLED_0).
+- Pressione o botao "DRS" mapeado nos controles: o flap WING_4 vai de 12 graus
+  (fechado) a 0 (aberto), a aerodinamica muda E A MALHA GIRA de verdade em
+  torno da dobradica. O AC associa o angulo da asa aos keyframes do .ksanim.
+- Dois LEDs no volante acendem: "DRS disponivel" e "DRS ativo", como no carro
+  real (digital_instruments.ini e nativo do ACD, nao e CSP).
 - IGNORE_ZONES=1: funciona em QUALQUER pista vanilla, sem editar o circuito.
 - Aberto: CdA cai ~13% e a downforce ~15%; ganho de velocidade em VALIDACAO.md.
+
+LUZ TRASEIRA (COMPORTAMENTO DE F1 REAL)
+---------------------------------------
+Arquivo: data/lights.ini (VERSION=3, chaves vanilla). Quatro emissores de malha
+independentes: luz central principal, luz central de chuva e dois repetidores
+nas placas laterais da asa traseira.
+- [BRAKE_0] -> luz central principal: fica mais forte ao frear.
+- [LIGHT_0] -> luz de chuva: LIGUE AS LUZES DO CARRO ao usar Intermediate ou
+  Full Wet. O regulamento desportivo FIA 2024 art. 26.11 obriga a luz traseira
+  a estar acesa SEMPRE com pneus intermediarios/de chuva. O AC vanilla nao
+  consegue detetar o composto automaticamente (isso exigiria CSP/Lua), entao
+  a acao do piloto e documentada em vez de fingirmos automacao.
+- [LIGHT_1] / [LIGHT_2] -> repetidores nas endplates com KERS=1 e
+  KERS_BLINKING=1: PICAM durante a recuperacao de energia do MGU-K/ERS,
+  exatamente como os carros de F1 reais. SPECIAL=1 impede que o interruptor
+  de luzes apague esse comportamento.
+- Sem shaders _emissive, sem ext_config.ini, sem dados AC_RAIN/RainFX.
 
 PNEUS DE CHUVA
 --------------
@@ -70,7 +93,9 @@ O QUE ESTA INCLUSO
   suspensao e cockpit; texturas DDS DXT1 embutidas.
 - data/ aberto (nao criptografado) com todos os INIs/LUTs: car, engine,
   power, coast, drivetrain, suspensions, tyres (5 compostos), aero (5 asas),
-  brakes, setup, electronics, ai, ers, drs e curvas de controle.
+  brakes, setup, electronics, ai, ers, drs, lights,
+  digital_instruments, wing_animations e curvas de controle.
+- animations/rb20_drs.ksanim: animacao visual nativa do flap do DRS.
 - Fisica calibrada com telemetria REAL da pole de Verstappen no GP do Bahrein
   2024 (FastF1): cambio, torque, arrasto, downforce, aderencia e frenagem.
 
@@ -84,7 +109,8 @@ SEM CSP - POR CONSTRUCAO
 LIMITACOES HONESTAS
 -------------------
 - Nao ha banco FMOD proprio: o AC pode usar o fallback de audio do jogo.
-- Sem animacao visual do flap do DRS (a aerodinamica e nativa e real).
+- A luz de chuva NAO e automatica: tem de ligar as luzes com pneus de chuva
+  (limitacao do AC vanilla, documentada acima).
 - Chuva dinamica e MGU-H detalhado exigiriam CSP; nao foram usados.
 - Modelo e livery originais, SEM logos ou marcas de equipe. Projeto de fa.
 - Este mod NAO foi executado dentro do Assetto Corsa neste ambiente (sem
@@ -94,8 +120,8 @@ LIMITACOES HONESTAS
 RECONSTRUIR (GitHub Actions com Blender)
 ---------------------------------------
 O workflow .github/workflows/rb20-mod.yml instala o Blender (bpy), modela o
-carro, calibra a fisica, gera ERS/DRS/pneus de chuva, gera os KN5, valida e
-produz este ZIP.
+carro, calibra a fisica, gera ERS/DRS/pneus de chuva, luzes de F1 e a
+animacao .ksanim do flap, gera os KN5, valida e produz este ZIP.
 """
 VALIDACAO_HEAD = """VALIDACAO DA FISICA (offline, comparada com telemetria real)
 ============================================================

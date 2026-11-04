@@ -72,3 +72,53 @@ Os repositórios acima foram consultados apenas para entender o **formato** dos
 arquivos. Suas licenças são variadas (alguns `NO-LICENSE`); nenhum `.ini`,
 `.lut`, `.kn5`, `.ksanim`, malha ou textura deles foi incorporado ao ZIP.
 Toda a física e a geometria deste mod são originais.
+
+
+---
+
+## Luz traseira e animação visual do DRS (v1.2)
+
+Fontes consultadas (todas sobre o AC **vanilla**, não CSP):
+
+- FIA 2024 Formula One **Sporting Regulations**, art. **26.11**: as luzes do
+  art. 14.3 devem estar iluminadas **sempre** que se usam pneus intermediate ou
+  wet. `https://www.fia.com/sites/default/files/fia_2024_formula_1_sporting_regulations_-_issue_4_-_2024-02-13.pdf`
+  (e issue 1, 2023-09-26). Art. 14.3 das *Technical Regulations* define a luz
+  traseira vermelha central.
+- F1-Fansite "flashing backlight" e Yahoo Autos: a luz traseira também pisca
+  durante o harvest do MGU-K/ERS e em baixa visibilidade; os repetidores ficam
+  nas placas laterais da asa traseira.
+- `https://labs.assettocorsa.jp/documents/reference/acd/lights`: `lights.ini`
+  aceita `[HEADER] VERSION`, `FLASHING_BLINK_TIME`, `FLASHING_REPEAT`,
+  `KERS_BLINKING`, `NO_LIGHT_SWITCH`; `[BRAKE_n] NAME/COLOR/OFF_COLOR`;
+  `[LIGHT_n] NAME/COLOR/OFF_COLOR/FLASH/PITLINE/KERS/SPECIAL`.
+  `https://www.scribd.com/document/501206878/AC-Pipeline-PUB-Rev2-0` (guia
+  AC Pipeline da Kunos) mostra `[LIGHT_0] NAME=g_Rain_Lights COLOR=180,0,0
+  PITLINE=1 KERS=1 SPECIAL=1`. Exemplos reais: `ohyeah2389/Assetto-T-180`
+  e `wintersjp/Zero-Culture-Cosmic-Drift-Pack` (`VERSION=2/3`, `COLOR`,
+  `OFF_COLOR`, `PITLINE=1`, `SPECIAL=1`, `INTENSITY`).
+- `https://labs.assettocorsa.jp/documents/reference/acd/digital_instruments`:
+  seções nativas `DRS_AVAILABLE_n`, `DRS_ENABLED_n`, `DRS_SERIE_n`,
+  `KERS_CHARGE_SERIE_n`, `KERS_INPUT_SERIE_n`, `KERS_LOAD_SERIE_n`, `LED_n`,
+  `RPM_SERIE_n`. Exemplo real: `hitairou/AssettoCorsa_tu_ecoran_c50e
+  data/digital_instruments.ini` (`[DRS_ENABLED_0] OBJECT_NAME=... EMISSIVE
+  BLINK_TIME`).
+- `https://www.overtake.gg/threads/how-to-create-a-wing-animation-in-assetto-corsa.237307/`
+  e `https://www.overtake.gg/threads/wing-animation-with-setup-click.262833/`:
+  `wing_animations.ini` + `.ksanim` são **vanilla** e ligam `WING=n` ao
+  `FILE=...`, com `MIN/MAX` em graus, `SPEED`, `NEXT`, `INVERTED`. Confirmado
+  em carros sem física estendida: `rick-lg/Lazy-Gecko-AC cars/prs_box`
+  (`car.ini VERSION=2`) e `tfuruha/gokart_ev` (`VERSION=1`). Exemplo real:
+  `Gemicaiz/AC_Car_Editor examples/data/wing_animations.ini`
+  (`[ANIMATION_0] WING=3 FILE=car_wing.ksanim MIN=0 MAX=13`).
+- Formato binário `.ksanim` v2 confirmado por parsing dos arquivos reais em
+  `Gemicaiz/AC_Car_Editor examples/audi_A5_teamsesh/animations/`:
+  `int32 version=2`, `int32 nodeCount`, e por nó `int32 nameLen`,
+  `char name[nameLen]`, `int32 frameCount`, `frameCount × 10 floats`
+  = `quat(x,y,z,w) + pos(3) + scale(3)`. Identidade = `(0,0,0,1)`
+  (verificado em `car_door_L.ksanim`); `car_wing.ksanim` e `car_wiper.ksanim`
+  foram lidos até o último byte. O gerador está em `tools/features.py`.
+
+**Limitação real**: AC vanilla não expõe o composto de pneu ao `lights.ini`.
+A regra 26.11 é cumprida pelo piloto (ligar as luzes com pneus de chuva), não
+por automação; automatizar exigiria CSP/Lua, que está fora do escopo.

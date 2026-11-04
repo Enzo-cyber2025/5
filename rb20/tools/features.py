@@ -340,6 +340,129 @@ def rewrite_ui(ui_dir, calib):
     return frac
 
 
+# ------------------------------------------------------------------ rear light
+# Vanilla lights.ini (Kunos ACD reference, VERSION=3). Real F1 behaviour:
+#   * main central red light -> [BRAKE_0], bright when braking;
+#   * second central emitter -> [LIGHT_0], switched on by the driver together
+#     with the light switch: FIA 2024 Sporting Regs art. 26.11 requires the
+#     rear light to be illuminated at ALL TIMES when intermediate/wet tyres
+#     are used. Vanilla AC cannot detect the tyre compound automatically, so
+#     the documented driver action is "lights on whenever wets are fitted";
+#   * the two endplate repeaters -> [LIGHT_1] / [LIGHT_2] with KERS=1: they
+#     flash while the MGU-K is harvesting energy, exactly like a real F1 car.
+# KERS_BLINKING=1 / FLASHING_* are vanilla header keys, not CSP.
+LIGHTS_INI = """[HEADER]
+VERSION=3
+FLASHING_BLINK_TIME=0.15
+FLASHING_REPEAT=8
+KERS_BLINKING=1
+
+[BRAKE_0]
+NAME=RAIN_LIGHT_MESH
+COLOR=320,10,6
+OFF_COLOR=0,0,0
+
+[LIGHT_0]
+NAME=RAIN_LIGHT_WET_MESH
+COLOR=180,0,0
+OFF_COLOR=0,0,0
+
+[LIGHT_1]
+NAME=RAIN_LIGHT_L_MESH
+COLOR=180,0,0
+KERS=1
+PITLINE=1
+SPECIAL=1
+
+[LIGHT_2]
+NAME=RAIN_LIGHT_R_MESH
+COLOR=180,0,0
+KERS=1
+PITLINE=1
+SPECIAL=1
+"""
+
+# Vanilla ACD digital_instruments.ini DRS sections. OBJECT_NAME points at real
+# MESH nodes of the KN5 (the dummy/mesh name collision was removed), so no
+# missing-dummy crash is possible.
+DIGITAL_INI = """[DRS_AVAILABLE_0]
+OBJECT_NAME=DASH_DRS_AVAIL_MESH
+EMISSIVE=0,12,0
+DIFFUSE=0.30
+BLINK_TIME=0
+
+[DRS_ENABLED_0]
+OBJECT_NAME=DASH_DRS_MESH
+EMISSIVE=0,35,0
+DIFFUSE=0.30
+BLINK_TIME=0
+"""
+
+WING_ANIM_INI = """[ANIMATION_0]
+WING=4
+FILE=rb20_drs.ksanim
+MIN=0
+MAX=12
+INVERTED=0
+SPEED=6
+"""
+
+# Rear flap hinge in car coordinates (Y-up, +Z forward): leading edge of the
+# 0.215 m chord aerofoil at (0, 0.985, -2.415) inclined 26 degrees.
+FLAP_HINGE_Y = 0.940
+FLAP_HINGE_Z = -2.320
+DRS_NODE = "WING_REAR_FLAP"
+
+
+def write_ksanim(path, node_name, frames):
+    """Write a vanilla AC .ksanim v2 keyframe animation.
+
+    On-disk layout verified against Kunos-style .ksanim files:
+      int32 version=2, int32 node_count
+      per node: int32 name_len, char name[name_len], int32 frame_count,
+                frame_count * 10 floats = quat(x,y,z,w) + pos(3) + scale(3).
+    Identity rotation is (0,0,0,1); no CSP/Lua is involved.
+    """
+    import struct
+    buf = bytearray()
+    buf += struct.pack("<ii", 2, 1)
+    nm = node_name.encode("ascii")
+    buf += struct.pack("<i", len(nm)) + nm
+    buf += struct.pack("<i", len(frames))
+    for q, p, s in frames:
+        buf += struct.pack("<10f", q[0], q[1], q[2], q[3],
+                           p[0], p[1], p[2], s[0], s[1], s[2])
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(buf)
+
+
+def drs_frames():
+    """13 keyframes: wing angle 12 deg (DRS closed) -> 0 deg (DRS open).
+
+    The flap's KN5 dummy sits at the origin and its vertices are in car space,
+    so a rotation about the hinge H is stored as R plus t = H - R*H.
+    """
+    frames = []
+    for angle in range(13):
+        theta = math.radians(12 - angle)
+        c, sn = math.cos(theta), math.sin(theta)
+        q = (math.sin(theta / 2.0), 0.0, 0.0, math.cos(theta / 2.0))
+        hy, hz = FLAP_HINGE_Y, FLAP_HINGE_Z
+        ty = hy * (1.0 - c) + hz * sn
+        tz = hz * (1.0 - c) - hy * sn
+        frames.append((q, (0.0, ty, tz), (1.0, 1.0, 1.0)))
+    return frames
+
+
+def write_visual_features(car_dir, d):
+    _w(os.path.join(d, "lights.ini"), LIGHTS_INI)
+    _w(os.path.join(d, "digital_instruments.ini"), DIGITAL_INI)
+    _w(os.path.join(d, "wing_animations.ini"), WING_ANIM_INI)
+    write_ksanim(os.path.join(car_dir, "animations", "rb20_drs.ksanim"),
+                 DRS_NODE, drs_frames())
+
+
 def apply(car_dir):
     """Post-process the calibrated data/ folder with native AC features."""
     d = os.path.join(car_dir, "data")
@@ -354,6 +477,7 @@ def apply(car_dir):
     write_ers(d)
     write_drs(d, CLA, CdA)
     write_wet(d, mu)
+    write_visual_features(car_dir, d)
     rewrite_ui(os.path.join(car_dir, "ui"), calib)
 
     calib["official_power"] = {
@@ -385,6 +509,31 @@ def apply(car_dir):
         "ignore_track_zones": True,
         "implementation": "vanilla drs.ini VERSION=2",
     }
+    calib["rear_light"] = {
+        "implementation": "vanilla lights.ini VERSION=3 (no CSP, no emissive shaders)",
+        "main_light": "BRAKE_0 -> RAIN_LIGHT_MESH, brighter under braking",
+        "wet_rule": "FIA 2024 Sporting Regulations art. 26.11: the rear light "
+                    "must be lit at all times with intermediate/full wet tyres",
+        "wet_activation": "LIGHT_0 -> RAIN_LIGHT_WET_MESH, driver switches the "
+                          "car lights on when fitting wet compounds. Vanilla AC "
+                          "has no compound-to-light binding (that needs CSP).",
+        "ers_harvest": "LIGHT_1/LIGHT_2 -> RAIN_LIGHT_L_MESH / _R_MESH, "
+                       "KERS=1 + KERS_BLINKING=1: flashes on MGU-K recovery",
+        "dashboard": "vanilla digital_instruments.ini DRS_AVAILABLE_0 / "
+                     "DRS_ENABLED_0 -> steering-wheel LEDs",
+        "meshes": ["RAIN_LIGHT_MESH", "RAIN_LIGHT_WET_MESH",
+                   "RAIN_LIGHT_L_MESH", "RAIN_LIGHT_R_MESH",
+                   "DASH_DRS_AVAIL_MESH", "DASH_DRS_MESH"],
+    }
+    calib["drs"]["visual_animation"] = {
+        "implementation": "vanilla wing_animations.ini + animations/rb20_drs.ksanim v2",
+        "wing": DRS_WING,
+        "frames": len(drs_frames()),
+        "angle_range_deg": [DRS_OPEN_ANGLE, DRS_CLOSED_ANGLE],
+        "node": DRS_NODE,
+        "note": "AC maps the wing angle (12 deg closed -> 0 deg open) to the "
+                "13 keyframes; the flap physically rotates about its hinge.",
+    }
     calib["wet_tyres"] = {
         "compounds": ["2024 Cinturato Intermediate", "2024 Cinturato Full Wet"],
         "grip_multiplier": {w["name"]: w["gm"] for w in WET},
@@ -395,5 +544,6 @@ def apply(car_dir):
     with open(p, "w", encoding="utf-8") as f:
         json.dump(calib, f, indent=2)
         f.write("\n")
-    print("  features: ERS (120 kW / 4 MJ), DRS (WING_4), 2 wet compounds, "
+    print("  features: ERS (120 kW / 4 MJ), DRS (WING_4 + 13-frame flap "
+          "animation), 2 wet compounds, vanilla F1 rear light / dash LEDs, "
           "official 805 kW published")

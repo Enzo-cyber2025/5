@@ -44,6 +44,7 @@ MATERIALS = {
     "RB20_GLASS":  ((34, 48, 58),   "dark visor"),
     "RB20_BRAKE":  ((74, 64, 56),   "carbon disc"),
     "RB20_LIGHT":  ((220, 30, 30),  "rain light"),
+    "RB20_LED":    ((30, 220, 100), "steering wheel DRS/ERS LEDs"),
 }
 
 
@@ -404,6 +405,13 @@ def build_car_raw():
     steer.box((0.0, 0.505, 1.002), (0.185, 0.030, 0.012))
     for s in (-1, 1):
         steer.box((s * 0.105, 0.545, 1.002), (0.065, 0.130, 0.022))
+    # Steering-wheel DRS LEDs, like the real RB20 wheel: one for "DRS
+    # available" and one for "DRS enabled". digital_instruments.ini (vanilla
+    # ACD DRS_AVAILABLE_n / DRS_ENABLED_n) switches their emissive.
+    avail = M("DASH_DRS_AVAIL", "RB20_LED")
+    avail.box((-0.055, 0.596, 1.012), (0.022, 0.010, 0.006))
+    enabled = M("DASH_DRS", "RB20_LED")
+    enabled.box((0.055, 0.596, 1.012), (0.022, 0.010, 0.006))
 
     # ---- front wing: mainplane, 3 flaps, endplates -------------------------
     fw = M("WING_FRONT", "RB20_CARBON", smooth=180)
@@ -436,8 +444,19 @@ def build_car_raw():
     rear.box((0.0, 0.285, -2.16), (0.30, 0.22, 0.34), taper=0.55)
     exh = M("EXHAUST", "RB20_RIM")
     exh.tube((0.0, 0.330, -2.02), (0.0, 0.330, -2.32), 0.055, 12, r1=0.048)
+    # ---- real F1 rear light cluster ----------------------------------------
+    # FIA 2024 Technical Regs art. 14.3 / Sporting Regs art. 26.11: one red
+    # rear light, always lit with intermediate/full-wet tyres, brighter under
+    # braking and flashing while the MGU-K harvests. Vanilla lights.ini drives
+    # these meshes by node name; each one has its own node so it can be
+    # controlled independently (brake / steady wet / ERS harvest repeaters).
     light = M("RAIN_LIGHT", "RB20_LIGHT")
     light.box((0.0, 0.245, -2.33), (0.085, 0.060, 0.025))
+    wet = M("RAIN_LIGHT_WET", "RB20_LIGHT")
+    wet.box((0.0, 0.281, -2.332), (0.055, 0.020, 0.020))
+    for s, tag in ((-1, "L"), (1, "R")):
+        led = M("RAIN_LIGHT_" + tag, "RB20_LIGHT")
+        led.box((s * 0.528, 0.865, -2.360), (0.014, 0.045, 0.030))
     cam = M("T_CAM", "RB20_CARBON")
     cam.box((0.0, 0.790, 0.13), (0.12, 0.10, 0.17), taper=0.4)
 
