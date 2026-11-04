@@ -49,10 +49,28 @@ def main():
     texs = textures.build_textures(used)
     os.makedirs(args.car_dir, exist_ok=True)
 
-    kn5_path = os.path.join(args.car_dir, "arb_rb20.kn5")
-    size = kn5format.write_kn5(kn5_path, texs, mats, objs, root_name="ARB_RB20")
-    print("wrote %s (%d bytes, %d objects, %d triangles)" %
-          (kn5_path, size, len(objs), sum(len(o["indices"]) // 3 for o in objs)))
+    # Kunos cars ship a four-step LOD chain referenced by data/lods.ini. Each
+    # level drops the smallest triangle soups; the KN5 format and vanilla
+    # shaders are identical, so no CSP or third-party mesh is involved.
+    def ntri(o):
+        return len(o["indices"]) // 3
+
+    biggest = max(objs, key=ntri)
+    lods = [
+        ("arb_rb20.kn5", objs, 0),
+        ("arb_rb20_LOD_B.kn5", [o for o in objs if ntri(o) >= 24], 24),
+        ("arb_rb20_LOD_C.kn5", [o for o in objs if ntri(o) >= 96], 96),
+        ("arb_rb20_LOD_D.kn5", [o for o in objs if ntri(o) >= 240], 240),
+    ]
+    kn5_paths = []
+    for name, subset, minimum in lods:
+        if not subset:
+            subset = [biggest]
+        p = os.path.join(args.car_dir, name)
+        size = kn5format.write_kn5(p, texs, mats, subset, root_name="ARB_RB20")
+        kn5_paths.append(p)
+        print("wrote %s (%d bytes, %d objects, %d triangles, min %d tri/obj)" %
+              (p, size, len(subset), sum(ntri(o) for o in subset), minimum))
 
     col = mesh_core.build_collider()
     col_path = os.path.join(args.car_dir, "collider.kn5")
@@ -68,7 +86,7 @@ def main():
                 f.write(blob)
 
     # Structural round-trip check with our independent reader.
-    for p in (kn5_path, col_path):
+    for p in kn5_paths + [col_path]:
         info = kn5format.read_kn5(p)
         nodes = list(kn5format.walk(info["root"]))
         meshes = [n for n in nodes if n["class"] == 2]

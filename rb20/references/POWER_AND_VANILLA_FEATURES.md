@@ -122,3 +122,37 @@ Fontes consultadas (todas sobre o AC **vanilla**, não CSP):
 **Limitação real**: AC vanilla não expõe o composto de pneu ao `lights.ini`.
 A regra 26.11 é cumprida pelo piloto (ligar as luzes com pneus de chuva), não
 por automação; automatizar exigiria CSP/Lua, que está fora do escopo.
+
+
+---
+
+## Layout padrão de `content/cars/<id>/` (v1.3)
+
+Para alinhar a estrutura do mod aos carros oficiais, consultamos a árvore
+completa do template open-wheel da Kunos `EXAMPLE/formula_k` em
+`https://github.com/javirs200/acCar` (GPL-3.0) e de
+`daniruiz/AC_MAZDA_MX5-ND2` (`ks_mazda_mx5_nd2`). Ambos mostram que um
+carro vanilla tem, além de `data/` + KN5:
+
+- cadeia de LODs (`lods.ini` → `<car>.kn5`, `<car>_LOD_B/C/D.kn5`),
+  `collider.kn5`, `logo.png`, `body_shadow.png`, `tyre_0..3_shadow.png`;
+- `animations/` (`steer.ksanim`, `shift.ksanim`, suspensões, portas, limpadores);
+- `data/driver3d.ini`, `cameras.ini`, `dash_cam.ini`, `escmode.ini`,
+  `fuel_cons.ini`, `blurred_objects.ini`, `proview_nodes.ini`,
+  `suspension_graphics.ini`, `sounds.ini`, `mirrors.ini`, `damage.ini`;
+- `sfx/GUIDs.txt` (+ banco FMOD), `skins/<skin>/preview.jpg`, `ui_skin.json`,
+  `livery.png`, `*.dds`, `texture/display.png`, `ui/ui_car.json`,
+  `badge.png`, `preview_small.png`.
+
+O `formula_K_LOD_C.kn5` também foi lido com o nosso parser para confirmar a
+hierarquia Kunos: um dummy raiz, dummies por objeto (`WING_REAR`,
+`WING_REAR_MOBILE`, `REAR_LIGHT`, `STEER_HR`, `WHEEL_LF` com filhos
+`TYRE_LF`/`RIM_LF`/`RIM_BLUR_LF`) e nós de malha com o mesmo nome do dummy ou
+sufixo `_SUBn`. Nossas malhas de luz/painel mantêm nomes distintos (`_MESH`)
+porque `lights.ini`/`digital_instruments.ini` precisam resolver um nó que
+realmente tenha material.
+
+**O que não foi replicado** (opcional/binário proprietário): `driver_base_pos.knh`,
+banco FMOD próprio, `texture/flames/*.dds`, `flames.ini`, `flame_presets.ini`,
+`ratios.rto`/`final.rto` e `wing_controller_*.lut`. Nada disso é necessário
+para o AC vanilla carregar o carro.

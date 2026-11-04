@@ -147,9 +147,19 @@ def main():
     ui = os.path.join(args.car_dir, "ui")
     os.makedirs(skins, exist_ok=True)
     os.makedirs(ui, exist_ok=True)
-    render(objs, os.path.join(skins, "preview.jpg"))
+    preview = os.path.join(skins, "preview.jpg")
+    render(objs, preview)
     badge(os.path.join(ui, "badge.png"))
     badge(os.path.join(ui, "logo.png"))
+    # Standard Kunos car folder also carries logo.png at the root and a small
+    # showroom preview under ui/.
+    import shutil
+    shutil.copyfile(os.path.join(ui, "logo.png"),
+                    os.path.join(args.car_dir, "logo.png"))
+    small = Image.open(preview).convert("RGB")
+    small.thumbnail((320, 180))
+    small.save(os.path.join(ui, "preview_small.png"))
+    print("wrote", os.path.join(ui, "preview_small.png"))
 
 
 if __name__ == "__main__":

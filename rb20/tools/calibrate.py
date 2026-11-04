@@ -51,6 +51,7 @@ CG_LOCATION = 0.455
 # kers_torque.lut and is deployed by ers.ini. Their sum is the official 805 kW.
 # Single source of truth for these numbers: features.py.
 import features
+import layout
 from features import (PU_PEAK_KW, MGUK_KW, ICE_KW, ERS_DEPLOY_MJ_LAP,
                       ERS_RECOVERY_MJ_LAP, DRIVETRAIN_EFF)
 
@@ -1013,21 +1014,29 @@ NAME=RAIN_LIGHT
 INTENSITY=100
 """)
     w(os.path.join(data, "lods.ini"), """[COCKPIT_HR]
-DISTANCE_SWITCH=7
+DISTANCE_SWITCH=6
+
+[DRIVER_HR]
+DISTANCE_SWITCH=25
 
 [LOD_0]
 FILE=arb_rb20.kn5
 IN=0
-OUT=30
+OUT=15
 
 [LOD_1]
-FILE=arb_rb20.kn5
-IN=30
-OUT=120
+FILE=arb_rb20_LOD_B.kn5
+IN=15
+OUT=45
 
 [LOD_2]
-FILE=arb_rb20.kn5
-IN=120
+FILE=arb_rb20_LOD_C.kn5
+IN=45
+OUT=201
+
+[LOD_3]
+FILE=arb_rb20_LOD_D.kn5
+IN=201
 OUT=2000
 """)
     w(os.path.join(data, "damage.ini"), """[DAMAGE]
@@ -1072,10 +1081,11 @@ SUSPENSION_DAMAGE_K=0.0005
     w(os.path.join(ui, "ui_car.json"), json.dumps(ui_car, indent=2, ensure_ascii=False) + "\n")
 
     calib["ui_specs"] = ui_car["specs"]
-    with open(os.path.join(CAR_DIR, "calibration.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(data, "calibration.json"), "w", encoding="utf-8") as f:
         json.dump(calib, f, indent=2)
     features.apply(CAR_DIR)
-    print("wrote calibration.json")
+    layout.apply(CAR_DIR)
+    print("wrote data/calibration.json")
     print("\nCALIBRATION SUMMARY")
     print("  lap            %.3f s  / %.0f m  / %d samples" %
           (d["lap_time"], d["lap_distance"], d["rows"]))

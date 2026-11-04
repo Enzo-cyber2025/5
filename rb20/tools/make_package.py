@@ -87,6 +87,25 @@ IMPORTANTE: o AC vanilla NAO tem chuva dinamica (isso exigiria CSP/RainFX,
 que nao usamos). Os pneus existem e tem a fisica de pista molhada, mas a
 condicao da pista nao muda sozinha no jogo base.
 
+ESTRUTURA DO CARRO (PADRAO KUNOS)
+---------------------------------
+content/cars/arb_rb20/
+  arb_rb20.kn5 + arb_rb20_LOD_B/C/D.kn5 + collider.kn5
+  logo.png, body_shadow.png, tyre_0..3_shadow.png
+  animations/  steer.ksanim, rb20_drs.ksanim
+  data/        todos os INIs/LUTs (inclui driver3d.ini, cameras.ini,
+               dash_cam.ini, escmode.ini, fuel_cons.ini, blurred_objects.ini,
+               proview_nodes.ini, suspension_graphics.ini, lights.ini,
+               digital_instruments.ini, wing_animations.ini)
+  sfx/         GUIDs.txt (banco comum) + LEIA-ME-SOM.txt
+  skins/       default/preview.jpg, livery.png, ui_skin.json, *.dds
+  texture/     display.png, display_off.png
+  ui/          ui_car.json, badge.png, logo.png, preview_small.png
+O ZIP contem SOMENTE content/; este LEIA-ME, VALIDACAO.md e REFERENCIAS.md
+ficam dentro da pasta do carro, sem espalhar arquivos na raiz do AC.
+Layout espelhado no template F1 da Kunos (formula_k). Faltam apenas os
+opcionais driver_base_pos.knh e banco FMOD proprietario.
+
 O QUE ESTA INCLUSO
 ------------------
 - Modelo 3D original (KN5 v5 vanilla), asas, halo, difusor, sidepods,
@@ -210,9 +229,13 @@ def main():
     os.makedirs(os.path.dirname(os.path.abspath(args.zip)), exist_ok=True)
     docs = {"LEIA-ME.txt": LEIAME, "VALIDACAO.md": validacao,
             "REFERENCIAS.md": refs or "Ver rb20/references/REFERENCES.md no repositorio.\n"}
+    car_id = os.path.basename(os.path.normpath(car_dir))
     with zipfile.ZipFile(args.zip, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+        # A standard AC car ZIP has only the content/ tree at its root. The
+        # documentation travels inside the car folder, like a Kunos car's own
+        # readmes, instead of scattering files into the AC installation root.
         for name, text in docs.items():
-            z.writestr(name, text)
+            z.writestr("content/cars/%s/%s" % (car_id, name), text)
         for root, dirs, files in os.walk(car_dir):
             dirs[:] = [d for d in dirs if d != "__pycache__"]
             for name in sorted(files):

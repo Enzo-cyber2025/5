@@ -210,21 +210,64 @@ chuva com menos aderência.
    fontes citam 550–560 kW de ICE e ~750 kW combinados. Conflito documentado.
 6. **Modelo é interpretação original**, sem logotipos ou pintura oficial.
 
-## 🗂️ Estrutura
+## 🗂️ Estrutura (layout Kunos padrão)
+
+O ZIP contém **apenas** `content/`, como um carro oficial. A documentação vai
+dentro da pasta do carro, e não solta na raiz do AC:
+
+```
+content/cars/arb_rb20/
+├── arb_rb20.kn5                    modelo principal (Blender → KN5 v5)
+├── arb_rb20_LOD_B.kn5              ┐
+├── arb_rb20_LOD_C.kn5              ├ cadeia de LOD de data/lods.ini
+├── arb_rb20_LOD_D.kn5              ┘
+├── collider.kn5
+├── logo.png                        (também em ui/)
+├── body_shadow.png
+├── tyre_0_shadow.png … tyre_3_shadow.png
+├── animations/
+│   ├── steer.ksanim                volante (driver3d.ini)
+│   └── rb20_drs.ksanim             flap do DRS (wing_animations.ini)
+├── data/
+│   ├── car.ini, engine.ini, drivetrain.ini, suspensions.ini, brakes.ini
+│   ├── tyres.ini, aero.ini, setup.ini, electronics.ini, ai.ini
+│   ├── ers.ini, ctrl_ers_0..2.ini, kers_*.lut
+│   ├── drs.ini, wing_animations.ini, aero_drs_*.lut
+│   ├── lights.ini, digital_instruments.ini
+│   ├── driver3d.ini, cameras.ini, dash_cam.ini, escmode.ini
+│   ├── fuel_cons.ini, blurred_objects.ini, proview_nodes.ini
+│   ├── suspension_graphics.ini, sounds.ini, damage.ini, colliders.ini
+│   ├── mirrors.ini, ambient_shadows.ini, lods.ini
+│   ├── *.lut                       curvas de potência/aero/pneu/ERS
+│   └── calibration.json            metadado do build (não é lido pelo AC)
+├── sfx/
+│   ├── GUIDs.txt                   banco comum do AC
+│   └── LEIA-ME-SOM.txt
+├── skins/default/
+│   ├── preview.jpg, livery.png, ui_skin.json
+│   └── *.dds                       texturas repintáveis
+├── texture/                        display.png / display_off.png
+├── ui/                             ui_car.json, badge.png, logo.png,
+│                                   preview_small.png
+├── LEIA-ME.txt, VALIDACAO.md, REFERENCIAS.md
+```
+
+Referência de layout: o template open-wheel da Kunos `formula_k`
+(`javirs200/acCar`, GPL-3.0) e `ks_mazda_mx5_nd2`. Não copiamos nenhum
+arquivo binário de terceiros — todos os INIs, LUTs, `.ksanim` e PNGs acima
+são gerados pelo build. `driver_base_pos.knh`, bancos FMOD próprios e
+pastas `texture/flames/` são opcionais e permanecem ausentes (documentado).
+
+Árvore do repositório (código-fonte, **não** o carro instalado):
 
 ```
 rb20/
 ├── README.md
-├── references/
-│   ├── REFERENCES.md                 imagens + modelos 3D de referência
-│   └── POWER_AND_VANILLA_FEATURES.md potência oficial + formatos ERS/DRS
-├── telemetry/VER_2024_Bahrain_Q.csv + SOURCES.md
-├── tools/
-│   ├── mesh_core.py / blender_model.py / kn5format.py / textures.py
-│   ├── make_kn5.py / render_preview.py
-│   ├── calibrate.py       telemetria → INIs/LUTs (potência oficial fixa)
-│   ├── features.py        ERS + DRS + pneus de chuva + luz + .ksanim + UI
-│   ├── physics_sim.py / make_package.py / validate.py
+├── references/         REFERENCES.md + POWER_AND_VANILLA_FEATURES.md
+├── telemetry/          VER_2024_Bahrain_Q.csv + SOURCES.md
+├── tools/              mesh_core, blender_model, kn5format, textures,
+│                       make_kn5, render_preview, calibrate, features,
+│                       layout, physics_sim, make_package, validate
 ├── download/RB20_AssettoCorsa.zip   ← ENTREGÁVEL
-└── out/                             gerado (ignorado)
+└── out/                gerado (ignorado)
 ```

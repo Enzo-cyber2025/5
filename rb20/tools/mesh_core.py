@@ -412,6 +412,10 @@ def build_car_raw():
     avail.box((-0.055, 0.596, 1.012), (0.022, 0.010, 0.006))
     enabled = M("DASH_DRS", "RB20_LED")
     enabled.box((0.055, 0.596, 1.012), (0.022, 0.010, 0.006))
+    # Vanilla digital_instruments.ini [DISPLAY_0] target, as on the Kunos F1
+    # template: the dash display is a real mesh so ITEM_n readouts can render.
+    display = M("DASH_DISPLAY", "RB20_GLASS")
+    display.box((0.0, 0.558, 1.014), (0.100, 0.034, 0.004))
 
     # ---- front wing: mainplane, 3 flaps, endplates -------------------------
     fw = M("WING_FRONT", "RB20_CARBON", smooth=180)

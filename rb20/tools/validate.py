@@ -56,8 +56,36 @@ REQUIRED = [
     "content/cars/arb_rb20/data/wing_animations.ini",
     "content/cars/arb_rb20/animations/rb20_drs.ksanim",
     "content/cars/arb_rb20/data/electronics.ini",
-    "content/cars/arb_rb20/calibration.json",
-    "LEIA-ME.txt",
+    "content/cars/arb_rb20/data/calibration.json",
+    "content/cars/arb_rb20/LEIA-ME.txt",
+    "content/cars/arb_rb20/VALIDACAO.md",
+    "content/cars/arb_rb20/REFERENCIAS.md",
+    # Standard Kunos car folder (formula_k layout).
+    "content/cars/arb_rb20/logo.png",
+    "content/cars/arb_rb20/body_shadow.png",
+    "content/cars/arb_rb20/tyre_0_shadow.png",
+    "content/cars/arb_rb20/tyre_1_shadow.png",
+    "content/cars/arb_rb20/tyre_2_shadow.png",
+    "content/cars/arb_rb20/tyre_3_shadow.png",
+    "content/cars/arb_rb20/arb_rb20_LOD_B.kn5",
+    "content/cars/arb_rb20/arb_rb20_LOD_C.kn5",
+    "content/cars/arb_rb20/arb_rb20_LOD_D.kn5",
+    "content/cars/arb_rb20/animations/steer.ksanim",
+    "content/cars/arb_rb20/data/driver3d.ini",
+    "content/cars/arb_rb20/data/cameras.ini",
+    "content/cars/arb_rb20/data/dash_cam.ini",
+    "content/cars/arb_rb20/data/escmode.ini",
+    "content/cars/arb_rb20/data/fuel_cons.ini",
+    "content/cars/arb_rb20/data/blurred_objects.ini",
+    "content/cars/arb_rb20/data/proview_nodes.ini",
+    "content/cars/arb_rb20/data/suspension_graphics.ini",
+    "content/cars/arb_rb20/data/throttle.lut",
+    "content/cars/arb_rb20/sfx/GUIDs.txt",
+    "content/cars/arb_rb20/skins/default/ui_skin.json",
+    "content/cars/arb_rb20/skins/default/livery.png",
+    "content/cars/arb_rb20/texture/display.png",
+    "content/cars/arb_rb20/texture/display_off.png",
+    "content/cars/arb_rb20/ui/preview_small.png",
 ]
 
 
@@ -130,7 +158,9 @@ def check_car_dir(car_dir):
                        "ksPerPixelMultiMap", "ksPerPixel_nosdw", "ksTyres",
                        "ksBrakeDisc", "GL"}
     mesh_names = set()
-    for kn5 in ("arb_rb20.kn5", "collider.kn5"):
+    for kn5 in ("arb_rb20.kn5", "arb_rb20_LOD_B.kn5",
+                "arb_rb20_LOD_C.kn5", "arb_rb20_LOD_D.kn5",
+                "collider.kn5"):
         p = os.path.join(car_dir, kn5)
         info = kn5format.read_kn5(p)
         nodes = list(kn5format.walk(info["root"]))
@@ -149,6 +179,8 @@ def check_car_dir(car_dir):
         notes.append("%s v%d: %d nodes, %d tris, %d textures, %d materials" %
                      (kn5, info["version"], len(nodes), tris,
                       len(info["textures"]), len(info["materials"])))
+        if tris < 100 and kn5 != "collider.kn5":
+            problems.append("%s has only %d triangles" % (kn5, tris))
         if tris < 5000 and kn5 == "arb_rb20.kn5":
             problems.append("main KN5 has only %d triangles" % tris)
 
@@ -206,7 +238,7 @@ def check_car_dir(car_dir):
             problems.append("missing wet compound section " + sec)
     if "FRONT_4" in tyres and float(tyres["FRONT_4"]["DX0"]) >= float(tyres["FRONT"]["DX0"]):
         problems.append("full-wet compound has no grip reduction")
-    with open(os.path.join(car_dir, "calibration.json"), "r", encoding="utf-8") as f:
+    with open(os.path.join(data, "calibration.json"), "r", encoding="utf-8") as f:
         cal = json.load(f)
     if abs(float(cal.get("official_power", {}).get("published_rb20_combined_kw", 0)) - 805.0) > 0.5:
         problems.append("official 805 kW power figure missing from calibration")
@@ -250,9 +282,34 @@ def check_car_dir(car_dir):
             if lights.has_option(x, "NAME")]
     refs += [digi.get(x, "OBJECT_NAME", fallback="") for x in digi.sections()
              if digi.has_option(x, "OBJECT_NAME")]
+    refs += [digi.get(x, "NAME", fallback="") for x in digi.sections()
+             if x.startswith("DISPLAY_") and digi.has_option(x, "NAME")]
     for r in refs:
         if r and r not in mesh_names:
             problems.append("lights/dash references missing KN5 mesh " + r)
+    # 8. Standard Kunos car layout: LOD chain, steer animation, dash sections.
+    steer = os.path.join(car_dir, "animations", "steer.ksanim")
+    if os.path.exists(steer):
+        sver, snodes, send, ssize = read_ksanim(steer)
+        if sver != 2 or send != ssize or not snodes or snodes[0][0] != "STEER_HR":
+            problems.append("steer.ksanim is not a valid vanilla STEER_HR animation")
+    else:
+        problems.append("missing vanilla animations/steer.ksanim")
+    if "DISPLAY_0" not in digi:
+        problems.append("digital_instruments.ini lacks the vanilla DISPLAY_0")
+    if not any(x.startswith("ITEM_") for x in digi.sections()):
+        problems.append("digital_instruments.ini lacks vanilla ITEM_n readouts")
+    lod_cp = ini(os.path.join(data, "lods.ini"))
+    lod_files = [lod_cp.get(x, "FILE", fallback="") for x in lod_cp.sections()
+                 if x.startswith("LOD_")]
+    if len(lod_files) != 4 or len(set(lod_files)) != 4:
+        problems.append("lods.ini must list four distinct LOD KN5 files")
+    else:
+        for f in lod_files:
+            if not os.path.exists(os.path.join(car_dir, f)):
+                problems.append("lods.ini references missing " + f)
+    notes.append("layout: Kunos-style folders, 4 LOD KN5, steer.ksanim, "
+                 "driver3d/cameras/dash/sfx/skins/texture")
     notes.append("lights: vanilla VERSION=3 (brake / wet / KERS harvest flash), "
                  "DRS: WING_4 13-frame flap animation + 2 dash LEDs")
     notes.append("features: ERS 120 kW/4 MJ, DRS WING_4, 5 compounds (2 wet), 805 kW official")

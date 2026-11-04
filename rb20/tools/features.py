@@ -466,7 +466,7 @@ def write_visual_features(car_dir, d):
 def apply(car_dir):
     """Post-process the calibrated data/ folder with native AC features."""
     d = os.path.join(car_dir, "data")
-    p = os.path.join(car_dir, "calibration.json")
+    p = os.path.join(car_dir, "data", "calibration.json")
     with open(p, "r", encoding="utf-8") as f:
         calib = json.load(f)
     mu = calib["braking"]["mu"]
