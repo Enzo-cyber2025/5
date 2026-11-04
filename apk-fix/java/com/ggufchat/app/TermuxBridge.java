@@ -2,6 +2,7 @@ package com.ggufchat.app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import java.util.WeakHashMap;
@@ -12,6 +13,9 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.EditText;
+import android.text.InputType;
+import android.content.SharedPreferences;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -33,9 +37,52 @@ public final class TermuxBridge {
     private static final int PERMISSION_REQUEST = 7431;
     private static final String ACTION = "com.termux.RUN_COMMAND";
     private static final String SERVICE = "com.termux.app.RunCommandService";
+    private static final String PREFS = "gguf-termux-access";
+    private static final String MODE_KEY = "mode";
+    private static final int MODE_OFF = 0;
+    private static final int MODE_MODERATE = 1;
+    private static final int MODE_COMPLETE = 2;
+    private static final int MODE_COMPLETE_AUTH = 3;
+    private static final String AUTH_PHRASE = "AUTORIZO";
+    private static final String[] MODES = {"Sem Termux", "Moderado", "Completo", "Completo com autorização"};
+    private static final Pattern MODERATE_COMMAND = Pattern.compile(
+        "(?i)^(?:pwd|date|whoami|uname(?: -a)?|ls(?: -[alh]+)?(?: [A-Za-z0-9_./-]+)?|df(?: -h)?|free(?: -h)?|getprop(?: [A-Za-z0-9._-]+)?|termux-info|pkg list-installed)$");
     private static final WeakHashMap<Activity, String> PENDING = new WeakHashMap<>();
 
     private TermuxBridge() {}
+
+    private static SharedPreferences prefs(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    private static int mode(Context context) {
+        return Math.max(MODE_OFF, Math.min(MODE_COMPLETE_AUTH, prefs(context).getInt(MODE_KEY, MODE_OFF)));
+    }
+
+    public static Button settingsButton(Activity activity) {
+        Button button = new Button(activity);
+        button.setText("Modo Termux");
+        button.setContentDescription("Configurar modo de acesso ao Termux");
+        button.setOnClickListener(view -> showModes(activity));
+        return button;
+    }
+
+    private static void showModes(Activity activity) {
+        final String[] descriptions = {
+            "Desativado: nenhum comando pode ser encaminhado.",
+            "Moderado: somente comandos curtos de consulta da lista permitida; cada comando é exibido para revisão.",
+            "Completo: aceita comandos arbitrários propostos pelo modelo, mas cada comando ainda exige revisão e toque de confirmação.",
+            "Completo com autorização: comandos amplos; além da revisão, digite AUTORIZO em cada encaminhamento e conceda RUN_COMMAND ao Termux."
+        };
+        int selected = mode(activity);
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity).setTitle("Modo de acesso ao Termux");
+        String[] choices = new String[MODES.length];
+        for (int i = 0; i < MODES.length; i++) choices[i] = (i == selected ? "✓ " : "") + MODES[i] + "\n" + descriptions[i];
+        builder.setItems(choices, (dialog, which) -> {
+            prefs(activity).edit().putInt(MODE_KEY, which).apply();
+            Toast.makeText(activity, "Modo Termux: " + MODES[which], Toast.LENGTH_SHORT).show();
+        }).setNegativeButton("Cancelar", null).show();
+    }
 
     public static Button chatButton(Activity activity) {
         Button button = new Button(activity);
@@ -79,6 +126,11 @@ public final class TermuxBridge {
     }
 
     private static void offer(Activity activity) {
+        int selectedMode = mode(activity);
+        if (selectedMode == MODE_OFF) {
+            Toast.makeText(activity, "Termux desativado. Selecione um modo para habilitar o encaminhamento.", Toast.LENGTH_LONG).show();
+            return;
+        }
         try {
             String command = assistantCommand(activity);
             if (command == null || command.trim().isEmpty()) {
@@ -89,13 +141,22 @@ public final class TermuxBridge {
                 Toast.makeText(activity, "O comando excede 6.000 caracteres; revise e divida-o antes de executar.", Toast.LENGTH_LONG).show();
                 return;
             }
-            showReview(activity, command);
+            if (selectedMode == MODE_MODERATE && !isModerateCommand(command)) {
+                Toast.makeText(activity, "Modo Moderado bloqueou o comando: use um comando curto de consulta da lista permitida ou escolha Completo.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            showReview(activity, command, selectedMode);
         } catch (Exception e) {
             Toast.makeText(activity, "Não foi possível ler o comando da resposta: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
-    private static void showReview(Activity activity, String command) {
+    private static boolean isModerateCommand(String command) {
+        if (command == null || command.length() > 256 || command.indexOf('\n') >= 0 || command.indexOf('\r') >= 0) return false;
+        return MODERATE_COMMAND.matcher(command.trim()).matches();
+    }
+
+    private static void showReview(Activity activity, String command, int selectedMode) {
         TextView code = new TextView(activity);
         code.setText(command);
         code.setTextIsSelectable(true);
@@ -109,9 +170,28 @@ public final class TermuxBridge {
             .setMessage("Nada será executado sem sua confirmação. O comando roda no Termux, com as permissões concedidas a ele. Revise todo o conteúdo antes de continuar.")
             .setView(scroll)
             .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Abrir no Termux", (d, which) -> confirmPermissionAndRun(activity, command))
+            .setPositiveButton("Abrir no Termux", (d, which) -> {
+                if (selectedMode == MODE_COMPLETE_AUTH) requireTypedAuthorization(activity, command);
+                else confirmPermissionAndRun(activity, command);
+            })
             .create();
         dialog.show();
+    }
+
+    private static void requireTypedAuthorization(Activity activity, String command) {
+        EditText input = new EditText(activity);
+        input.setSingleLine(true);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+        input.setHint(AUTH_PHRASE);
+        input.setContentDescription("Digite AUTORIZO para confirmar este comando");
+        new AlertDialog.Builder(activity).setTitle("Autorização explícita necessária")
+            .setMessage("Revise o comando na tela anterior. Para cada encaminhamento neste modo, digite exatamente AUTORIZO. A permissão RUN_COMMAND do Android/Termux também será exigida.")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Autorizar e abrir", (dialog, which) -> {
+                if (AUTH_PHRASE.equals(input.getText().toString().trim())) confirmPermissionAndRun(activity, command);
+                else Toast.makeText(activity, "Autorização não confirmada; comando não executado.", Toast.LENGTH_LONG).show();
+            }).show();
     }
 
     private static void confirmPermissionAndRun(Activity activity, String command) {

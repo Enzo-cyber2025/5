@@ -9,6 +9,13 @@ A cota é configurável entre 1 e 2048 MB (padrão 64 MB), com limite adicional 
 
 O arquivo é um **arquivo local**, não uma janela de contexto infinita: não muda `n_ctx`, não garante que o conteúdo arquivado será reinserido no prompt, e não evita limites de memória/RAM do modelo. As mensagens normais da conversa continuam seguindo o armazenamento e o ciclo de vida próprios do app.
 
-## Termux
+## Modos do Termux
 
-Este checkout ainda não contém uma ponte de comandos com o Termux. Portanto, não há quatro modos de acesso funcionais para habilitar neste momento. Não será adicionado um modo de shell irrestrito, sem revisão do comando. Uma futura integração deverá manter o Termux externo ao app, exigir confirmação humana do comando, declarar claramente permissões e não enviar automaticamente a saída do shell de volta ao modelo.
+O botão **Modo Termux** oferece quatro níveis, e o padrão é **Sem Termux**:
+
+1. **Sem Termux**: bloqueia o encaminhamento.
+2. **Moderado**: aceita somente comandos curtos de consulta da lista permitida (`pwd`, `date`, `whoami`, `uname`, `ls`, `df`, `free`, `getprop`, `termux-info` e `pkg list-installed`, com argumentos restritos). Cada comando continua sendo mostrado para revisão.
+3. **Completo**: aceita blocos de shell propostos pelo modelo, mas mantém o limite de 6.000 caracteres, a tela com o comando exato e o toque explícito em **Abrir no Termux**. Também depende da permissão Android/Termux `RUN_COMMAND`.
+4. **Completo com autorização**: tem o mesmo escopo do modo Completo, mas exige digitar `AUTORIZO` em cada encaminhamento, além da revisão e da permissão `RUN_COMMAND`.
+
+O modo Completo sem confirmação/autorização não foi implementado: um comando arbitrário pode apagar ou expor dados. O Termux continua sendo um app separado, os comandos rodam com as permissões concedidas ao Termux e a saída permanece no Termux; ela não é retornada automaticamente ao modelo.

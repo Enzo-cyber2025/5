@@ -70,7 +70,7 @@ def test_box64_arm64_smoke_test_pins_reviewed_third_party_payload_and_uses_termu
     assert '"app_mediated_model_handoff": False' in smoke
     assert "runs-on: macos-15" in workflow
     assert "arch: arm64-v8a" in workflow
-    assert "system-images;android-35;google_apis;arm64-v8a" in workflow
+    assert "system-images;android-35;default;arm64-v8a" in workflow
 
 
 def test_android_harness_runs_app_before_termux_bootstrap_and_recovers_launcher_anr():
