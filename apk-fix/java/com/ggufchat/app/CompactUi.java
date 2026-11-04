@@ -41,6 +41,8 @@ public final class CompactUi {
         ArrayList<Button> buttons = new ArrayList<>();
         buttons.add(SystemPrompts.chatButton(activity));
         buttons.add(TermuxBridge.chatButton(activity));
+        buttons.add(TermuxBridge.settingsButton(activity));
+        buttons.add(AssistantOptions.button(activity));
         buttons.add(thinking); buttons.add(search);
         for (int i=0; i<row.getChildCount(); i++)
             if (row.getChildAt(i) instanceof Button) buttons.add((Button)row.getChildAt(i));
