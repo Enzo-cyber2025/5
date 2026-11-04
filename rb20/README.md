@@ -16,8 +16,8 @@ Mod de F1 2024 inspirado no **RB20**, com modelo 3D original feito em
 
 https://github.com/Enzo-cyber2025/5/releases/download/rb20-v1.0/RB20_AssettoCorsa.zip
 
-Espelho no branch: `rb20/download/RB20_AssettoCorsa.zip` (2.258.269 bytes,
-SHA-256 `4cac80fc0969ab02d88a4580603c24240c3cd0081f4be9fad60d8bf5806a429c`).
+Espelho no branch: `rb20/download/RB20_AssettoCorsa.zip` — veja o
+**SHA-256 atual** no final deste README (o ZIP é reconstruído a cada run).
 O asset da Release é sempre o ZIP reconstruído pelo Actions (modelado no
 Blender). O ZIP contém `content/cars/arb_rb20/` pronta para extrair na raiz do
 AC, mais `LEIA-ME.txt`, `VALIDACAO.md` e `REFERENCIAS.md`.
@@ -143,8 +143,9 @@ checkout → setup-python 3.11 → apt (libs X/GL) → pip install bpy==4.5.4
 
 `tools/features.py` é chamado ao final de `calibrate.py` e escreve todos os
 arquivos nativos de ERS/DRS/compostos de chuva, além de atualizar `ui_car.json`
-e `calibration.json`. O KN5 é gerado a partir da saída do Blender (33.684
-triângulos com Bevel/WeightedNormal, 137 objetos, 10 texturas DXT1) e o
+e `calibration.json`. O KN5 é gerado a partir da saída do Blender
+(**225.504 triângulos** após SUBSURF nível 1, 165 objetos / 331 nós,
+10 texturas DXT1 256×256, só `ksPerPixel`) e o
 build deriva os três LODs reduzidos a partir da mesma malha.
 
 ---
@@ -296,18 +297,23 @@ louvres nas endplates, dutos de freio, *fences*, asa de borda de assoalho e
 
 ## 🔎 Mod de referência externo (CSP) — só inspeção
 
-`fetch_reference.py` roda no Actions (o relatório também é publicado em
-[`rb20/references/EXTERNAL_MOD_STRUCTURE.md`](references/EXTERNAL_MOD_STRUCTURE.md))
-e tenta baixar
+`fetch_reference.py` roda no Actions e publica
+[`rb20/references/EXTERNAL_MOD_STRUCTURE.md`](references/EXTERNAL_MOD_STRUCTURE.md)
+no branch. Ele **tenta** baixar
 `https://modsfire.com/RcgUC30KVzcd5Nr?rf=39204` (`redbull-rb20-f1.zip`,
 126 MB, **exige CSP**). Ele gera `reference_report.json` /
 `REFERENCE_MOD.md` como **artifact**: lista de pastas, arquivos em `data/`,
 KN5 e marcadores CSP encontrados. **Nada do mod é copiado, commitado ou
 empacotado** — não há licença para redistribuir esses assets. O passo é
-`continue-on-error`: o ModsFire usa "Generate Link"/premium e pode não
-entregar o ZIP ao runner; nesse caso o build segue normalmente com o nosso
-modelo. O gate anti-CSP continua proibindo `ext_config.ini`, `.lua`,
-`extension/`, `data.acd`, `extended-*`, `_emissive` e `RainFX`.
+`continue-on-error`: o ModsFire usa "Generate Link"/premium e, nos runs
+feitos, **não entregou o ZIP** (a URL é uma página de primeiro passo, sem link
+direto); nesse caso o build segue com o nosso modelo. Como referência
+**real e licenciada**, o mesmo relatório consulta a árvore do
+`formula_k` da Kunos (`javirs200/acCar`, GPL-3.0) via API do GitHub: 155
+arquivos, 8 pastas, 5 KN5 e 7 `.ksanim`, **zero marcadores CSP** — é essa
+estrutura que espelhamos. O gate anti-CSP continua proibindo
+`ext_config.ini`, `.lua`, `extension/`, `data.acd`, `extended-*`, `_emissive`
+e `RainFX`.
 
 Árvore do repositório (código-fonte, **não** o carro instalado):
 

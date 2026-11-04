@@ -40,6 +40,11 @@ CSP_MARKERS = ("ext_config.ini", ".lua", "extension/", "data.acd",
                "extended-2", "extendedV", "REQUIRED_VERSION", "_emissive",
                "wing_controller.ini", "RainFX", "AC_RAIN")
 
+# Licensed, actually-downloadable vanilla reference: Kunos' own F1 template,
+# GPL-3.0. Only PATH NAMES are inspected, never file contents or binaries.
+GH_REPO = "javirs200/acCar"
+KUNOS_PREFIX = "EXAMPLE/formula_k/"
+
 
 def get(url, timeout=90):
     req = urllib.request.Request(url, headers={
@@ -104,6 +109,40 @@ def inspect_zip(blob, temp_dir):
             if len(info["kn5"]) >= 12:
                 break
     return info
+
+
+def kunos_structure():
+    """Fetch the real vanilla F1 car tree (path names only) as a licensed
+    structural reference. This always works from an Actions runner."""
+    out = {"repo": GH_REPO, "license": "GPL-3.0", "fetched": False,
+           "default_branch": "", "file_count": 0, "files": [],
+           "directories": [], "data_files": [], "kn5": [],
+           "animations": [], "csp_markers": [], "reason": ""}
+    try:
+        meta, _ = get("https://api.github.com/repos/" + GH_REPO, timeout=30)
+        branch = json.loads(meta)["default_branch"]
+        out["default_branch"] = branch
+        raw, _ = get("https://api.github.com/repos/%s/git/trees/%s?recursive=1"
+                     % (GH_REPO, branch), timeout=60)
+        items = json.loads(raw)["tree"]
+        files = sorted(i["path"] for i in items
+                       if i["type"] == "blob" and i["path"].startswith(KUNOS_PREFIX))
+        out["files"] = [f[len(KUNOS_PREFIX):] for f in files]
+        out["file_count"] = len(files)
+        out["directories"] = sorted({f.rsplit("/", 1)[0] for f in out["files"]
+                                     if "/" in f} | {"<raiz>"})
+        out["data_files"] = sorted(f.split("/")[-1] for f in out["files"]
+                                   if f.startswith("data/"))
+        out["kn5"] = [f for f in out["files"] if f.endswith(".kn5")]
+        out["animations"] = [f for f in out["files"]
+                             if f.startswith("animations/")]
+        out["csp_markers"] = sorted({m for m in CSP_MARKERS
+                                     if any(m.lower() in f.lower()
+                                            for f in out["files"])})
+        out["fetched"] = True
+    except Exception as e:
+        out["reason"] = str(e)
+    return out
 
 
 def main():
@@ -171,6 +210,8 @@ def main():
                             "runner. This step is best-effort and non-blocking. "
                             "The build does NOT depend on it.")
 
+    report["kunos_reference"] = kunos_structure()
+
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
@@ -186,13 +227,42 @@ def main():
                  "- Motivo: %s" % (report.get("reason") or "n/a")]
         st = report.get("structure")
         if st:
-            lines += ["", "## Estrutura observada", "",
+            lines += ["", "## Estrutura observada no mod externo", "",
                       "- Arquivos: %d" % st["file_count"],
                       "- Pastas de carro: %s" % ", ".join(st["car_folders"]),
                       "- Arquivos em `data/`: %s" % ", ".join(st["data_files"][:40]),
                       "- Marcadores CSP encontrados: %s" %
                       (", ".join(st["csp_markers"]) or "nenhum"),
                       "- KN5: %s" % json.dumps(st["kn5"][:6])]
+
+        ku = report["kunos_reference"]
+        lines += ["", "---", "",
+                  "## Estrutura real de referência: Kunos `formula_k`", "",
+                  "Fonte licenciada e **efetivamente consultada** via API do "
+                  "GitHub: `%s` (branch `%s`, %s). Apenas **nomes de "
+                  "arquivos/pastas** são lidos - nenhum binário, textura, som "
+                  "ou `.kn5` é copiado." %
+                  (ku["repo"], ku["default_branch"] or "?", ku["license"]), ""]
+        if ku["fetched"]:
+            lines += ["- **%d arquivos** em `%s`" % (ku["file_count"], KUNOS_PREFIX),
+                      "- Pastas: %s" % ", ".join("`%s`" % d for d in ku["directories"]),
+                      "- KN5: %s" % ", ".join("`%s`" % f for f in ku["kn5"]),
+                      "- `animations/`: %s" %
+                      ", ".join("`%s`" % f.split("/")[-1] for f in ku["animations"]),
+                      "- Marcadores CSP: %s" %
+                      (", ".join(ku["csp_markers"]) or "**nenhum** (100% vanilla)"),
+                      "", "### Árvore completa (nomes relativos)", "", "```text"]
+            lines += ku["files"]
+            lines += ["```", "",
+                      "O nosso `content/cars/arb_rb20/` espelha essa árvore. "
+                      "Diferenças deliberadas: sem `driver_base_pos.knh`, "
+                      "`data/flames.ini`/`texture/flames/*`, "
+                      "`data/analog_instruments.ini` e `animations/shift.ksanim` "
+                      "(formatos auto-carregados que não podemos validar sem o "
+                      "AC e que foram removidos na correção de crash) e sem o "
+                      "banco FMOD `.bank` proprietário. Nenhum arquivo CSP.", ""]
+        else:
+            lines += ["- Falha ao consultar a API: %s" % ku["reason"], ""]
         with open(args.markdown, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
 
