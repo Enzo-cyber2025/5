@@ -1,0 +1,118 @@
+// ESPL06 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int ax; int ay;
+int r;
+int t;
+
+void init() {
+    fillsin();
+    title("Espiral 6");
+    ax = 4096;
+    ay = 0;
+    r = 0;
+}
+
+void tick() {
+    int i = 0;
+    while (i < 2) {
+        int nx = ax - (ay * 4096) / 4096 / 50;
+        int ny = ay + (ax * 4096) / 4096 / 50;
+        ax = nx; ay = ny;
+        r = r + 3;
+        t = t + 1;
+        i = i + 1;
+    }
+    invalidate();
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 856343);
+    int i = 0;
+    int rr = 0;
+    int lx = 4096; int ly = 0;
+    while (i < 300) {
+        int nx = lx - (ly * 4096) / 4096 / 50;
+        int ny = ly + (lx * 4096) / 4096 / 50;
+        lx = nx; ly = ny;
+        rr = rr + 3;
+        int X = win_w / 2 + (lx * rr) / 4096 / 28;
+        int Y = win_h / 2 + (ly * rr) / 4096 / 28;
+        rect(X, Y, 3, 3, 4740850);
+        if ((i % 8) == 0) { rect(X, Y, 6, 6, 16777215); }
+        i = i + 1;
+    }
+    text(8, 8, "ESPIRAL 6", 0xFFFFFFFF);
+}
+
+int sins[32];
+int coss[32];
+void fillsin() {
+        sins[0] = 0;
+        sins[1] = 799;
+        sins[2] = 1567;
+        sins[3] = 2276;
+        sins[4] = 2896;
+        sins[5] = 3406;
+        sins[6] = 3784;
+        sins[7] = 4017;
+        sins[8] = 4096;
+        sins[9] = 4017;
+        sins[10] = 3784;
+        sins[11] = 3406;
+        sins[12] = 2896;
+        sins[13] = 2276;
+        sins[14] = 1567;
+        sins[15] = 799;
+        sins[16] = 0;
+        sins[17] = -799;
+        sins[18] = -1567;
+        sins[19] = -2276;
+        sins[20] = -2896;
+        sins[21] = -3406;
+        sins[22] = -3784;
+        sins[23] = -4017;
+        sins[24] = -4096;
+        sins[25] = -4017;
+        sins[26] = -3784;
+        sins[27] = -3406;
+        sins[28] = -2896;
+        sins[29] = -2276;
+        sins[30] = -1567;
+        sins[31] = -799;
+        coss[0] = 4096;
+        coss[1] = 4017;
+        coss[2] = 3784;
+        coss[3] = 3406;
+        coss[4] = 2896;
+        coss[5] = 2276;
+        coss[6] = 1567;
+        coss[7] = 799;
+        coss[8] = 0;
+        coss[9] = -799;
+        coss[10] = -1567;
+        coss[11] = -2276;
+        coss[12] = -2896;
+        coss[13] = -3406;
+        coss[14] = -3784;
+        coss[15] = -4017;
+        coss[16] = -4096;
+        coss[17] = -4017;
+        coss[18] = -3784;
+        coss[19] = -3406;
+        coss[20] = -2896;
+        coss[21] = -2276;
+        coss[22] = -1567;
+        coss[23] = -799;
+        coss[24] = 0;
+        coss[25] = 799;
+        coss[26] = 1567;
+        coss[27] = 2276;
+        coss[28] = 2896;
+        coss[29] = 3406;
+        coss[30] = 3784;
+        coss[31] = 4017;
+}

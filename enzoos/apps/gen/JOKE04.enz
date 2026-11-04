@@ -1,0 +1,120 @@
+// JOKE04 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int meu;   // 1 pedra 2 papel 3 tesoura
+int dele;
+int res;   // 0 nada, 1 empate, 2 ganhei, 3 perdi
+int v; int e; int d;
+int semente;
+
+void init() {
+    seg_init();
+    title("Jokenpo 4");
+    semente = uptime() | 1;
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = 0 - semente; }
+    return (semente / 65536) % m;
+}
+
+void joga(int m) {
+    meu = m;
+    dele = 1 + rnd(3);
+    res = 1;
+    if (meu == dele) { res = 1; e = e + 1; }
+    else if (meu == 1 && dele == 3) { res = 2; v = v + 1; }
+    else if (meu == 2 && dele == 1) { res = 2; v = v + 1; }
+    else if (meu == 3 && dele == 2) { res = 2; v = v + 1; }
+    else { res = 3; d = d + 1; }
+    if (res == 2) { beep(880, 50); }
+    invalidate();
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr != 1) { return; }
+    if (y > 210) {
+        if (x > 20 && x < 120) { joga(1); }
+        if (x > 150 && x < 250) { joga(2); }
+        if (x > 280 && x < 380) { joga(3); }
+    }
+}
+
+void simbolo(int x, int y, int q, int cor) {
+    if (q == 1) {
+        rect(x, y, 60, 50, cor);
+        rect(x + 8, y + 8, 44, 34, cor);
+    } else if (q == 2) {
+        rect(x, y, 55, 45, cor);
+        rect(x + 12, y + 40, 31, 14, cor);
+    } else {
+        line(x + 10, y + 40, x + 30, y + 5, cor);
+        line(x + 30, y + 5, x + 50, y + 40, cor);
+        line(x + 18, y + 45, x + 42, y + 45, cor);
+    }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(12, 10, "PEDRA PAPEL TESOURA", 15265012);
+    simbolo(30, 60, meu, 7330047);
+    simbolo(280, 60, dele, 16758861);
+    text(160, 80, "VS", 15265012);
+    if (res == 1) { text(120, 140, "EMPATE", 9081765); }
+    if (res == 2) { text(100, 140, "VOCE GANHOU", 7331978); }
+    if (res == 3) { text(110, 140, "VOCE PERDEU", 16743001); }
+    // botoes
+    rect(20, 210, 100, 60, 2568266);
+    text(30, 232, "PEDRA", 15265012);
+    rect(150, 210, 100, 60, 2568266);
+    text(160, 232, "PAPEL", 15265012);
+    rect(280, 210, 100, 60, 2568266);
+    text(280, 232, "TESOURA", 15265012);
+    // placar
+    segnum(40, 160, v, 2, 15265012, 0);
+    text(90, 170, "v", 15265012);
+    segnum(170, 160, e, 2, 15265012, 0);
+    text(220, 170, "e", 15265012);
+    segnum(300, 160, d, 2, 15265012, 0);
+    text(350, 170, "d", 15265012);
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

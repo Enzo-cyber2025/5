@@ -1,0 +1,93 @@
+// BHAS09 — gerado por tools/genapps.py (categoria MATH)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int A; int B; int C;
+int x1e; int x1d; int x2e; int x2d;
+int tem;
+
+void init() {
+    seg_init();
+    title("Bhaskara 9");
+    A = 1; B = 1; C = -12;
+}
+
+void calcula() {
+    // raizes por busca direta em inteiros (parabola classica)
+    tem = 0;
+    int x = -300;
+    while (x <= 300) {
+        int y = A * x * x + B * x + C;
+        if (y == 0) {
+            if (tem == 0) { x1e = x; tem = 1; }
+            x2e = x;
+            tem = 2;
+        }
+        x = x + 1;
+    }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(16, 12, "BHASKARA — x^2 + x - 12", 15265012);
+    text(16, 40, "coeficientes A B C fixos deste app", 9081765);
+    calcula();
+    // eixo
+    line(16, 150, win_w - 16, 150, 3752794);
+    line(210, 40, 210, 260, 3752794);
+    // parabola
+    int px = -40;
+    while (px <= 40) {
+        int y = A * px * px + B * px + C;
+        int sy = 150 - y / 4;
+        if (sy > 30 && sy < 280) {
+            rect(210 + px * 4, sy, 3, 3, 15889736);
+        }
+        px = px + 1;
+    }
+    if (tem == 2) {
+        text(16, 265, "raizes inteiras:", 15265012);
+        segnum(160, 256, x1e, 4, 15899001, 0);
+        segnum(250, 256, x2e, 4, 15899001, 0);
+    } else {
+        text(16, 265, "sem raiz inteira na janela", 9081765);
+    }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

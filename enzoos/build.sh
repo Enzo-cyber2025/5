@@ -19,6 +19,18 @@ nasm -f bin -o obj/stage1.bin boot/stage1.asm
 
 # ---- kernel ----
 nasm -f bin -I kernel/ -o obj/kernel.bin kernel/kernel.asm
+# trunca os zeros finais (bss do kernel no fim do .kdata) — a janela de
+# carga do stage1 (64..640 KB) limita a imagem de boot em ~576 KB
+python3 - <<'TRUNC'
+d = open('obj/kernel.bin','rb').read()
+i = len(d)
+while i > 0 and d[i-1] == 0:
+    i -= 1
+i = (i + 15) & ~15
+if i < len(d):
+    open('obj/kernel.bin','wb').write(d[:i])
+print("mkkernel: obj/kernel.bin %d -> %d bytes (bss truncado)" % (len(d), min(i, len(d))))
+TRUNC
 
 # ---- aplicativos: fonte .ce (retrocompat) + formato único .ENZ ----
 nasm -f bin -I apps/ -o obj/TERMINAL.ce apps/terminal.asm
@@ -39,9 +51,11 @@ python3 tools/mkenz.py obj/PLASMA.ce   obj/PLASMA.ENZ
 nasm -f bin -I apps/ -o obj/files.bin  apps/files.asm
 nasm -f bin -I apps/ -o obj/fox.bin    apps/fox.asm
 nasm -f bin -I apps/ -o obj/sysmon.bin apps/sysmon.asm
+nasm -f bin -I apps/ -o obj/loja.bin   apps/loja.asm
 python3 tools/mkenz.py obj/files.bin  obj/FILES.ENZ  --name Files  --w 460 --h 380 --icon 0x7FD8FF
 python3 tools/mkenz.py obj/fox.bin    obj/FOX.ENZ    --name EnzoFox --w 560 --h 440 --icon 0x2D9CDB
 python3 tools/mkenz.py obj/sysmon.bin obj/SYSMON.ENZ --name SysMon --w 460 --h 360 --icon 0x10A372
+python3 tools/mkenz.py obj/loja.bin   obj/LOJA.ENZ   --name "Loja de Apps" --w 480 --h 400 --icon 0x7FD8FF
 
 # ---- demo do compilador ENZ: mandel.enz -> MANDDEL.ENZ ----
 python3 tools/enzc.py apps/mandel.enz obj/mandel.asm
@@ -49,6 +63,17 @@ nasm -f bin -o obj/mandel.bin obj/mandel.asm
 python3 tools/mkenz.py obj/mandel.bin obj/MANDEL.ENZ --name Mandelbrot \
     --w 520 --h 420 --icon 0xB06FD8 --entry "$(cat obj/mandel.entry)" \
     --imports "$(cat obj/mandel.imports)"
+
+# ---- app de pen-test + binários malformados (hardening) ----
+nasm -f bin -I apps/ -o obj/attack.bin apps/attack.asm
+python3 tools/mkenz.py obj/attack.bin obj/ATTACK.ENZ --name PenTest \
+    --w 460 --h 240 --icon 0xE05555
+
+# app de teste do kill-app (crasha de propósito em qualquer tecla)
+nasm -f bin -I apps/ -o obj/crasher.bin apps/crasher.asm
+python3 tools/mkenz.py obj/crasher.bin obj/CRASHER.ENZ --name Crasher \
+    --w 420 --h 200 --icon 0xFFA500
+python3 tools/genfuzz.py obj/CALC.ENZ obj
 
 # ---- demos estrangeiras ----
 nasm -f bin -o obj/pe_demo.bin  demos/pe_demo.asm
@@ -63,18 +88,30 @@ python3 tools/mkelf.py --dyn  obj/so_demo.bin obj/so_demo.lst obj/libdemo.so
 python3 tools/mkapk.py obj/libdemo.so obj/DEMO.APK
 cp demos/SCRIPT.RUN demos/LEIA.TXT obj/
 
-# ---- disco ENZFS persistente (AHCI) com arquivos iniciais ----
-python3 tools/mkfs.py release/disk.img \
+# ---- disco ENZFS persistente (AHCI): 1000+ apps em /APPS ----
+APPS_ARGS=""
+for f in $(ls obj/apps/*.ENZ 2>/dev/null | sort); do
+    APPS_ARGS="$APPS_ARGS APPS/$(basename "$f")=$f"
+done
+python3 tools/mkfs.py --blocks 8192 release/disk.img \
     LEIA.TXT=obj/LEIA.TXT \
     ENZFS.TXT=demos/ENZFS.TXT \
-    DEMOS/MANDEL.TXT=apps/mandel.enz
+    DEMOS/MANDEL.TXT=apps/mandel.enz \
+    $APPS_ARGS
 
 # ---- ISO bootável (todos os apps em .ENZ) ----
 python3 tools/mkiso.py obj/mbr.bin obj/stage1.bin release/enzos.iso \
     obj/kernel.bin \
+    obj/LOJA.ENZ \
     obj/TERMINAL.ENZ obj/INFO.ENZ obj/PAINT.ENZ obj/CALC.ENZ \
     obj/NOTAS.ENZ obj/PLASMA.ENZ obj/FILES.ENZ obj/FOX.ENZ \
-    obj/SYSMON.ENZ obj/MANDEL.ENZ \
+    obj/SYSMON.ENZ obj/MANDEL.ENZ obj/ATTACK.ENZ obj/CRASHER.ENZ \
+    obj/TRUNC.ENZ obj/BADENT.ENZ obj/BADIMP.ENZ obj/HUGE.ENZ \
+    obj/ZERO.ENZ obj/NOTENZ.ENZ \
+    obj/FZ01.ENZ obj/FZ02.ENZ obj/FZ03.ENZ obj/FZ04.ENZ \
+    obj/FZ05.ENZ obj/FZ06.ENZ obj/FZ07.ENZ obj/FZ08.ENZ \
+    obj/FZ09.ENZ obj/FZ10.ENZ obj/FZ11.ENZ obj/FZ12.ENZ \
+    obj/FZ13.ENZ obj/FZ14.ENZ obj/FZ15.ENZ obj/FZ16.ENZ \
     obj/DEMO.EXE obj/CALC.RUN obj/DEMO.APK obj/LIBDEMO.DLL \
     obj/libdemo.so obj/SCRIPT.RUN obj/LEIA.TXT
 

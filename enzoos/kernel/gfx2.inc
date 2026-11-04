@@ -676,6 +676,58 @@ g2_win_blit:
         mov r15d, ecx               ; h
         mov rbx, r8                 ; fonte
         mov ebp, r9d                ; passo
+        ; hardening: clipa destino contra a superfície (evita blit além do
+        ; buffer com w/h gigantes vindos de apps)
+        test rbx, rbx
+        jz .done
+        test r14d, r14d
+        jle .done
+        test r15d, r15d
+        jle .done
+        ; clip de x negativo: dobra na largura e avança a FONTE igual
+        ; (antes: x<0 passava pelo teste abaixo e o blit escrevia ABAIXO
+        ; da base da superfície — em cima do bitmap/PTs do heap)
+        cmp r12d, 0
+        jge .xneg_ok
+        mov eax, r12d
+        neg eax
+        cmp eax, r14d
+        jge .done                     ; janela toda à esquerda
+        sub r14d, eax
+        shl eax, 2
+        add rbx, rax                  ; src += (-x)*4
+        xor r12d, r12d
+.xneg_ok:
+        ; clip de y negativo: análogo, por linhas
+        cmp r13d, 0
+        jge .yneg_ok
+        mov eax, r13d
+        neg eax
+        cmp eax, r15d
+        jge .done                     ; janela toda acima
+        sub r15d, eax
+        imul eax, ebp                 ; src += (-y)*passo
+        add rbx, rax
+        xor r13d, r13d
+.yneg_ok:
+        cmp r12d, [gsurf_w]
+        jge .done
+        cmp r13d, [gsurf_h]
+        jge .done
+        mov eax, r12d
+        add eax, r14d
+        cmp eax, [gsurf_w]
+        jbe .wok
+        mov r14d, [gsurf_w]
+        sub r14d, r12d
+.wok:
+        mov eax, r13d
+        add eax, r15d
+        cmp eax, [gsurf_h]
+        jbe .hok
+        mov r15d, [gsurf_h]
+        sub r15d, r13d
+.hok:
         xor ecx, ecx
 .row:
         cmp ecx, r15d

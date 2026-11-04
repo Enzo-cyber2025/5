@@ -1,0 +1,167 @@
+// METRO07 — gerado por tools/genapps.py (categoria UTIL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int bpm;
+int t0;
+int ligado;
+int batida;
+
+void init() {
+    seg_init();
+    fillsin();
+    title("Metronomo 7");
+    bpm = 132;
+    t0 = uptime();
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr != 1) { return; }
+    if (y > win_h - 70) {
+        if (x > win_w - 90) { ligado = 1 - ligado; }
+        else if (x > win_w / 2) { bpm = bpm + 4; }
+        else { bpm = bpm - 4; }
+        if (bpm < 30) { bpm = 30; }
+        if (bpm > 300) { bpm = 300; }
+        invalidate();
+    }
+}
+
+void tick() {
+    if (ligado == 0) { return; }
+    int intervalo = 60000 / bpm;
+    int agora = uptime();
+    if (agora - t0 >= intervalo) {
+        t0 = agora;
+        batida = 1 - batida;
+        beep(530, 40);
+        invalidate();
+    }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(16, 12, "METRONOMO", 15265012);
+    segnum(120, 70, bpm, 3, 7205511, 0);
+    text(200, 92, "BPM", 15265012);
+    rect(20, win_h - 60, 120, 44, 5319754);
+    text(48, win_h - 46, "MENOS", 15265012);
+    rect(150, win_h - 60, 120, 44, 5319754);
+    text(178, win_h - 46, "MAIS", 15265012);
+    rect(win_w - 90, win_h - 60, 70, 44, 5319754);
+    if (ligado == 1) { text(win_w - 82, win_h - 46, "PAUSA", 15265012); }
+    else { text(win_w - 82, win_h - 46, "TOCA", 15265012); }
+    // pendulo
+    int a = 0;
+    if (ligado == 1) { a = (batida * 2 - 1) * 10; }
+    int px = win_w / 2 + coss[(a + 16) & 31] * 90 / 4096;
+    int py = 60 - coss[(a + 16) & 31] * 10 / 4096;
+    line(win_w / 2, 40, px, 150, 15265012);
+    rect(px - 6, 150, 12, 12, 4194149);
+}
+int sins[32];
+int coss[32];
+void fillsin() {
+        sins[0] = 0;
+        sins[1] = 799;
+        sins[2] = 1567;
+        sins[3] = 2276;
+        sins[4] = 2896;
+        sins[5] = 3406;
+        sins[6] = 3784;
+        sins[7] = 4017;
+        sins[8] = 4096;
+        sins[9] = 4017;
+        sins[10] = 3784;
+        sins[11] = 3406;
+        sins[12] = 2896;
+        sins[13] = 2276;
+        sins[14] = 1567;
+        sins[15] = 799;
+        sins[16] = 0;
+        sins[17] = -799;
+        sins[18] = -1567;
+        sins[19] = -2276;
+        sins[20] = -2896;
+        sins[21] = -3406;
+        sins[22] = -3784;
+        sins[23] = -4017;
+        sins[24] = -4096;
+        sins[25] = -4017;
+        sins[26] = -3784;
+        sins[27] = -3406;
+        sins[28] = -2896;
+        sins[29] = -2276;
+        sins[30] = -1567;
+        sins[31] = -799;
+        coss[0] = 4096;
+        coss[1] = 4017;
+        coss[2] = 3784;
+        coss[3] = 3406;
+        coss[4] = 2896;
+        coss[5] = 2276;
+        coss[6] = 1567;
+        coss[7] = 799;
+        coss[8] = 0;
+        coss[9] = -799;
+        coss[10] = -1567;
+        coss[11] = -2276;
+        coss[12] = -2896;
+        coss[13] = -3406;
+        coss[14] = -3784;
+        coss[15] = -4017;
+        coss[16] = -4096;
+        coss[17] = -4017;
+        coss[18] = -3784;
+        coss[19] = -3406;
+        coss[20] = -2896;
+        coss[21] = -2276;
+        coss[22] = -1567;
+        coss[23] = -799;
+        coss[24] = 0;
+        coss[25] = 799;
+        coss[26] = 1567;
+        coss[27] = 2276;
+        coss[28] = 2896;
+        coss[29] = 3406;
+        coss[30] = 3784;
+        coss[31] = 4017;
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

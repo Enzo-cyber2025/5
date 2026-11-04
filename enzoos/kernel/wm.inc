@@ -78,6 +78,15 @@ wnd_create:
         jmp .fail
 .have_buf:
         mov [rbx + W_BUF], rax
+        ; registra o tamanho real do alloc: W_W/W_H em app-mem são
+        ; corrompíveis por um app bugado — o free no wnd_destroy usava
+        ; w*h corrompido e liberava páginas vivas de outros donos
+        mov edx, r14d
+        imul edx, r15d
+        shl edx, 2
+        add edx, 4095
+        shr edx, 12
+        call bufreg_add
         mov [rbx + W_X], r12d
         mov [rbx + W_Y], r13d
         mov [rbx + W_W], r14d
@@ -135,6 +144,7 @@ wnd_create:
         pop rsi
         pop rdi
         pop rax
+        xor edi, edi                   ; 0 = criação: pinta o fundo também
         call wnd_render_chrome
         mov edi, [rbx + W_X]
         mov esi, [rbx + W_Y]
@@ -198,10 +208,12 @@ wnd_focus:
         mov rbx, r12
         test rbx, rbx
         jz .no_old
+        mov edi, 1                     ; só o chrome: não apaga o conteúdo
         call wnd_render_chrome
         call wnd_damage
 .no_old:
         pop rbx
+        mov edi, 1                     ; só o chrome: não apaga o conteúdo
         call wnd_render_chrome
         call wnd_damage
 .already:
@@ -238,22 +250,43 @@ wnd_destroy:
         pop rsi
         pop rdi
         pop rax
-        ; buffer
+        ; buffer — npages pelo REGISTRO do wnd_create (W_W/W_H podem ter
+        ; sido corrompidos pelo app) e liberação ADIADA: o wnd_destroy pode
+        ; rodar dentro de uma IRQ (kill de app que crashou no EV_TICK) e o
+        ; laço principal pode estar NO MEIO do composite com este buffer
+        ; como surface corrente — liberar aqui = use-after-free imediato.
         mov rdi, [rbx + W_BUF]
-        mov esi, [rbx + W_W]           ; dword!
-        imul esi, [rbx + W_H]
-        shl rsi, 2
-        call k_free_bytes
+        test rdi, rdi
+        jz .bufd
+        push rbx
+        call bufreg_take               ; esi = npages registrados
+        test esi, esi
+        jz .wskip                      ; SEM registro: W_BUF foi corrompido
+                                       ; pelo app — liberar um ponteiro
+                                       ; forjado matava páginas vivas (o
+                                       ; shadow do kernel!); leak seguro
+.wfree:
+        call wnd_free_defer
+.wskip:
+        pop rbx
+.bufd:
         call wnd_damage
         mov dword [rbx + W_H], 0
         mov qword [rbx + W_BUF], 0
         mov qword [rbx + W_NEXT], 0
         mov qword [rbx + W_PREV], 0
+        ; a surface corrente pode ser o buffer recém-liberado: reseta pro
+        ; desktop (sempre vivo) — uso residual após free causava #PF no
+        ; composite (gsurf_ptr retido apontando pra página liberada)
+        call surf_use_desktop
         pop rbx
         ret
 
 ; -----------------------------------------------------------------------------
 ; wnd_render_chrome: rbx = janela — pinta estrutura na própria janela
+; edi = 0: pinta também o fundo do conteúdo (janela recém-criada).
+; edi != 0: só o chrome (moldura/título) — preserva o que o app desenhou
+; (re-render em foco/api_title apagava o conteúdo da janela).
 ; -----------------------------------------------------------------------------
 wnd_render_chrome:
         push rbx
@@ -261,6 +294,7 @@ wnd_render_chrome:
         push r13
         push r14
         push r15
+        mov r15d, edi                   ; 0 = pintar fundo do conteúdo
         ; superfície = buffer da janela
         mov rdi, [rbx + W_BUF]
         mov esi, [rbx + W_W]
@@ -268,7 +302,9 @@ wnd_render_chrome:
         mov ecx, [rbx + W_W]
         shl ecx, 2
         call surf_set
-        ; fundo do conteúdo
+        ; fundo do conteúdo (apenas na criação da janela)
+        test r15d, r15d
+        jnz .nofill
         xor edi, edi
         mov esi, TITLE_H
         mov edx, [rbx + W_W]
@@ -276,6 +312,7 @@ wnd_render_chrome:
         sub ecx, TITLE_H
         mov r14d, COL_PANEL
         call surf_fill
+.nofill:
         ; barra de título em gradiente (nova renderização)
         xor edi, edi
         xor esi, esi
@@ -298,11 +335,11 @@ wnd_render_chrome:
         mov r9d, 0x2D9CDB
         call g2_grad
         ; título
-        mov edi, 10
-        mov esi, 10
-        lea rdx, [rbx + W_TITLE]
+        lea rdi, [rbx + W_TITLE]
         call k_strlen
         mov ecx, eax
+        mov edi, 10
+        mov esi, 10
         lea rdx, [rbx + W_TITLE]
         mov r13d, COL_WHITE
         call surf_text
@@ -415,6 +452,7 @@ draw_icons:
         lea rax, [icon_name_table]
         mov rdx, [rax + r12*8]
         push rdx
+        mov rdi, rdx
         call k_strlen
         mov ecx, eax
         pop rdx
@@ -563,7 +601,7 @@ draw_taskbar:
 .tcol:
         call surf_text
         inc r12d
-        mov rbx, [rbx + W_NEXT]
+        mov rbx, [rbx + W_PREV]
         jmp .wloop
 .wdone:
         ; relógio
@@ -582,9 +620,9 @@ draw_taskbar:
 ; menu Iniciar
 ; -----------------------------------------------------------------------------
 menu_count:
-        ; nº de apps .ce + 2 (Reiniciar, Desligar)
+        ; nº de apps .ce + 3 (LOJA de apps, Reiniciar, Desligar)
         mov eax, [menu_app_count]
-        add eax, 2
+        add eax, 3
         ret
 
 menu_height:
@@ -697,6 +735,19 @@ draw_menu:
         add edi, 14
         mov esi, [tmp_y]
         add esi, 9
+        cmp r12d, [menu_app_count]
+        jne .sys_icon
+        mov ecx, 0x25A6                 ; ▦ — LOJA de apps (ENZFS)
+        mov r13d, COL_ACCENT
+        call surf_char
+        mov edi, [tmp_x]
+        add edi, 34
+        mov esi, [tmp_y]
+        add esi, 9
+        lea rdx, [s_loja]
+        mov ecx, s_loja_len
+        jmp .systext
+.sys_icon:
         mov ecx, 0x25AA                 ; ■
         mov r13d, COL_YELLOW
         call surf_char
@@ -785,23 +836,23 @@ draw_modal:
         mov ecx, 30
         mov r14d, COL_TITLE
         call surf_fill
+        lea rdi, [modal_title]
+        call k_strlen
+        mov ecx, eax
         mov edi, [modal_x]
         add edi, 12
         mov esi, [modal_y]
         add esi, 11
         lea rdx, [modal_title]
-        call k_strlen
-        mov ecx, eax
-        lea rdx, [modal_title]
         mov r13d, COL_WHITE
         call surf_text
+        lea rdi, [modal_text]
+        call k_strlen
+        mov ecx, eax
         mov edi, [modal_x]
         add edi, 12
         mov esi, [modal_y]
         add esi, 48
-        lea rdx, [modal_text]
-        call k_strlen
-        mov ecx, eax
         lea rdx, [modal_text]
         mov r13d, COL_GRAY
         call surf_text
@@ -927,13 +978,236 @@ clock_update:
 section .kdata
 wnd_top:     dq 0
 wnd_bottom:  dq 0
-wm_magic:    dd 0x13572468               ; assinatura p/ achar wnd_count por scan
 s_wnd_diag:  db "[wm] +janela:", 0
 s_wnd_noslot: db "[wm] wnd_create: sem slot de janela", 10, 0
 s_wnd_nomem: db "[wm] wnd_create: sem memoria p/ buffer", 10, 0
 s_wnd_diag2: db "[wm] -janela, total:", 0
+align 4                            ; magic+wnd_count+wnd_array contiguos p/ o scan do qmp_test
+wm_magic:    dd 0x13572468               ; assinatura p/ achar wnd_count por scan
 wnd_count:   dd 0
 wnd_array:   times MAX_WND * W_SIZE db 0
+
+align 8
+; registro de buffers de janela: (ptr, npages) — fonte da verdade p/ o
+; free no wnd_destroy (estruturas do app são corrompíveis em CPL0)
+bufreg_ptr: times 64 dq 0
+bufreg_npg: times 64 dd 0
+bufreg_i:   dd 0
+
+align 8
+; fila de frees adiados: produzida pelo wnd_destroy (que pode rodar em
+; IRQ), consumida pelo laço principal ANTES do composite (fora de IRQ)
+freeq_ptr:  times 32 dq 0
+freeq_npg:  times 32 dd 0
+freeq_head: dd 0
+freeq_tail: dd 0
+
+; wnd_free_defer: rdi=ptr, esi=npages — enfileira a liberação
+wnd_free_defer:
+        push rbx
+        push rcx
+        push rdx
+        mov ecx, [freeq_head]
+        mov edx, ecx
+        inc edx
+        and edx, 31
+        cmp edx, [freeq_tail]         ; fila cheia?
+        je .fqdrop                    ; leak controlado (32 slots)
+        lea rbx, [freeq_ptr]
+        mov [rbx + rcx*8], rdi
+        lea rbx, [freeq_npg]
+        mov [rbx + rcx*4], esi
+        mov [freeq_head], edx
+.fqdrop:
+        pop rdx
+        pop rcx
+        pop rbx
+        ret
+
+; freeq_drain: libera tudo da fila — só no laço principal (fora de IRQ)
+freeq_drain:
+        push rbx
+        push r12
+        push r13
+        push r14
+        push r15
+.fql:
+        mov ecx, [freeq_tail]
+        cmp ecx, [freeq_head]
+        je .fqdone
+        lea rbx, [freeq_ptr]
+        mov r12, [rbx + rcx*8]
+        lea rbx, [freeq_npg]
+        mov r13d, [rbx + rcx*4]
+        ; validação defensiva: ptr no heap e npages sanos
+        cmp r12, HEAP_START
+        jb .fqskip
+        mov rax, HEAP_START + SWAP_SPAN
+        cmp r12, rax
+        jae .fqskip
+        test r13d, r13d
+        jz .fqskip
+        cmp r13d, 16384
+        ja .fqskip
+        mov rdi, r12
+        mov rsi, r13
+        shl rsi, 12
+        call k_free_bytes
+        jmp .fqadv
+.fqskip:
+        mov ecx, [freeq_tail]
+        lea rbx, [freeq_ptr]
+        mov qword [rbx + rcx*8], 0
+.fqadv:
+        mov ecx, [freeq_tail]
+        lea rbx, [freeq_ptr]
+        mov qword [rbx + rcx*8], 0
+        inc ecx
+        and ecx, 31
+        mov [freeq_tail], ecx
+        jmp .fql
+.fqdone:
+        pop r15
+        pop r14
+        pop r13
+        pop r12
+        pop rbx
+        ret
+
+; bufreg_add: rax=ptr, edx=npages
+bufreg_add:
+        push rbx
+        push rcx
+        push rdx
+        mov ecx, [bufreg_i]
+        inc ecx
+        and ecx, 63
+        mov [bufreg_i], ecx
+        lea rbx, [bufreg_ptr]
+        mov [rbx + rcx*8], rax
+        lea rbx, [bufreg_npg]
+        mov [rbx + rcx*4], edx
+        pop rdx
+        pop rcx
+        pop rbx
+        ret
+
+; bufreg_take: rdi=ptr -> esi=npages (remove do registro; 0 se ausente)
+bufreg_take:
+        push rbx
+        push rcx
+        lea rbx, [bufreg_ptr]
+        xor ecx, ecx
+.bl:
+        cmp ecx, 64
+        jae .bno
+        cmp [rbx + rcx*8], rdi
+        je .bfound
+        inc ecx
+        jmp .bl
+.bfound:
+        mov qword [rbx + rcx*8], 0
+        lea rbx, [bufreg_npg]
+        mov esi, [rbx + rcx*4]
+        mov dword [rbx + rcx*4], 0
+        jmp .bout
+.bno:
+        xor esi, esi
+.bout:
+        pop rcx
+        pop rbx
+        ret
+
+; bufreg_peek: rdi=ptr -> esi=npages (NÃO remove do registro)
+bufreg_peek:
+        push rbx
+        push rcx
+        lea rbx, [bufreg_ptr]
+        xor ecx, ecx
+.pl:
+        cmp ecx, 64
+        jae .pno
+        cmp [rbx + rcx*8], rdi
+        je .pfound
+        inc ecx
+        jmp .pl
+.pfound:
+        lea rbx, [bufreg_npg]
+        mov esi, [rbx + rcx*4]
+        jmp .pout
+.pno:
+        xor esi, esi
+.pout:
+        pop rcx
+        pop rbx
+        ret
+
+; -----------------------------------------------------------------------------
+; wnd_sane: rbx = janela -> rax = 1 se a struct está coerente com o buffer
+; registrado. O compositor e as APIs de desenho confiam em W_X/Y/W/H/BUF;
+; um app bugado/hostil (CPL0) corrompe esses campos e o kernel escrevia/
+; lia fora do buffer — inclusive em cima das tabelas de página. Janela
+; insanável não é desenhada (o app continua vivo; só não aparece).
+; -----------------------------------------------------------------------------
+wnd_sane:
+        push rbx
+        push rdi
+        push rsi
+        push rcx
+        push r12
+        ; dimensões: [1, 4096]
+        mov eax, [rbx + W_W]
+        cmp eax, 1
+        jl .no
+        cmp eax, 4096
+        jg .no
+        mov eax, [rbx + W_H]
+        cmp eax, 1
+        jl .no
+        cmp eax, 4096
+        jg .no
+        ; posição: [0, 8192] (drag/cascata nunca geram negativo)
+        mov eax, [rbx + W_X]
+        cmp eax, 8192
+        ja .no
+        mov eax, [rbx + W_Y]
+        cmp eax, 8192
+        ja .no
+        ; buffer: página alinhada dentro do heap
+        mov r12, [rbx + W_BUF]
+        test r12, r12
+        jz .no
+        test r12, 4095
+        jnz .no
+        cmp r12, HEAP_START
+        jb .no
+        mov rax, [heap_top]
+        cmp r12, rax
+        jae .no
+        ; o tamanho declarado precisa caber no buffer REGISTRADO
+        mov rdi, r12
+        call bufreg_peek
+        test esi, esi
+        jz .yes                  ; sem registro (anel girou): só valida ranges
+        mov eax, [rbx + W_W]
+        imul eax, [rbx + W_H]
+        shl rax, 2
+        mov rcx, rsi
+        shl rcx, 12
+        cmp rax, rcx
+        ja .no
+.yes:
+        mov eax, 1
+        jmp .out
+.no:
+        xor eax, eax
+.out:
+        pop r12
+        pop rcx
+        pop rsi
+        pop rdi
+        pop rbx
+        ret
 
 menu_open:   dd 0
 menu_sel:    dd -1
@@ -978,6 +1252,8 @@ s_inicio: db "Início"
 s_inicio_len equ $ - s_inicio
 s_menufoot: db "EnzoOS 1.0 — Assembly puro"
 s_menufoot_len equ $ - s_menufoot
+s_loja: db "LOJA DE APPS"
+s_loja_len equ $ - s_loja
 s_reboot: db "Reiniciar"
 s_reboot_len equ $ - s_reboot
 s_shutdown: db "Desligar"

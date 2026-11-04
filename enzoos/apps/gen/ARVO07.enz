@@ -1,0 +1,141 @@
+// ARVO07 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int fx[128];
+int fy[128];
+int fa[128];
+int fl[128];
+int n;
+int t;
+
+void init() {
+    fillsin();
+    title("Arvore 7");
+}
+
+void tick() {
+    t = t + 1;
+    invalidate();
+}
+
+// angulo em unidades de 1/4096 rad aproximado por tabela
+int cossi(int a) {
+    a = a & 255;
+    return coss[(a * 32 / 256) & 31];
+}
+
+int sini(int a) {
+    a = a & 255;
+    return sins[(a * 32 / 256) & 31];
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 856343);
+    // semente
+    n = 1;
+    fx[0] = win_w / 2;
+    fy[0] = win_h - 20;
+    fa[0] = 192;       // apontando pra cima (3/4 de volta)
+    fl[0] = 68;
+    int passo = 0;
+    while (passo < 4) {
+        int i = 0;
+        int base = n;
+        while (i < base) {
+            int x = fx[i];
+            int y = fy[i];
+            int a = fa[i];
+            int l = fl[i];
+            int x2 = x + (sini(a) * l) / 4096;
+            int y2 = y - (cossi(a) * l) / 4096;
+            int cor = 5360770;
+            if (passo < 2) { cor = 9067051; }
+            line(x, y, x2, y2, cor);
+            // dois filhos
+            if (n < 126) {
+                fx[n] = x2; fy[n] = y2; fa[n] = a - 28; fl[n] = l * 62 / 100;
+                n = n + 1;
+            }
+            if (n < 126) {
+                fx[n] = x2; fy[n] = y2; fa[n] = a + 28; fl[n] = l * 62 / 100;
+                n = n + 1;
+            }
+            i = i + 1;
+        }
+        passo = passo + 1;
+    }
+    // vento: deslocamento pelo tempo
+    text(8, 8, "ARVORE FRACTAL 7", 0xFFFFFFFF);
+}
+
+int sins[32];
+int coss[32];
+void fillsin() {
+        sins[0] = 0;
+        sins[1] = 799;
+        sins[2] = 1567;
+        sins[3] = 2276;
+        sins[4] = 2896;
+        sins[5] = 3406;
+        sins[6] = 3784;
+        sins[7] = 4017;
+        sins[8] = 4096;
+        sins[9] = 4017;
+        sins[10] = 3784;
+        sins[11] = 3406;
+        sins[12] = 2896;
+        sins[13] = 2276;
+        sins[14] = 1567;
+        sins[15] = 799;
+        sins[16] = 0;
+        sins[17] = -799;
+        sins[18] = -1567;
+        sins[19] = -2276;
+        sins[20] = -2896;
+        sins[21] = -3406;
+        sins[22] = -3784;
+        sins[23] = -4017;
+        sins[24] = -4096;
+        sins[25] = -4017;
+        sins[26] = -3784;
+        sins[27] = -3406;
+        sins[28] = -2896;
+        sins[29] = -2276;
+        sins[30] = -1567;
+        sins[31] = -799;
+        coss[0] = 4096;
+        coss[1] = 4017;
+        coss[2] = 3784;
+        coss[3] = 3406;
+        coss[4] = 2896;
+        coss[5] = 2276;
+        coss[6] = 1567;
+        coss[7] = 799;
+        coss[8] = 0;
+        coss[9] = -799;
+        coss[10] = -1567;
+        coss[11] = -2276;
+        coss[12] = -2896;
+        coss[13] = -3406;
+        coss[14] = -3784;
+        coss[15] = -4017;
+        coss[16] = -4096;
+        coss[17] = -4017;
+        coss[18] = -3784;
+        coss[19] = -3406;
+        coss[20] = -2896;
+        coss[21] = -2276;
+        coss[22] = -1567;
+        coss[23] = -799;
+        coss[24] = 0;
+        coss[25] = 799;
+        coss[26] = 1567;
+        coss[27] = 2276;
+        coss[28] = 2896;
+        coss[29] = 3406;
+        coss[30] = 3784;
+        coss[31] = 4017;
+}

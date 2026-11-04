@@ -1,0 +1,106 @@
+// FORC19 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int letras[26];
+int erradas;
+int fim;
+
+void init() {
+    seg_init();
+    title("Forca 19");
+}
+
+void key(int k) {
+    if (fim != 0) { return; }
+    int c = k;
+    if (c >= 65 && c <= 90) { c = c + 32; }
+    if (c < 97 || c > 122) { return; }
+    int idx = c - 97;
+    if (letras[idx] != 0) { return; }
+    letras[idx] = 1;
+    int achou = 0;
+    if (k == 107 || k == 75) { achou = 1; }
+    if (k == 101 || k == 69) { achou = 1; }
+    if (k == 114 || k == 82) { achou = 1; }
+    if (k == 110 || k == 78) { achou = 1; }
+    if (k == 101 || k == 69) { achou = 1; }
+    if (k == 108 || k == 76) { achou = 1; }
+    if (achou == 0) {
+        erradas = erradas + 1;
+        beep(300, 25);
+        if (erradas >= 6) { fim = 2; }
+    }
+    invalidate();
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    int DASHC = 9081765;
+    text(12, 10, "FORCA — digite letras", 15265012);
+    // forca
+    line(40, 200, 40, 40, 13160672);
+    line(40, 40, 140, 40, 13160672);
+    line(140, 40, 140, 60, 13160672);
+    if (erradas >= 1) { rect(128, 60, 24, 24, 16743001); }
+    if (erradas >= 2) { line(140, 84, 140, 140, 16743001); }
+    if (erradas >= 3) { line(140, 100, 110, 120, 15265012); }
+    if (erradas >= 4) { line(140, 100, 170, 120, 15265012); }
+    if (erradas >= 5) { line(140, 140, 115, 170, 15265012); }
+    if (erradas >= 6) { line(140, 140, 165, 170, 15265012); }
+    // palavra: "KERNEL"
+        rect(20, 250, 40, 4, DASHC);
+        rect(64, 250, 40, 4, DASHC);
+        rect(108, 250, 40, 4, DASHC);
+        rect(152, 250, 40, 4, DASHC);
+        rect(196, 250, 40, 4, DASHC);
+        rect(240, 250, 40, 4, DASHC);
+    // teclado
+    int i = 0;
+    while (i < 26) {
+        int usada = letras[i];
+        int col = 2239294;
+        if (usada != 0) { col = 5219296; }
+        rect(20 + i * 14, 290, 12, 16, col);
+        i = i + 1;
+    }
+    if (fim == 2) { text(160, 70, "PERDEU!", 16743001); }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

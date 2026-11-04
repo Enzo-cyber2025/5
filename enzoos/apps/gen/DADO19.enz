@@ -1,0 +1,116 @@
+// DADO19 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int ndados;
+int val[8];
+int rolando;
+int t0;
+int semente;
+int total;
+
+void init() {
+    seg_init();
+    title("Dados 19");
+    ndados = 2;
+    semente = uptime() | 1;
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = 0 - semente; }
+    return (semente / 65536) % m;
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr != 1) { return; }
+    rolando = 12;
+    t0 = uptime();
+    invalidate();
+}
+
+void tick() {
+    if (rolando <= 0) { return; }
+    rolando = rolando - 1;
+    total = 0;
+    int i = 0;
+    while (i < ndados) {
+        val[i] = 1 + rnd(6);
+        total = total + val[i];
+        i = i + 1;
+    }
+    invalidate();
+}
+
+void pino(int x, int y, int c) {
+    rect(x - 5, y - 5, 10, 10, c);
+}
+
+void face(int x, int y, int v) {
+    rect(x, y, 56, 56, 16119802);
+    rect(x + 2, y + 2, 52, 52, 15265012);
+    int c = 1712176;
+    if (v >= 1) { pino(x + 14, y + 14, c); }
+    if (v >= 3) { pino(x + 28, y + 28, c); }
+    if (v >= 5) { pino(x + 42, y + 14, c); pino(x + 14, y + 42, c); }
+    if (v >= 2) { pino(x + 42, y + 42, c); }
+    if (v >= 4) { pino(x + 28, y + 14, c); pino(x + 28, y + 42, c); }
+    if (v >= 6) { pino(x + 14, y + 28, c); pino(x + 42, y + 28, c); }
+    if (v >= 7) { pino(x + 28, y + 20, c); }
+    if (v >= 8) { pino(x + 28, y + 36, c); }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1712176);
+    text(16, 10, "DADOS — clique para rolar", 15265012);
+    int i = 0;
+    while (i < ndados) {
+        int x = 20 + (i % 4) * 90;
+        int y = 40 + (i / 4) * 70;
+        face(x, y, val[i]);
+        i = i + 1;
+    }
+    text(16, 200, "total:", 15265012);
+    segnum(110, 192, total, 2, 7991941, 0);
+    if (rolando > 0) {
+        text(200, 200, "rolando...", 9081765);
+    }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

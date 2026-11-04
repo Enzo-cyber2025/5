@@ -100,7 +100,10 @@ cur_put:                           ; eax=char
         mov edi, [nlines]
         dec edi
         imul edi, LINESZ
-        lea rdi, [text + rdi]
+        push rax
+        lea rax, [text]
+        add rdi, rax
+        pop rax
         xor ecx, ecx
 .find:
         cmp ecx, LINESZ-2
@@ -123,7 +126,10 @@ cur_bs:
         mov edi, [nlines]
         dec edi
         imul edi, LINESZ
-        lea rdi, [text + rdi]
+        push rax
+        lea rax, [text]
+        add rdi, rax
+        pop rax
         xor ecx, ecx
 .find:
         cmp ecx, LINESZ-1
@@ -159,7 +165,8 @@ line_break:
         mov eax, LINES_MAX - 1
 .space:
         imul eax, LINESZ
-        lea rdi, [text + rax]
+        lea rdi, [text]
+        add rdi, rax
         mov byte [rdi], 0
         inc dword [nlines]
         ret
@@ -172,7 +179,8 @@ line_add:                          ; rdi=string
         mov eax, [nlines]
         dec eax
         imul eax, LINESZ
-        lea rdi, [text + rax]
+        lea rdi, [text]
+        add rdi, rax
         mov rsi, [rsp + 16]
         xor ecx, ecx
 .cp:
@@ -213,7 +221,8 @@ render:
         jae .done
         mov eax, ebx
         imul eax, LINESZ
-        lea rdx, [text + rax]
+        lea rdx, [text]
+        add rdx, rax
         push rbx
         xor ecx, ecx
 .len:
@@ -236,7 +245,8 @@ render:
         mov eax, [nlines]
         dec eax
         imul eax, LINESZ
-        lea rdx, [text + rax]
+        lea rdx, [text]
+        add rdx, rax
         xor ecx, ecx
 .cl:
         cmp ecx, LINESZ-1

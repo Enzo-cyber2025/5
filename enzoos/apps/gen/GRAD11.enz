@@ -1,0 +1,43 @@
+// GRAD11 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int t;
+
+void init() {
+    title("Grade 11");
+}
+
+void tick() {
+    t = t + 1;
+    invalidate();
+}
+
+void paint() {
+    int y = 0;
+    while (y < win_h) {
+        int x = 0;
+        while (x < win_w) {
+            int dx = x - win_w / 2;
+            int dy = y - win_h / 2;
+            int v = (dx * dx / 70 + dy * dy / 120 + t) & 127;
+            int l = 24 + v / 2;
+            px(x, y, 0xFF000000 | (l << 16) | (l << 8) | (l + 50));
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    // linhas de grade
+    int gx = 0;
+    while (gx < win_w) {
+        int gy = 0;
+        while (gy < win_h) {
+            px(gx, gy, 3752794);
+            gy = gy + 16;
+        }
+        gx = gx + 16;
+    }
+    text(8, 8, "GRADE 11", 0xFFFFFFFF);
+}

@@ -1,0 +1,65 @@
+// FOGO03 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int f[960];
+int semente;
+
+void init() {
+    title("Fogo 3");
+    semente = uptime() | 1;
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = -semente; }
+    return (semente / 65536) % m;
+}
+
+void tick() {
+    // base alimenta
+    int x = 0;
+    while (x < 40) {
+        if (rnd(100) < 46) { f[x*24+23] = 255; }
+        else { f[x*24+23] = f[x*24+23] * 75 / 100; }
+        x = x + 1;
+    }
+    // sobe esfriando
+    int y = 0;
+    while (y < 23) {
+        x = 0;
+        while (x < 40) {
+            int soma = f[x*24+y+1];
+            if (x > 0) { soma = soma + f[(x-1)*24+y+1]; }
+            if (x < 39) { soma = soma + f[(x+1)*24+y+1]; }
+            int v = soma / 3 - 5;
+            if (v < 0) { v = 0; }
+            f[x*24+y] = v;
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    invalidate();
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 656899);
+    int y = 0;
+    while (y < 24) {
+        int x = 0;
+        while (x < 40) {
+            int v = f[x*24+23-y];
+            if (v > 0) {
+                int r = v;
+                int g = (v * 210) / 255;
+                int b = (v * 14) / 255;
+                rect(10 + x * 9, 10 + y * 11, 8, 10, 0xFF000000 | (r << 16) | (g << 8) | b);
+            }
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    text(8, win_h - 14, "FOGO 3", 0xFFFFFFFF);
+}

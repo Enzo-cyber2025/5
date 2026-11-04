@@ -45,9 +45,9 @@ k_enzfs_mount:
 .nb_ok:
         mov [enz_nblocks], eax
         mov eax, [enz_super + 28]  ; n_inodes
-        cmp eax, 256
+        cmp eax, 2048
         jbe .ni_ok
-        mov eax, 256
+        mov eax, 2048
 .ni_ok:
         mov [enz_ninodes], eax
         ; carrega bitmap (1 bloco)
@@ -58,10 +58,10 @@ k_enzfs_mount:
         call ahci_read
         test eax, eax
         jnz .bad
-        ; carrega inodes (16 KB = 4 blocos)
+        ; carrega inodes (128 KB = 32 blocos = 2048 inodes)
         mov edi, [enz_super + 20]
         shl edi, 3
-        mov esi, 32
+        mov esi, 256
         mov rdx, enz_inodes
         call ahci_read
         test eax, eax
@@ -983,7 +983,7 @@ e_flush:
         call ahci_write
         mov edi, [enz_super + 20]
         shl edi, 3
-        mov esi, 32
+        mov esi, 256
         mov rdx, enz_inodes
         call ahci_write
         mov dword [enz_dirty], 0
@@ -1019,9 +1019,6 @@ e_stat:
 section .kdata
 enz_super:  times 512 db 0
 align 4096
-enz_bm:     times 4096 db 0         ; bitmap de blocos (32k blocos)
-enz_inodes: times 256*64 db 0       ; cache de inodes
-enz_dirbuf: times 4096 db 0         ; bloco de trabalho
 enz_tmpname: times 24 db 0
 enz_parent: times 64 db 0
 enzfs_ok:   dd 0

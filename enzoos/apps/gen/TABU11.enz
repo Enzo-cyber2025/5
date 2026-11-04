@@ -1,0 +1,74 @@
+// TABU11 — gerado por tools/genapps.py (categoria MATH)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+void init() {
+    seg_init();
+    title("Tabuada 11");
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    int COL = 15265012;
+    text(24, 16, "TABUADA DO 12", 12582719);
+    text(24, 50, " 1 x 12 =   12", COL);
+    text(24, 72, " 2 x 12 =   24", COL);
+    text(24, 94, " 3 x 12 =   36", COL);
+    text(24, 116, " 4 x 12 =   48", COL);
+    text(24, 138, " 5 x 12 =   60", COL);
+    text(24, 160, " 6 x 12 =   72", COL);
+    text(24, 182, " 7 x 12 =   84", COL);
+    text(24, 204, " 8 x 12 =   96", COL);
+    text(24, 226, " 9 x 12 =  108", COL);
+    text(24, 248, "10 x 12 =  120", COL);
+    // grade colorida n x 10
+    int r = 0;
+    while (r < 12) {
+        int c = 0;
+        while (c < 10) {
+            int on = (r * c) % 2;
+            if (on == 1) { rect(240 + c * 12, 52 + r * 12, 10, 10, 12582719); }
+            else { rect(240 + c * 12, 52 + r * 12, 10, 10, 2832420); }
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

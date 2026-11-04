@@ -111,9 +111,11 @@ ev_mouse:
         jmp epilogue
 
 ; ---- helpers ----------------------------------------------------------------
-slen:                           ; rdi = str -> eax
+slen:                           ; rdi = str -> eax (máx 4096: hardening)
         xor eax, eax
 .l:
+        cmp eax, 4096
+        jae .d
         cmp byte [rdi + rax], 0
         je .d
         inc eax
@@ -126,6 +128,7 @@ text_at:                        ; edi=x esi=y rdx=str r8d=cor
         push rsi
         push rdx
         push r8
+        mov rdi, rdx
         call slen
         mov ecx, eax
         pop r8
@@ -141,6 +144,7 @@ label_at:                       ; edi=x esi=y rdx=str r8d=cor (comprimento fixo)
         push rsi
         push rdx
         push r8
+        mov rdi, rdx              ; slen mede a STRING (rdx), não a coordenada
         call slen
         mov ecx, eax
         pop r8

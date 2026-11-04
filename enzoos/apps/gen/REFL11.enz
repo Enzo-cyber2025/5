@@ -1,0 +1,108 @@
+// REFL11 — gerado por tools/genapps.py (categoria JOGO)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int estado;   // 0 espera, 1 verde, 2 resultado, 3 apertado
+int t0;
+int melhor;
+int semente;
+
+void init() {
+    seg_init();
+    title("Reflexo 11");
+    semente = uptime() | 1;
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = 0 - semente; }
+    return (semente / 65536) % m;
+}
+
+void mouse(int x, int y, int b, int pr) {
+    if (pr != 1) { return; }
+    if (estado == 0) {
+        // apertou cedo demais
+        estado = 3;
+        invalidate();
+    } else if (estado == 1) {
+        int d = uptime() - t0;
+        estado = 2;
+        if (melhor == 0 || d < melhor) { melhor = d; }
+        beep(990, 40);
+        invalidate();
+    } else {
+        estado = 0;
+        invalidate();
+    }
+}
+
+void tick() {
+    if (estado == 0) {
+        t0 = uptime() + 3000 + rnd(2500);
+        estado = 1;
+        invalidate();
+    } else if (estado == 1) {
+        if (uptime() >= t0) {
+            // ficou verde agora
+        }
+    }
+}
+
+void paint() {
+    if (estado == 1 && uptime() >= t0) {
+        rect(0, 0, win_w, win_h, 2006608);
+        text(90, 120, "CLIQUE!", 16777215);
+    } else if (estado == 0) {
+        rect(0, 0, win_w, win_h, 11546688);
+        text(70, 120, "espere o verde...", 16777215);
+    } else if (estado == 3) {
+        rect(0, 0, win_w, win_h, 12613664);
+        text(60, 120, "CEDO DEMAIS! clique p/ tentar", 16777215);
+    } else {
+        rect(0, 0, win_w, win_h, 2110542);
+        text(60, 60, "seu tempo (ms):", 15265012);
+        segnum(200, 100, uptime() - t0, 3, 7331978, 0);
+        text(60, 170, "melhor:", 15265012);
+        segnum(180, 210, melhor, 3, 7331978, 0);
+        text(60, 250, "clique para reiniciar", 15265012);
+    }
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

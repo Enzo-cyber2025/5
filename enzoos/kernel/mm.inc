@@ -17,6 +17,8 @@ mark_used:
         push rcx
         push r8
         push r9
+        cmp rax, [heap_pages]         ; índice fora do heap -> ignora
+        jae mark_used_out
         mov r8, rax
         shr r8, 3
         mov r9, HEAP_START
@@ -26,6 +28,7 @@ mark_used:
         mov r8, 1
         shl r8, cl
         or [r9], r8b
+mark_used_out:
         pop r9
         pop r8
         pop rcx
@@ -35,6 +38,8 @@ mark_free:
         push rcx
         push r8
         push r9
+        cmp rax, [heap_pages]         ; índice fora do heap -> ignora
+        jae mark_free_out
         mov r8, rax
         shr r8, 3
         mov r9, HEAP_START
@@ -45,6 +50,7 @@ mark_free:
         shl r8, cl
         not r8
         and [r9], r8b
+mark_free_out:
         pop r9
         pop r8
         pop rcx
@@ -54,6 +60,8 @@ page_is_free:
         push rcx
         push r8
         push r9
+        cmp rax, [heap_pages]         ; fora do heap = "livre" (não toca)
+        jae page_is_free_yes
         mov r8, rax
         shr r8, 3
         mov r9, HEAP_START
@@ -65,6 +73,12 @@ page_is_free:
         test [r9], r8b
         setz al
         movzx rax, al
+        pop r9
+        pop r8
+        pop rcx
+        ret
+page_is_free_yes:
+        mov eax, 1
         pop r9
         pop r8
         pop rcx
@@ -176,6 +190,79 @@ k_mm_init:
         ret
 
 ; -----------------------------------------------------------------------------
+; k_page_pinned — rax = índice da página -> rax = 1 se é estrutura vital
+; do kernel (tabelas de página do swap, PD novo, sombra, fundo da área de
+; trabalho). Essas páginas NUNCA podem ser entregues pelo k_alloc: se o
+; bitmap for corrompido (bit virado a "livre" por uma escrita selvagem ou
+; um free com tamanho errado), o k_alloc devolvia a página a uma imagem ou
+; buffer de janela — o conteúdo do app era escrito POR CIMA das PTEs e o
+; compositor pânicava no primeiro acesso à página sem mapeamento.
+; -----------------------------------------------------------------------------
+k_page_pinned:
+        push rdx
+        push rcx
+        push r8
+        push r9
+        mov r9, rax
+        shl r9, 12
+        add r9, HEAP_START              ; r9 = endereço da página
+        xor edx, edx                    ; resultado
+        ; 32 tabelas de página do swap
+        xor ecx, ecx
+.pt:
+        cmp ecx, 32
+        jae .ptdone
+        mov r8, [sw_pts + rcx*8]
+        test r8, r8
+        jz .ptnext
+        cmp r8, r9
+        je .yes
+.ptnext:
+        inc ecx
+        jmp .pt
+.ptdone:
+        ; PD novo (modo páginas de 1 GB)
+        mov r8, [sw_newpd]
+        test r8, r8
+        jz .nopd
+        cmp r8, r9
+        je .yes
+.nopd:
+        ; sombra do compositor [shadow, shadow_end)
+        mov r8, [shadow]
+        test r8, r8
+        jz .nsh
+        cmp r8, r9
+        ja .nsh
+        mov r8, [shadow_end]
+        test r8, r8
+        jz .nsh
+        cmp r8, r9
+        ja .yes
+.nsh:
+        ; fundo da área de trabalho [desktop_bg, desktop_end)
+        mov r8, [desktop_bg]
+        test r8, r8
+        jz .no
+        cmp r8, r9
+        ja .no
+        mov r8, [desktop_end]
+        test r8, r8
+        jz .no
+        cmp r8, r9
+        jbe .no
+        jmp .yes
+.yes:
+        mov edx, 1
+.no:
+        mov rax, rdx
+        pop r9
+        pop r8
+        pop rcx
+        pop rdx
+        ret
+
+; -----------------------------------------------------------------------------
 ; k_alloc — rdi=bytes -> rax=ptr (0 se falhar)
 ; -----------------------------------------------------------------------------
 k_alloc:
@@ -192,6 +279,13 @@ k_alloc:
         mov r13, [heap_pages]
         sub r13, r12
         mov r14, [bitmap_pages]
+        ; hardening: cursor fora do span do heap (corrupção) -> volta ao
+        ; início; um k_alloc com bitmap_pages inválido devolveria páginas
+        ; fora do heap (inclusive em cima do kernel)
+        cmp r14, r13
+        jb .cursor_ok
+        xor r14d, r14d
+.cursor_ok:
 .next:
         cmp r14, r13
         ja .fail
@@ -202,6 +296,26 @@ k_alloc:
         call page_is_free
         test rax, rax
         jz .advance
+        ; blindagem: página "livre" no bitmap mas vital (PT/shadow/desktop)?
+        ; bitmap corrompido não entrega estrutura do kernel a app nenhum
+        mov rax, r15
+        call k_page_pinned
+        test eax, eax
+        jz .notpinned
+        ; log limitado: as primeiras 8 por sessão
+        cmp dword [pinskip_log], 8
+        jae .advance
+        inc dword [pinskip_log]
+        push rdi
+        push rsi
+        mov rdi, s_pinskip
+        call k_log
+        mov rdi, r15
+        call k_log_hex
+        pop rsi
+        pop rdi
+        jmp .advance
+.notpinned:
         inc r15
         dec rbx
         jnz .test
@@ -210,6 +324,10 @@ k_alloc:
 .mark:
         mov rax, r15
         call mark_used
+        mov rdi, r15
+        shl rdi, 12
+        add rdi, HEAP_START
+        call sw_remap_page              ; PTE presente ao (re)alocar a página
         inc r15
         dec rbx
         jnz .mark
@@ -260,6 +378,9 @@ k_free_n:
         push r13
         cmp rdi, HEAP_START
         jb .done
+        mov rax, [heap_top]
+        cmp rdi, rax
+        jae .done                    ; ponteiro fora do heap: ignora
         mov r13, rdi
         add r13, 4095
         and r13, -4096               ; primeira página
@@ -267,6 +388,14 @@ k_free_n:
 .loop:
         test rbx, rbx
         jz .done
+        mov rax, r13
+        add rax, 4096
+        jc .done                     ; wraparound: para
+        cmp rax, HEAP_START
+        jb .done
+        mov rax, r13
+        cmp rax, [heap_top]
+        jae .done                    ; além do heap: para (não toca o resto)
         mov rdi, r13
         call sw_free_frame           ; desmapeia e devolve o frame da PTE
         add r13, 4096
@@ -320,6 +449,8 @@ k_free_pages_count:
 
 section .kdata
 sw_retry:   dd 0
+pinskip_log: dd 0
+s_pinskip:  db "[mm] PIN-SKIP: bitmap diz livre mas a pagina e vital (PT/shadow/desktop):", 0
 section .kdata
 s_ka_start: db "[ka] varrendo npages:", 0
 s_ka_ok:    db "[ka] alocou em:", 0

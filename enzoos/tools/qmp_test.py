@@ -35,12 +35,36 @@ def ppm_to_png(src, dst):
     open(dst, 'wb').write(png)
     return w, h
 
+def lfb_to_png(data, w, h, pitch, bpp, dst):
+    """converte um dump do framebuffer linear (bpp 24/32, pixel
+    0x00BBGGRR little-endian) em PNG — mesmo formato do ppm_to_png"""
+    if bpp == 32:
+        def px(off): return (data[off], data[off+1], data[off+2])
+        step = 4
+    elif bpp == 24:
+        def px(off): return (data[off], data[off+1], data[off+2])
+        step = 3
+    else:
+        raise RuntimeError("bpp nao suportado no dump LFB: %d" % bpp)
+    rows = b''.join(b'\x00' + b''.join(bytes(px(y*pitch + x*step))
+                                       for x in range(w))
+                    for y in range(h))
+    def chunk(tag, payload):
+        c = struct.pack('>I', len(payload)) + tag + payload
+        return c + struct.pack('>I', zlib.crc32(tag + payload) & 0xFFFFFFFF)
+    png = b'\x89PNG\r\n\x1a\n'
+    png += chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0))
+    png += chunk(b'IDAT', zlib.compress(rows, 6))
+    png += chunk(b'IEND', b'')
+    open(dst, 'wb').write(png)
+    return w, h
+
 # ---------------------------------------------------------------------------
 class Qmp:
     def __init__(self, iso, serial_path, disk=None):
         qtrace = serial_path.replace("serial.log", "qtrace.log")
         pcap = serial_path.replace("serial.log", "traffic.pcap")
-        args = [QEMU, "-m", "2048", "-display", "none", "-qmp", "stdio",
+        args = [QEMU, "-m", "1024", "-display", "none", "-qmp", "stdio",
                 "-machine", "q35", "-boot", "d",
                 "-device", "ahci,id=sata0",
                 "-drive", "id=cd0,if=none,format=raw,media=cdrom,file=" + iso,
@@ -101,14 +125,80 @@ class Qmp:
     def sleep(self, s):
         time.sleep(s)
 
+    def mouse_rel(self, dx, dy):
+        """move o mouse por delta relativo (passos de 80 p/ caber no PS/2).
+        Formato QMP: um evento por eixo {axis,value}."""
+        while dx or dy:
+            sx = max(-80, min(80, dx)); sy = max(-80, min(80, dy))
+            dx -= sx; dy -= sy
+            ev = []
+            if sx:
+                ev.append({"type": "rel", "data": {"axis": "x", "value": sx}})
+            if sy:
+                ev.append({"type": "rel", "data": {"axis": "y", "value": sy}})
+            self.cmd("input-send-event", events=ev)
+        self.sleep(0.05)
+
+    def mouse_btn(self, down):
+        self.cmd("input-send-event", events=[{"type": "btn",
+                    "data": {"down": bool(down), "button": "left"}}])
+        self.sleep(0.15)
+
     def shot(self, name, outdir):
         ppm = os.path.join(outdir, name + ".ppm")
         png = os.path.join(outdir, name + ".png")
         self.cmd("screendump", filename=ppm)
         w, h = ppm_to_png(ppm, png)
         os.remove(ppm)
+        # QEMUs antigos (3.1) podem renderizar o console em modo texto
+        # mesmo com VBE/LFB ativo: se o screendump nao bate com o modo do
+        # boot params, captura o framebuffer linear direto da memoria
+        # fisica (pmemsave) — o que o EnzoOS realmente desenhou.
+        fb = self.boot_fb()
+        if fb and (w, h) != (fb["w"], fb["h"]):
+            try:
+                w2, h2 = self.lfb_shot(png, fb)
+                print("captura: %s.png (%dx%d) [LFB dump]" % (name, w2, h2))
+                return w2, h2
+            except Exception as e:
+                print("aviso: dump LFB falhou (%s); mantendo screendump" % e)
         print("captura: %s.png (%dx%d)" % (name, w, h))
         return w, h
+
+    def boot_fb(self):
+        """le os boot params do stage1 (magic 'E5BP' em 0x10E00) e devolve
+        o modo grafico: lfb, w, h, bpp, pitch — ou None se indisponivel"""
+        import re as _re
+        try:
+            r = self.hmp("xp /6xw 0x10E08").get("return", "")
+            v = [int(t, 16) for t in _re.findall(r"0x([0-9a-f]{8})", r)]
+            if len(v) < 6:
+                return None
+            lfb_lo, lfb_hi, w, h, bpp, pitch = v[:6]
+            m = self.hmp("xp /1xw 0x10E00").get("return", "")
+            magic = _re.search(r"0x([0-9a-f]{8})", m)
+            if not magic or magic.group(1).upper() != "50423545":
+                return None            # nao eh 'E5BP'
+            if lfb_hi != 0 or w == 0 or h == 0 or w > 4096 or h > 4096:
+                return None
+            return {"lfb": lfb_lo, "w": w, "h": h, "bpp": bpp, "pitch": pitch}
+        except Exception:
+            return None
+
+    def lfb_shot(self, png, fb):
+        """copia o LFB do guest via HMP pmemsave e grava o PNG.
+        Nota: pmemsave confunde '/' do caminho com operador de divisao —
+        usar nome de arquivo sem barras (cai no cwd do QEMU)."""
+        size = fb["pitch"] * fb["h"]
+        tmp = "lfbshot.tmp"
+        r = self.hmp("pmemsave 0x%X 0x%X %s" % (fb["lfb"], size, tmp))
+        if "return" not in r:
+            raise RuntimeError("pmemsave: %s" % r)
+        data = open(tmp, "rb").read()
+        os.remove(tmp)
+        if len(data) != size:
+            raise RuntimeError("pmemsave curto: %d != %d" % (len(data), size))
+        return lfb_to_png(data, fb["w"], fb["h"], fb["pitch"], fb["bpp"], png)
 
     def kread32(self, addr):
         """le um dword da memoria do guest (kernel @ 0x100000)"""
@@ -161,6 +251,7 @@ def main():
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     q = Qmp(iso, serial, disk)
+    errs = []
     try:
         # 1. boot -> área de trabalho com 3 janelas (DHCP+AHCI+swap no meio)
         q.sleep(8)
@@ -305,6 +396,180 @@ def main():
         launch_menu_app(9)                 # MANDEL.ENZ
         q.sleep(4)
         print("::notice::passo 16-mandel ok"); q.shot("16-mandel", outdir)
+
+        # 17. Pen-test: ATTACK.ENZ — bateria hostil contra as APIs do kernel
+        #     (31 testes: alloc/free inválidos, coords negativas, paths
+        #     maliciosos, binários malformados). O kernel deve sobreviver.
+        launch_menu_app(10)                # ATTACK.ENZ (11º app da ISO)
+        q.sleep(12)                        # bateria completa
+        print("::notice::passo 17-pentest ok"); q.shot("17-pentest", outdir)
+
+        # ---- helpers de memória para os testes pesados --------------------
+        def find_wnd_array():
+            """wnd_array fica logo após a magic (magic dd, wnd_count dd,
+            wnd_array em magic+8) — layout contíguo garantido pelo align 4"""
+            return WND_COUNT + 4 if WND_COUNT else 0
+
+        def find_ps2():
+            """procura 0x2468ACE0 no kernel: mouse_x = magic+4, mouse_y = +8"""
+            import re as _re
+            for base in range(0x100000, 0x160000, 0x1000):
+                r = q.hmp("xp /1024xw 0x%X" % base).get("return", "")
+                for m in _re.finditer(r"0x([0-9a-f]{8})", r):
+                    if int(m.group(1), 16) == 0x2468ACE0:
+                        idx = len(_re.findall(r"0x[0-9a-f]{8}",
+                                              r[:m.start()]))
+                        return base + idx * 4
+            return 0
+        PS2_MAGIC = find_ps2()
+        MOUSE_X = PS2_MAGIC + 4 if PS2_MAGIC else 0
+        MOUSE_Y = PS2_MAGIC + 8 if PS2_MAGIC else 0
+        print("::notice::ps2_magic addr=0x%X (mouse em +4/+8)" % PS2_MAGIC)
+
+        def mouse_pos():
+            if not MOUSE_X:
+                return None
+            return (q.kread32(MOUSE_X), q.kread32(MOUSE_Y))
+
+        def mouse_move_to(tx, ty):
+            """move o cursor ate (tx,ty) lendo a pos real do guest"""
+            p = mouse_pos()
+            if not p:
+                return
+            q.mouse_rel(tx - p[0], ty - p[1])
+        WND_ARRAY = find_wnd_array()
+        print("::notice::wnd_array addr=0x%X" % WND_ARRAY)
+
+        def wnd_slot(i):
+            """(x, y, w, h) da janela i do wnd_array (W_X=16, W_Y=20, W_W=24, W_H=28)"""
+            if not WND_ARRAY:
+                return None
+            x = q.kread32(WND_ARRAY + i * 0x60 + 16)
+            y = q.kread32(WND_ARRAY + i * 0x60 + 20)
+            w = q.kread32(WND_ARRAY + i * 0x60 + 24)
+            h = q.kread32(WND_ARRAY + i * 0x60 + 28)
+            if w < 50 or h < 50 or w > 4096 or h > 4096:
+                return None
+            if x > 4096 or y > 4096:
+                return None
+            return (x, y, w, h)
+
+        def last_wnd():
+            n = q.kread32(WND_COUNT) if WND_COUNT else -1
+            for i in range(min(n, 16) - 1, -1, -1):
+                s = wnd_slot(i)
+                if s:
+                    return i, s
+            return None, None
+
+        # 18. UI: arrastar janela com o mouse (drag real via PS/2)
+        def all_slots():
+            out = {}
+            n = q.kread32(WND_COUNT) if WND_COUNT else 0
+            for i in range(min(n, 16)):
+                s = wnd_slot(i)
+                if s:
+                    out[i] = s
+            return out
+
+        before = all_slots()
+        if before and MOUSE_X:
+            # arrasta a partir da janela mais abaixo (não coberta por outras)
+            ti = min(before)                      # slot mais baixo
+            wx, wy, ww, wh = before[ti]
+            print("::notice::drag: alvo janela %d em (%d,%d) %dx%d" % (ti, wx, wy, ww, wh))
+            q.shot("18-drag-antes", outdir)
+            mouse_move_to(wx + ww // 2, wy + 10)
+            q.mouse_btn(True)
+            q.mouse_rel(120, 60)
+            q.mouse_btn(False)
+            q.sleep(1.0)
+            after = all_slots()
+            moved = []
+            for i, s in before.items():
+                if i in after:
+                    ddx = after[i][0] - s[0]; ddy = after[i][1] - s[1]
+                    if ddx >= 60 and ddy >= 20:
+                        moved.append((i, ddx, ddy))
+            if moved:
+                print("::notice::drag: moveu janela(s) %s -> OK" % moved)
+            else:
+                print("::notice::drag: nenhuma janela moveu -> FALHOU")
+                errs.append("drag nao moveu nenhuma janela")
+            q.shot("18-drag-depois", outdir)
+        else:
+            print("::notice::drag: indisponivel (slots=%d mouse=0x%X)"
+                  % (len(before), MOUSE_X))
+
+        # 19. Limite de apps: abre até MAX_APPS (16) e tenta o 17º
+        n0 = q.kread32(WND_COUNT) if WND_COUNT else -1
+        print("::notice::appslimite: janelas iniciais=%d" % n0)
+        for hk in list("tipcns") * 6:            # hotkeys globais de apps
+            if q.kread32(WND_COUNT) >= 16:
+                break
+            q.key(hk)
+            q.sleep(0.35)
+        n1 = q.kread32(WND_COUNT) if WND_COUNT else -1
+        print("::notice::appslimite: apos hotkeys=%d" % n1)
+        q.key("t"); q.sleep(1.0)                 # deve ser rejeitado (sem slot)
+        n2 = q.kread32(WND_COUNT) if WND_COUNT else -1
+        print("::notice::appslimite: apos o 17o=%d (esperado 16)" % n2)
+        q.shot("19-appslimite", outdir)
+        # fecha janelas clicando no botão X (app_close do kernel)
+        if MOUSE_X:
+            for _ in range(20):
+                n = q.kread32(WND_COUNT) if WND_COUNT else 0
+                if n <= 3:            # deixa as janelas do boot
+                    break
+                slots = all_slots()
+                if not slots:
+                    break
+                i = min(slots)        # fecha a mais antiga primeiro
+                x, y, w, h = slots[i]
+                mouse_move_to(x + w - 14, y + 14)
+                q.mouse_btn(True)
+                q.mouse_btn(False)
+                q.sleep(0.35)
+        n3 = q.kread32(WND_COUNT) if WND_COUNT else -1
+        print("::notice::appslimite: apos fechar via X=%d" % n3)
+        q.shot("19b-fechadas", outdir)
+
+        # 20. Rajada de teclado: 150 teclas + menus abrindo/fechando
+        for i in range(50):
+            q.key("abcdefghijklmnopqrstuvwxyz"[i % 26])
+        for i in range(8):
+            q.key("m", "ctrl-alt")
+            q.sleep(0.1)
+            q.key("esc")
+        for i in range(30):
+            q.key("down")
+        q.key("esc")
+        for i in range(20):
+            q.key("spc")
+        q.sleep(1.5)
+        print("::notice::passo 20-kbdspam ok"); q.shot("20-kbdspam", outdir)
+
+        # 21. Long-run: 60 s exercitando o sistema (mouse + menus + teclas)
+        import os as _os
+        ser0 = _os.path.getsize(serial) if _os.path.exists(serial) else 0
+        q.shot("21-longrun-t0", outdir)
+        for _ in range(6):               # 0..30 s
+            q.mouse_rel(40, 25); q.sleep(0.5)
+            q.mouse_rel(-40, -25); q.sleep(0.5)
+            q.key("m", "ctrl-alt"); q.sleep(0.4); q.key("esc")
+            q.sleep(3.0)
+        ser1 = _os.path.getsize(serial) if _os.path.exists(serial) else 0
+        q.shot("21-longrun-t30", outdir)
+        for _ in range(6):               # 30..60 s
+            q.mouse_rel(-30, 35); q.sleep(0.5)
+            q.mouse_rel(30, -35); q.sleep(0.5)
+            q.key("m", "ctrl-alt"); q.sleep(0.4); q.key("esc")
+            q.sleep(3.0)
+        ser2 = _os.path.getsize(serial) if _os.path.exists(serial) else 0
+        q.shot("21-longrun-t60", outdir)
+        print("::notice::longrun: serial %d -> %d -> %d bytes" % (ser0, ser1, ser2))
+        if ser2 <= ser0:
+            errs.append("serial parou de crescer no long-run")
     except Exception as e:
         print("::error::excecao no teste: %s" % repr(e)[:200])
         print("--- QEMU morreu no meio do teste: %s ---" % repr(e))
@@ -396,8 +661,15 @@ def main():
         log = f.read()
     slines = log.splitlines()
 
+    # falhas registradas pelos testes pesados (drag, long-run, ...)
+    for e in errs:
+        print("FALHOU: %s" % e)
+        print("::error::%s" % e)
+
     # validações que devem fechar o CI em vermelho se quebrarem
     ok = True
+    if errs:
+        ok = False
     if "[net] conectado via DHCP" not in log:
         print("FALHOU: e1000/DHCP nao conectou (serial sem '[net] conectado')")
         print("::error::DHCP nao conectou")

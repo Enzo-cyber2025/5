@@ -1,0 +1,93 @@
+// PRIMO06 — gerado por tools/genapps.py (categoria MATH)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int n;
+int ultimo;
+int cnt;
+
+void init() {
+    seg_init();
+    title("Primos 6");
+    n = 950;
+    calcula();
+}
+
+void calcula() {
+    cnt = 0;
+    ultimo = 2;
+    int c = 2;
+    while (c <= n) {
+        int primo = 1;
+        int d = 2;
+        while (d * d <= c) {
+            if (c % d == 0) { primo = 0; break; }
+            d = d + 1;
+        }
+        if (primo == 1) { cnt = cnt + 1; ultimo = c; }
+        c = c + 1;
+    }
+}
+
+void key(int k) {
+    if (k == 97) { n = n + 50; calcula(); invalidate(); }
+    if (k == 100) { n = n - 50; if (n < 2) { n = 2; } calcula(); invalidate(); }
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 1053727);
+    text(16, 12, "PRIMOS ATE N — teclas A/D mudam N", 15265012);
+    segnum(60, 60, n, 5, 15887802, 0);
+    text(200, 82, "N", 15265012);
+    text(16, 120, "quantos:", 15265012);
+    segnum(130, 112, cnt, 5, 15887802, 0);
+    text(16, 160, "maior:", 15265012);
+    segnum(100, 152, ultimo, 5, 15887802, 0);
+    // densidade: pontos
+    int i = 0;
+    while (i < cnt) {
+        int x = (i * 1000) / 4096;
+        int y = 220 + ((i * 2654435761) % 40) / 4;
+        rect(20 + (x % 360), y, 3, 3, 16727983);
+        i = i + 1;
+    }
+    rect(16, 210, win_w - 32, 60, 3679273);
+}
+
+// ---- máscaras 7-seg: bit0 topo,1 sup-dir,2 inf-dir,3 base,4 inf-esq,
+// ---- 5 sup-esq,6 meio (hexa completo)
+void seg_init() {
+    segm[0] = 0x3F;  segm[1] = 0x06;  segm[2] = 0x5B;  segm[3] = 0x4F;
+    segm[4] = 0x66;  segm[5] = 0x6D;  segm[6] = 0x7D;  segm[7] = 0x07;
+    segm[8] = 0x7F;  segm[9] = 0x6F;  segm[10] = 0x77; segm[11] = 0x7C;
+    segm[12] = 0x39; segm[13] = 0x5E; segm[14] = 0x79; segm[15] = 0x71;
+}
+
+void seg1(int x, int y, int d, int cor) {
+    int m = segm[d & 15];
+    int W = 14;
+    int H = 24;
+    if ((m & 1) != 0) { rect(x + 2, y, W, 3, cor); }
+    if ((m & 2) != 0) { rect(x + W, y + 2, 3, H / 2, cor); }
+    if ((m & 4) != 0) { rect(x + W, y + H, 3, H / 2, cor); }
+    if ((m & 8) != 0) { rect(x + 2, y + H + H, W, 3, cor); }
+    if ((m & 16) != 0) { rect(x, y + H, 3, H / 2, cor); }
+    if ((m & 32) != 0) { rect(x, y + 2, 3, H / 2, cor); }
+    if ((m & 64) != 0) { rect(x + 2, y + H, W, 3, cor); }
+}
+
+// desenha v com nd dígitos (sem sinal; se v<0 mostra '-')
+void segnum(int x, int y, int v, int nd, int cor, int apag) {
+    int i = nd - 1;
+    int neg = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    while (i >= 0) {
+        int d = v % 10;
+        v = v / 10;
+        seg1(x + i * 22, y, d, cor);
+        i = i - 1;
+    }
+    if (neg == 1) { rect(x - 6, y + 20, 4, 4, cor); }
+}

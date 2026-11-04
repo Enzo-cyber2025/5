@@ -32,6 +32,13 @@ k_gfx_init:
         test rax, rax
         jz .fail
         mov [shadow], rax
+        ; fim real da sombra (blindagem do alocador: k_page_pinned)
+        mov rcx, rax
+        mov eax, [screen_w]
+        imul eax, [screen_h]
+        shl rax, 2
+        add rcx, rax
+        mov [shadow_end], rcx
         mov edi, [screen_w]
         imul edi, [screen_h]
         shl rdi, 2
@@ -39,6 +46,13 @@ k_gfx_init:
         test rax, rax
         jz .fail
         mov [desktop_bg], rax
+        ; fim real do fundo (idem)
+        mov rcx, rax
+        mov eax, [screen_w]
+        imul eax, [screen_h]
+        shl rax, 2
+        add rcx, rax
+        mov [desktop_end], rcx
         call render_desktop
         call damage_all
         ret
@@ -386,19 +400,19 @@ render_desktop:
         call draw_logo_scaled
         ; marca
         call surf_use_desktop
+        lea rdi, [brand_str]
+        call k_strlen
+        mov ecx, eax
         mov edi, 24
         mov esi, 24
         lea rdx, [brand_str]
-        call k_strlen
-        mov ecx, eax
-        lea rdx, [brand_str]
         mov r13d, 0x35507E
         call surf_text
-        mov edi, 24
-        mov esi, 36
-        lea rdx, [brand_str2]
+        lea rdi, [brand_str2]
         call k_strlen
         mov ecx, eax
+        mov edi, 24
+        mov esi, 36
         lea rdx, [brand_str2]
         mov r13d, 0x2C4670
         call surf_text
@@ -509,8 +523,7 @@ px_desktop:
         jge .no
         mov ecx, esi
         imul ecx, [screen_pitch]
-        add ecx, edi
-        shl ecx, 2
+        lea ecx, [ecx + edi*4]
         add rcx, [desktop_bg]
         mov [rcx], eax
 .no:
@@ -528,8 +541,7 @@ px_screen:
         jge .no
         mov ecx, esi
         imul ecx, [screen_pitch]
-        add ecx, edi
-        shl ecx, 2
+        lea ecx, [ecx + edi*4]
         add rcx, [shadow]
         mov [rcx], eax
 .no:
@@ -644,13 +656,19 @@ compose_if_dirty:
         call copy_region_desktop
         ; 1.5 ícones da área de trabalho
         call draw_icons
-        ; 2. janelas (de baixo para cima)
+        ; 2. janelas (de baixo para cima: wnd_bottom -> W_PREV -> ... -> wnd_top)
         mov rbx, [wnd_bottom]
 .win_loop:
         test rbx, rbx
         jz .win_done
         test dword [rbx + W_FLAGS], 2
         jnz .win_next
+        ; hardening: struct da janela coerente com o buffer registrado?
+        ; (app bugado/hostil corrompe W_X/Y/W/H/BUF e o blit lia/escrevia
+        ; fora do buffer — inclusive em cima das tabelas de página)
+        call wnd_sane
+        test eax, eax
+        jz .win_next
         ; janela intersecta o dano?
         mov edi, [rbx + W_X]
         mov esi, [rbx + W_Y]
@@ -679,7 +697,7 @@ compose_if_dirty:
         mov r9d, r14d
         call g2_win_blit
 .win_next:
-        mov rbx, [rbx + W_NEXT]
+        mov rbx, [rbx + W_PREV]
         jmp .win_loop
 .win_done:
         ; 3. modal
@@ -902,6 +920,8 @@ k_panic:
         ; estado do compositor (shadow/lfb/stride) para diagnostico
         mov rdi, [shadow]
         call k_log_hex
+        mov edi, [app_dispatching]         ; diagnostico: app em dispatch?
+        call k_log_hex
         mov rdi, [lfb]
         call k_log_hex
         mov edi, [gsurf_ptr]
@@ -936,11 +956,97 @@ k_panic:
         jz .nodump
         cmp rsi, 0x1000
         jb .nodump
+        ; hardening: endereço precisa ser canônico e dentro do mapeado
+        mov rax, rsi
+        shr rax, 48
+        jnz .nodump                      ; bit 63..48 não estendidos: não-canônico
+        cmp rsi, 0x10000000
+        jae .nodump                      ; acima de 256 MB: fora do mapeado
         mov rdi, [rsi - 8]
         call k_log_hex
         mov rdi, [rsi]
         call k_log_hex
 .nodump:
+        ; ---- diagnóstico de propriedade: PTs, janelas e apps vivos ----
+        ; (lê apenas dados do kernel — mapeados pelas páginas grandes, não
+        ; pelas PTs possivelmente corrompidas; permite identificar quem
+        ; alocou em cima de qual estrutura após a morte do sistema)
+        ; NOTA: k_log_hex preserva rbx/r12-r15 mas CLOBBA rcx/rax/rdx/rsi/rdi
+        ; — os laços abaixo usam apenas rbx/r12-r13 como contadores.
+        push rbx
+        push r12
+        push r13
+        push r14
+        push r15
+        mov rdi, s_pd_pts
+        call k_log
+        xor r12d, r12d
+.pdpt:
+        cmp r12d, 32
+        jae .pdpt_done
+        mov rdi, [sw_pts + r12*8]
+        call k_log_hex
+        inc r12d
+        jmp .pdpt
+.pdpt_done:
+        mov rdi, s_pd_wnd
+        call k_log
+        lea rbx, [wnd_array]
+        xor r13d, r13d
+.pdwnd:
+        cmp r13d, MAX_WND
+        jae .pdwnd_done
+        cmp qword [rbx + W_BUF], 0
+        je .pdwnd_next
+        mov edi, r13d
+        call k_log_hex
+        mov edi, [rbx + W_X]
+        call k_log_hex
+        mov edi, [rbx + W_Y]
+        call k_log_hex
+        mov edi, [rbx + W_W]
+        call k_log_hex
+        mov edi, [rbx + W_H]
+        call k_log_hex
+        mov rdi, [rbx + W_BUF]
+        call k_log_hex
+        mov edi, [rbx + W_APP]
+        call k_log_hex
+.pdwnd_next:
+        add rbx, W_SIZE
+        inc r13d
+        jmp .pdwnd
+.pdwnd_done:
+        mov rdi, s_pd_app
+        call k_log
+        lea r14, [app_slots]
+        xor r13d, r13d
+.pdapp:
+        cmp r13d, MAX_APPS
+        jae .pdapp_done
+        cmp dword [r14 + A_USED], 0
+        je .pdapp_next
+        mov edi, r13d
+        call k_log_hex
+        lea rax, [launch_img]
+        mov rdi, [rax + r13*8]
+        call k_log_hex
+        mov rdi, [r14 + A_ENTRY]
+        call k_log_hex
+        mov rdi, [r14 + A_WND]
+        call k_log_hex
+        mov rdi, [r14 + A_APITBL]
+        call k_log_hex
+.pdapp_next:
+        add r14, A_SIZEOF
+        inc r13d
+        jmp .pdapp
+.pdapp_done:
+        pop r15
+        pop r14
+        pop r13
+        pop r12
+        pop rbx
         cmp qword [shadow], 0
         je .hang
         call surf_use_shadow
@@ -1020,7 +1126,9 @@ screen_h:     dd 768
 screen_pitch: dd 4096
 lfb:          dq 0
 shadow:       dq 0
+shadow_end:   dq 0
 desktop_bg:   dq 0
+desktop_end:  dq 0
 
 gsurf_ptr:    dq 0
 gsurf_w:      dd 0
@@ -1049,6 +1157,9 @@ panic_msg_len equ $ - panic_msg - 1
 panic_rip:  db "RIP:", 0
 panic_rip_len equ $ - panic_rip - 1
 panic_serial: db "PANICO DO NUCLEO", 0
+s_pd_pts: db "[panic] PTs do swap (32 enderecos):", 0
+s_pd_wnd: db "[panic] janelas idx/x/y/w/h/buf/app:", 0
+s_pd_app: db "[panic] apps slot/img/entry/wnd/apitbl:", 0
 s_pv:   db "vec:", 0
 s_prip: db "rip:", 0
 s_pcr2: db "cr2:", 0

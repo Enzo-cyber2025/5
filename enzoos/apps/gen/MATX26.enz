@@ -1,0 +1,74 @@
+// MATX26 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int colu[53];
+int brilho[848];
+int semente;
+
+void init() {
+    title("Matrix 26");
+    semente = uptime() | 1;
+    int i = 0;
+    while (i < 53) {
+        colu[i] = rnd(16);
+        int j = 0;
+        while (j < 16) {
+            brilho[i*16+j] = rnd(3);
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+}
+
+int rnd(int m) {
+    semente = semente * 1664525 + 1013904223;
+    if (semente < 0) { semente = -semente; }
+    return (semente / 65536) % m;
+}
+
+void tick() {
+    int i = 0;
+    while (i < 53) {
+        colu[i] = colu[i] + 2;
+        if (colu[i] >= 24) { colu[i] = 0; }
+        int j = 0;
+        while (j < 16) {
+            if (rnd(6) == 0) { brilho[i*16+j] = 1 + rnd(2); }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    invalidate();
+}
+
+void paint() {
+    rect(0, 0, win_w, win_h, 330246);
+    int i = 0;
+    while (i < 53) {
+        int j = 0;
+        while (j < 16) {
+            int pos = colu[i] - j;
+            if (pos < 0) { pos = pos + 24; }
+            if (pos < 19) {
+                int br = 8 - j;
+                if (br < 1) { br = 1; }
+                int c = 2006608;
+                if (j == 0) { c = 7331978; }
+                else if (br > 6) { c = 12124112; }
+                // glifo: pontos do brilho
+                int g = brilho[i*16+j];
+                int y = 10 + pos * 15;
+                int x = 6 + i * 8;
+                if ((g & 1) != 0) { rect(x, y, 4, 4, c); }
+                if ((g & 2) != 0) { rect(x + 4, y + 4, 3, 3, c); }
+                if (br > 4 && (g & 1) != 0) { rect(x, y + 8, 4, 3, c); }
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    text(8, win_h - 14, "MATRIX 26", 5219166);
+}

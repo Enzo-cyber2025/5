@@ -81,6 +81,12 @@ enz_build:
         mov dword [rbx + A_FMT], 2
         ; resolve os imports (cada um no SEU slot canônico)
         mov eax, [r14 + 48]         ; imp_off
+        ; hardening: imp_off vem do cabeçalho (mutável em fuzz/pen-test) e
+        ; precisa cair DENTRO da imagem — um offset arbitrário fazia o
+        ; resolvedor caminhar memória fora do arquivo
+        mov rcx, [rbx + A_SIZE]
+        cmp rax, rcx
+        jae .badimp
         add r14, rax                ; r14 = primeira string
         xor r12d, r12d
 .imp:
@@ -89,13 +95,17 @@ enz_build:
         mov rdi, r14
         call enz_lookup_export      ; rax = fn, rdx = slot canônico (0 = não achou)
         test rdx, rdx
-        jz .skip_store
+        jz .badimp                  ; import desconhecido: app inválido
         mov rcx, rdx
         mov [r15 + rcx*8], rax     ; rcx = slot 1-based: slot 1 fica em r15+8
-.skip_store:
 .skipz:
         cmp byte [r14], 0
         je .adv
+        ; hardening: a string precisa terminar dentro da imagem
+        mov rax, [img_ptr]
+        add rax, [rbx + A_SIZE]
+        cmp r14, rax
+        jae .badimp
         inc r14
         jmp .skipz
 .adv:
@@ -107,6 +117,22 @@ enz_build:
         ; sem isto o rax residual era o endereco do ultimo import resolvido
         ; e o A_ENTRY virava lixo -> app executava NOP slides -> panic 0x90)
         mov rax, [img_ptr]
+        pop r15
+        pop r14
+        pop r13
+        pop r12
+        ret
+.badimp:
+        ; hardening: import não resolvido — aborta o launch sem executar
+        ; nada (antes: o slot ficava NULL e o app crashava ao chamar)
+        mov rdi, r15
+        mov esi, (K_EXPORTS_N + 1) * 8
+        add rsi, 4095
+        and rsi, -4096
+        call k_free_bytes
+        mov qword [rbx + A_APITBL], 0
+        mov dword [rbx + A_APITBL_N], 0
+        xor eax, eax
         pop r15
         pop r14
         pop r13

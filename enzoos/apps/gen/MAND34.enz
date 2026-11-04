@@ -1,0 +1,55 @@
+// MAND34 — gerado por tools/genapps.py (categoria VISUAL)
+
+int segm[16];
+int vals[6];
+int linha[34];
+
+int pal[32];
+int cr0; int ci0; int span;
+
+void init() {
+    title("Mandel 34");
+    cr0 = -1649;
+    ci0 = -481;
+    span = 323;
+    int i = 0;
+    while (i < 32) {
+        int r = 159 + i * 4;
+        int g = 81 + i * 3;
+        int b = 163 + i * 1;
+        if (r > 255) { r = 255; }
+        if (g > 255) { g = 255; }
+        if (b > 255) { b = 255; }
+        pal[i] = 0xFF000000 | (r << 16) | (g << 8) | b;
+        i = i + 1;
+    }
+}
+
+void paint() {
+    int esc = 4096;
+    int y = 0;
+    while (y < win_h) {
+        int x = 0;
+        while (x < win_w) {
+            int cr = cr0 + ((x - win_w / 2) * span) / win_w;
+            int ci = ci0 + ((y - win_h / 2) * span) / win_h;
+            int zr = 0;
+            int zi = 0;
+            int i = 0;
+            int cor = 0xFF05070D;
+            while (i < 32) {
+                int zr2 = (zr * zr) / esc;
+                int zi2 = (zi * zi) / esc;
+                if (zr2 + zi2 > 4 * esc) { cor = pal[i & 31]; break; }
+                int tt = (((zr * zi) / esc) * 2) + ci;
+                zr = zr2 - zi2 + cr;
+                zi = tt;
+                i = i + 1;
+            }
+            px(x, y, cor);
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+    text(8, 8, "MANDELBROT 34 — espiral dupla", 0xFFFFFFFF);
+}
