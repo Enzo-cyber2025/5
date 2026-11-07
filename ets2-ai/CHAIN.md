@@ -2,10 +2,10 @@
 
 | metrica | valor |
 |---|---|
-| amostras acumuladas | **50,716,720,395** |
-| % da meta (500 bilhoes de amostras = ~1,25 bilhao de km) | **10.14%** |
-| km simulados equivalentes | ~126,791,801 km |
-| certificado 1 BILHAO de km (400 bi de amostras) | ainda nao — faltam 349,283,279,605 amostras (~873,208,199 km) |
+| amostras acumuladas | **61,592,163,387** |
+| % da meta (500 bilhoes de amostras = ~1,25 bilhao de km) | **12.32%** |
+| km simulados equivalentes | ~153,980,408 km |
+| certificado 1 BILHAO de km (400 bi de amostras) | ainda nao — faltam 338,407,836,613 amostras (~846,019,592 km) |
 | garantia anti-repeticao | semente da sessao = SEED + acumulado — nenhuma sessao repete dados (impressao digital no metrics.json) |
 | sessao media | 2x T4, ~11,5 h, FP32 em fluxo |
 
