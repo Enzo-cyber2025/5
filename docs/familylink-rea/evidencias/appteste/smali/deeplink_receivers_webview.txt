@@ -1,0 +1,1353 @@
+
+===== Lcm/aptoide/pt/DeepLinkIntentReceiver;  (classes.dex) =====
+  .field public static final AUTHORITY Ljava/lang/String;
+  .field public static final DEEPLINK_ID I
+  .field public static final DEEP_LINK Ljava/lang/String;
+  .field public static final FROM_SHORTCUT Ljava/lang/String;
+  .field public static final SCHEDULE_DOWNLOADS Ljava/lang/String;
+  .field public static final SCHEDULE_DOWNLOADS_ID I
+  .field private static final TAG Ljava/lang/String;
+  .field private static final sURIMatcher Landroid/content/UriMatcher;
+  .field private            analyticsManager Lcm/aptoide/analytics/AnalyticsManager;
+  .field private            deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+  .field private            navigationTracker Lcm/aptoide/analytics/implementation/navigation/NavigationTracker;
+  .field private            newFeature Lcm/aptoide/pt/themes/NewFeature;
+  .field private            shortcutNavigation Z
+  .field private final      startClass Ljava/lang/Class;
+
+  .method static constructor <clinit>()V
+      const-class                  v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;
+      invoke-virtual               v0, Ljava/lang/Class;->getSimpleName()Ljava/lang/String;
+      move-result-object           v0
+      sput-object                  v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      new-instance                 v0, Landroid/content/UriMatcher;
+      const/4                      v1, -1
+      invoke-direct                v0, v1, Landroid/content/UriMatcher;-><init>(I)V
+      sput-object                  v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->sURIMatcher Landroid/content/UriMatcher;
+      const-string                 v1, "cm.aptoide.pt"
+      const-string                 v2, "deeplink"
+      const/4                      v3, 1
+      invoke-virtual               v0, v1, v2, v3, Landroid/content/UriMatcher;->addURI(Ljava/lang/String; Ljava/lang/String; I)V
+      const-string                 v2, "schedule_downloads"
+      const/4                      v3, 2
+      invoke-virtual               v0, v1, v2, v3, Landroid/content/UriMatcher;->addURI(Ljava/lang/String; Ljava/lang/String; I)V
+      return-void                  
+  .end method
+
+  .method public constructor <init>()V
+      invoke-direct                v1, Lcm/aptoide/pt/view/ActivityView;-><init>()V
+      invoke-static                Lcm/aptoide/pt/AptoideApplication;->getActivityProvider()Lcm/aptoide/pt/view/ActivityProvider;
+      move-result-object           v0
+      invoke-interface             v0, Lcm/aptoide/pt/view/ActivityProvider;->getMainActivityFragmentClass()Ljava/lang/Class;
+      move-result-object           v0
+      iput-object                  v0, v1, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      return-void                  
+  .end method
+
+  .method private dealWithAptoideAuthentication(Ljava/lang/String;)Landroid/content/Intent;
+      const-string                 v0, "app.aptoide.com/auth/code/"
+      invoke-virtual               v2, v0, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v2
+      const/4                      v0, 1
+      aget-object                  v2, v2, v0
+      const-string                 v0, "/"
+      invoke-virtual               v2, v0, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v2
+      const/4                      v0, 0
+      aget-object                  v2, v2, v0
+      invoke-direct                v1, v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->parseAptoideAuthUri(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v2
+      return-object                v2
+  .end method
+
+  .method private dealWithAptoideRepo(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Ljava/util/ArrayList;
+      invoke-direct                v0, Ljava/util/ArrayList;-><init>()V
+      const/16                     v1, 14
+      invoke-virtual               v3, v1, Ljava/lang/String;->substring(I)Ljava/lang/String;
+      move-result-object           v3
+      invoke-virtual               v0, v3, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+      invoke-static                v0, Lcm/aptoide/pt/store/StoreUtils;->split(Ljava/util/List;)Ljava/util/ArrayList;
+      move-result-object           v3
+      invoke-virtual               v2, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startWithRepo(Ljava/util/ArrayList;)Landroid/content/Intent;
+      move-result-object           v3
+      return-object                v3
+  .end method
+
+  .method private dealWithAptoideSchema(Landroid/net/Uri;)Landroid/content/Intent;
+      const-string                 v0, "name"
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "getHome"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +013h
+      const-string                 v0, "user_id"
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v5
+      if-eqz                       v5, +106h
+      invoke-static                v5, Ljava/lang/Long;->valueOf(Ljava/lang/String;)Ljava/lang/Long;
+      move-result-object           v5
+      invoke-direct                v4, v5, Lcm/aptoide/pt/DeepLinkIntentReceiver;->openUserScreen(Ljava/lang/Long;)Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "getUserTimeline"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +00dh
+      const-string                 v0, "cardId"
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v5
+      invoke-virtual               v4, v5, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromAppsTimeline(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "search"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +01ah
+      invoke-virtual               v5, Landroid/net/Uri;->getQueryParameterNames()Ljava/util/Set;
+      move-result-object           v0
+      const-string                 v1, "keyword"
+      invoke-interface             v0, v1, Ljava/util/Set;->contains(Ljava/lang/Object;)Z
+      move-result                  v0
+      if-eqz                       v0, +007h
+      invoke-virtual               v5, v1, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v5
+      goto                         +3h
+      const-string                 v5, ""
+      invoke-virtual               v4, v5, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromSearch(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "myStore"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +007h
+      invoke-direct                v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromMyStore()Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "pickApp"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +007h
+      invoke-direct                v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromPickApp()Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "promotions"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +007h
+      invoke-direct                v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromPromotions()Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "CURATION_1"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      const-string                 v2, "id"
+      if-eqz                       v1, +011h
+      invoke-virtual               v5, v2, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      if-eqz                       v1, +00bh
+      invoke-virtual               v5, v2, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v5
+      invoke-direct                v4, v5, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromEditorialCard(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v3, "NEW_APP"
+      invoke-virtual               v3, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-nez                       v1, +068h
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v3, "NEW_APP_VERSION"
+      invoke-virtual               v3, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +003h
+      goto                         +5ah
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v3, "IN_GAME_EVENT"
+      invoke-virtual               v3, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-nez                       v1, +00eh
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v3, "NEWS_ITEM"
+      invoke-virtual               v3, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +011h
+      invoke-virtual               v5, v2, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      if-eqz                       v1, +00bh
+      invoke-virtual               v5, v2, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v5
+      invoke-direct                v4, v5, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromPromotionalCard(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "appc_info_view"
+      invoke-virtual               v2, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +007h
+      invoke-direct                v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startAppcInfoView()Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v1, "appcoins_ads"
+      invoke-virtual               v1, v0, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v0
+      if-eqz                       v0, +007h
+      invoke-direct                v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromAppcAds()Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      sget-object                  v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->sURIMatcher Landroid/content/UriMatcher;
+      invoke-virtual               v0, v5, Landroid/content/UriMatcher;->match(Landroid/net/Uri;)I
+      move-result                  v0
+      const/4                      v1, 1
+      if-ne                        v0, v1, +007h
+      invoke-direct                v4, v5, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startGenericDeepLink(Landroid/net/Uri;)Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+      const/4                      v5, 0
+      return-object                v5
+      invoke-virtual               v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromHome()Landroid/content/Intent;
+      move-result-object           v5
+      return-object                v5
+  .end method
+
+  .method private dealWithAptoideWebsite(Landroid/net/Uri;)Landroid/content/Intent;
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      const/4                      v1, 0
+      if-eqz                       v0, +08fh
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v2, "thank-you"
+      invoke-virtual               v0, v2, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-nez                       v0, +00eh
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v2, "download"
+      invoke-virtual               v0, v2, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +077h
+      iget-object                  v0, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v0, Lcm/aptoide/pt/DeepLinkAnalytics;->websiteFromThankYouWebPage()V
+      const-string                 v0, "app_id"
+      invoke-virtual               v8, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v0
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v2
+      sget-object                  v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      new-instance                 v4, Ljava/lang/StringBuilder;
+      invoke-direct                v4, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v5, "aptoide thank you: app id: "
+      invoke-virtual               v4, v5, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v4, v0, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v4, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v4
+      invoke-virtual               v2, v3, v4, Lcm/aptoide/pt/logger/Logger;->v(Ljava/lang/String; Ljava/lang/String;)V
+      invoke-static                v0, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-eqz                       v2, +047h
+      const-string                 v0, "package_uname"
+      invoke-virtual               v8, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v0
+      invoke-static                v0, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-nez                       v2, +018h
+      new-instance                 v8, Ljava/lang/StringBuilder;
+      invoke-direct                v8, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v1, "uname="
+      invoke-virtual               v8, v1, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v8, v0, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v8, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v8
+      invoke-direct                v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->parseAptoideInstallUri(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      const-string                 v0, "package_name"
+      invoke-virtual               v8, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v8
+      invoke-static                v8, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-nez                       v0, +018h
+      new-instance                 v0, Ljava/lang/StringBuilder;
+      invoke-direct                v0, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v1, "package="
+      invoke-virtual               v0, v1, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v0, v8, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v0, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v8
+      invoke-direct                v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->parseAptoideInstallUri(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      return-object                v1
+      invoke-direct                v7, v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->parseAptoideInstallUri(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      const/4                      v2, 3
+      const/4                      v3, 4
+      const-string                 v4, "store"
+      if-eqz                       v0, +0cbh
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v5, "group"
+      invoke-virtual               v0, v5, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +0bfh
+      iget-object                  v0, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v0, Lcm/aptoide/pt/DeepLinkAnalytics;->websiteFromBundlesWebPage()V
+      invoke-virtual               v8, Landroid/net/Uri;->getPathSegments()Ljava/util/List;
+      move-result-object           v0
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v5
+      invoke-virtual               v5, v4, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v4
+      const-string                 v5, "apps"
+      if-eqz                       v4, +01ch
+      if-eqz                       v0, +017h
+      invoke-interface             v0, Ljava/util/List;->size()I
+      move-result                  v8
+      if-lt                        v8, v3, +011h
+      invoke-interface             v0, v2, Ljava/util/List;->get(I)Ljava/lang/Object;
+      move-result-object           v8
+      check-cast                   v8, Ljava/lang/String;
+      const/4                      v2, 1
+      invoke-interface             v0, v2, Ljava/util/List;->get(I)Ljava/lang/Object;
+      move-result-object           v0
+      move-object                  v5, v0
+      check-cast                   v5, Ljava/lang/String;
+      goto                         +8h
+      const-string                 v8, ""
+      goto                         +5h
+      invoke-virtual               v8, Landroid/net/Uri;->getLastPathSegment()Ljava/lang/String;
+      move-result-object           v8
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      sget-object                  v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      new-instance                 v3, Ljava/lang/StringBuilder;
+      invoke-direct                v3, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v4, "aptoide web site: bundle: "
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, v8, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v3
+      invoke-virtual               v0, v2, v3, Lcm/aptoide/pt/logger/Logger;->v(Ljava/lang/String; Ljava/lang/String;)V
+      invoke-static                v8, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-nez                       v0, +14eh
+      new-instance                 v0, Ljava/lang/StringBuilder;
+      invoke-direct                v0, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v3, "aptoide://cm.aptoide.pt/deeplink?name=listApps&layout=GRID&type=API&title=bundle&action="
+      invoke-virtual               v0, v3, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      new-instance                 v3, Ljava/lang/StringBuilder;
+      invoke-direct                v3, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v6, "https://ws75-cache.aptoide.com/api/7/listApps/store_name="
+      invoke-virtual               v3, v6, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, v5, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      const-string                 v5, "/group_name="
+      invoke-virtual               v3, v5, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, v8, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      const-string                 v8, "/limit=30/sort=downloads7d"
+      invoke-virtual               v3, v8, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v8
+      const-string                 v3, "utf-8"
+      invoke-static                v8, v3, Ljava/net/URLEncoder;->encode(Ljava/lang/String; Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v8
+      invoke-virtual               v0, v8, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      const-string                 v8, "&storetheme=default"
+      invoke-virtual               v0, v8, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v0, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v8
+      invoke-static                v8, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+      move-result-object           v8
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      new-instance                 v3, Ljava/lang/StringBuilder;
+      invoke-direct                v3, Ljava/lang/StringBuilder;-><init>()V
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v8, Landroid/net/Uri;->toString()Ljava/lang/String;
+      move-result-object           v4
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v3
+      invoke-virtual               v0, v2, v3, Lcm/aptoide/pt/logger/Logger;->v(Ljava/lang/String; Ljava/lang/String;)V
+      invoke-direct                v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithAptoideSchema(Landroid/net/Uri;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      move-exception               v8
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      sget-object                  v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      const-string                 v3, "dealWithAptoideWebsite: "
+      invoke-virtual               v0, v2, v3, v8, Lcm/aptoide/pt/logger/Logger;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)V
+      return-object                v1
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      if-eqz                       v0, +040h
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      invoke-virtual               v0, v4, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +036h
+      iget-object                  v0, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v0, Lcm/aptoide/pt/DeepLinkAnalytics;->websiteFromStoreWebPage()V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      sget-object                  v1, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      new-instance                 v2, Ljava/lang/StringBuilder;
+      invoke-direct                v2, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v3, "aptoide web site: store: "
+      invoke-virtual               v2, v3, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v8, Landroid/net/Uri;->getLastPathSegment()Ljava/lang/String;
+      move-result-object           v3
+      invoke-virtual               v2, v3, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v2, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v2
+      invoke-virtual               v0, v1, v2, Lcm/aptoide/pt/logger/Logger;->v(Ljava/lang/String; Ljava/lang/String;)V
+      new-instance                 v0, Ljava/util/ArrayList;
+      invoke-direct                v0, Ljava/util/ArrayList;-><init>()V
+      invoke-virtual               v8, Landroid/net/Uri;->getLastPathSegment()Ljava/lang/String;
+      move-result-object           v8
+      invoke-virtual               v0, v8, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+      invoke-virtual               v7, v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startWithRepo(Ljava/util/ArrayList;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      if-eqz                       v0, +020h
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v4, "editorial"
+      invoke-virtual               v0, v4, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +014h
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v8
+      const-string                 v0, "/"
+      invoke-virtual               v8, v0, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v8
+      const/4                      v0, 2
+      aget-object                  v8, v8, v0
+      invoke-direct                v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startEditorialFromSlug(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      if-eqz                       v0, +013h
+      invoke-virtual               v8, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v4, "appcoins"
+      invoke-virtual               v0, v4, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +007h
+      invoke-direct                v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startAppcInfoView()Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      invoke-virtual               v8, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v8
+      const-string                 v0, "\."
+      invoke-virtual               v8, v0, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v8
+      const/4                      v0, 0
+      if-eqz                       v8, +02dh
+      array-length                 v4, v8
+      if-ne                        v4, v3, +02ah
+      iget-object                  v1, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v1, Lcm/aptoide/pt/DeepLinkAnalytics;->websiteFromAppViewWebPage()V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v1
+      sget-object                  v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      new-instance                 v3, Ljava/lang/StringBuilder;
+      invoke-direct                v3, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v4, "aptoide web site: app view: "
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      aget-object                  v4, v8, v0
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v3
+      invoke-virtual               v1, v2, v3, Lcm/aptoide/pt/logger/Logger;->v(Ljava/lang/String; Ljava/lang/String;)V
+      aget-object                  v8, v8, v0
+      invoke-virtual               v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startAppView(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      if-eqz                       v8, +02bh
+      array-length                 v3, v8
+      if-ne                        v3, v2, +028h
+      iget-object                  v1, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v1, Lcm/aptoide/pt/DeepLinkAnalytics;->websiteFromHomeWebPage()V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v1
+      sget-object                  v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      new-instance                 v3, Ljava/lang/StringBuilder;
+      invoke-direct                v3, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v4, "aptoide web site: home: "
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      aget-object                  v8, v8, v0
+      invoke-virtual               v3, v8, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v8
+      invoke-virtual               v1, v2, v8, Lcm/aptoide/pt/logger/Logger;->v(Ljava/lang/String; Ljava/lang/String;)V
+      invoke-virtual               v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromHome()Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      return-object                v1
+      .catch <androguard.core.dex.TryItem object at 0x7fc8f28cbd50>
+  .end method
+
+  .method private dealWithGoogleHost(Landroid/net/Uri;)Landroid/content/Intent;
+      const-string                 v0, "id"
+      invoke-virtual               v2, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v0, "pname:"
+      invoke-virtual               v2, v0, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +008h
+      const/4                      v0, 6
+      invoke-virtual               v2, v0, Ljava/lang/String;->substring(I)Ljava/lang/String;
+      move-result-object           v2
+      goto                         +eh
+      const-string                 v0, "pub:"
+      invoke-virtual               v2, v0, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +007h
+      const/4                      v0, 4
+      invoke-virtual               v2, v0, Ljava/lang/String;->substring(I)Ljava/lang/String;
+      move-result-object           v2
+      invoke-virtual               v1, v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromPackageName(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v2
+      return-object                v2
+  .end method
+
+  .method private dealWithMarketSchema(Ljava/lang/String; Landroid/net/Uri;)Landroid/content/Intent;
+      invoke-virtual               v5, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v1, "details"
+      invoke-virtual               v1, v0, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v0
+      if-eqz                       v0, +009h
+      const-string                 v4, "id"
+      invoke-virtual               v5, v4, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v4
+      goto                         +4dh
+      invoke-virtual               v5, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v1, "search"
+      invoke-virtual               v1, v0, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v0
+      if-eqz                       v0, +009h
+      const-string                 v4, "q"
+      invoke-virtual               v5, v4, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v4
+      goto                         +3ah
+      const-string                 v0, "&"
+      invoke-virtual               v4, v0, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v4
+      const/4                      v0, 0
+      aget-object                  v4, v4, v0
+      const-string                 v0, "="
+      invoke-virtual               v4, v0, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v1
+      if-eqz                       v1, +00dh
+      array-length                 v1, v1
+      const/4                      v2, 1
+      if-le                        v1, v2, +009h
+      invoke-virtual               v4, v0, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v4
+      aget-object                  v4, v4, v2
+      goto                         +3h
+      const-string                 v4, ""
+      const-string                 v0, "pname:"
+      invoke-virtual               v4, v0, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +008h
+      const/4                      v0, 6
+      invoke-virtual               v4, v0, Ljava/lang/String;->substring(I)Ljava/lang/String;
+      move-result-object           v4
+      goto                         +eh
+      const-string                 v0, "pub:"
+      invoke-virtual               v4, v0, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +007h
+      const/4                      v0, 4
+      invoke-virtual               v4, v0, Ljava/lang/String;->substring(I)Ljava/lang/String;
+      move-result-object           v4
+      const-string                 v0, "utm_source"
+      invoke-virtual               v5, v0, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v1, "app_source"
+      invoke-virtual               v5, v1, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v5
+      if-eqz                       v0, +022h
+      invoke-direct                v3, v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->isFromAppCoins(Ljava/lang/String;)Z
+      move-result                  v1
+      if-eqz                       v1, +01ch
+      const-string                 v1, "com.appcoins.wallet"
+      invoke-virtual               v1, v4, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +014h
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v1, v0, Lcm/aptoide/pt/DeepLinkAnalytics;->sendWalletDeepLinkEvent(Ljava/lang/String;)V
+      const-string                 v1, "appcoinssdk"
+      invoke-virtual               v0, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v1
+      if-eqz                       v1, +007h
+      invoke-virtual               v3, v4, v0, v5, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startWalletInstallIntent(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v4
+      return-object                v4
+      invoke-virtual               v3, v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromPackageName(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v4
+      return-object                v4
+  .end method
+
+  .method private dealWithShortcuts()V
+      sget                         v0, Landroid/os/Build$VERSION;->SDK_INT I
+      const/16                     v1, 25
+      if-lt                        v0, v1, +041h
+      invoke-virtual               v6, Landroid/app/Activity;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v0
+      const-class                  v1, Landroid/content/pm/ShortcutManager;
+      invoke-virtual               v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;
+      move-result-object           v0
+      check-cast                   v0, Landroid/content/pm/ShortcutManager;
+      invoke-virtual               v6, Landroid/app/Activity;->getIntent()Landroid/content/Intent;
+      move-result-object           v1
+      if-eqz                       v1, +02fh
+      const-string                 v2, "search"
+      invoke-virtual               v1, v2, Landroid/content/Intent;->hasExtra(Ljava/lang/String;)Z
+      move-result                  v3
+      const/4                      v4, 1
+      const/4                      v5, 0
+      if-eqz                       v3, +010h
+      invoke-virtual               v1, v2, v5, Landroid/content/Intent;->getBooleanExtra(Ljava/lang/String; Z)Z
+      move-result                  v1
+      if-eqz                       v1, +01fh
+      iput-boolean                 v4, v6, Lcm/aptoide/pt/DeepLinkIntentReceiver;->shortcutNavigation Z
+      if-eqz                       v0, +01bh
+      invoke-virtual               v0, v2, Landroid/content/pm/ShortcutManager;->reportShortcutUsed(Ljava/lang/String;)V
+      goto                         +16h
+      const-string                 v2, "timeline"
+      invoke-virtual               v1, v2, Landroid/content/Intent;->hasExtra(Ljava/lang/String;)Z
+      move-result                  v3
+      if-eqz                       v3, +00fh
+      invoke-virtual               v1, v2, v5, Landroid/content/Intent;->getBooleanExtra(Ljava/lang/String; Z)Z
+      move-result                  v1
+      if-eqz                       v1, +009h
+      iput-boolean                 v4, v6, Lcm/aptoide/pt/DeepLinkIntentReceiver;->shortcutNavigation Z
+      if-eqz                       v0, +005h
+      invoke-virtual               v0, v2, Landroid/content/pm/ShortcutManager;->reportShortcutUsed(Ljava/lang/String;)V
+      return-void                  
+  .end method
+
+  .method private dealWithWebservicesAptoide(Ljava/lang/String;)Landroid/content/Intent;
+      const/4                      v0, 0
+      invoke-static                v9, Ljava/net/URI;->create(Ljava/lang/String;)Ljava/net/URI;
+      move-result-object           v9
+      invoke-static                v9, Lcm/aptoide/pt/utils/AptoideUtils$StringU;->splitQuery(Ljava/net/URI;)Ljava/util/Map;
+      move-result-object           v9
+      goto                         +ah
+      move-exception               v9
+      invoke-static                Lcm/aptoide/pt/crashreports/CrashReport;->getInstance()Lcm/aptoide/pt/crashreports/CrashReport;
+      move-result-object           v1
+      invoke-virtual               v1, v9, Lcm/aptoide/pt/crashreports/CrashReport;->log(Ljava/lang/Throwable;)V
+      move-object                  v9, v0
+      if-eqz                       v9, +065h
+      invoke-interface             v9, Ljava/util/Map;->entrySet()Ljava/util/Set;
+      move-result-object           v9
+      invoke-interface             v9, Ljava/util/Set;->iterator()Ljava/util/Iterator;
+      move-result-object           v9
+      move-object                  v1, v0
+      invoke-interface             v9, Ljava/util/Iterator;->hasNext()Z
+      move-result                  v2
+      if-eqz                       v2, +01dh
+      invoke-interface             v9, Ljava/util/Iterator;->next()Ljava/lang/Object;
+      move-result-object           v2
+      check-cast                   v2, Ljava/util/Map$Entry;
+      invoke-interface             v2, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
+      move-result-object           v3
+      check-cast                   v3, Ljava/lang/String;
+      const-string                 v4, "uid"
+      invoke-virtual               v3, v4, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v3
+      if-eqz                       v3, -018h
+      invoke-interface             v2, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
+      move-result-object           v1
+      check-cast                   v1, Ljava/lang/String;
+      goto                         -20h
+      if-eqz                       v1, +039h
+      invoke-static                v1, Ljava/lang/Long;->parseLong(Ljava/lang/String;)J
+      move-result-wide             v3
+      const/4                      v5, 0
+      const-string                 v6, "open_with_install_popup"
+      const-string                 v7, "no_origin"
+      move-object                  v2, v8
+      invoke-virtual/range         v2 ... v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromAppView(J Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v9
+      return-object                v9
+      move-exception               v9
+      invoke-static                Lcm/aptoide/pt/crashreports/CrashReport;->getInstance()Lcm/aptoide/pt/crashreports/CrashReport;
+      move-result-object           v2
+      invoke-virtual               v2, v9, Lcm/aptoide/pt/crashreports/CrashReport;->log(Ljava/lang/Throwable;)V
+      invoke-static                Lcm/aptoide/pt/crashreports/CrashReport;->getInstance()Lcm/aptoide/pt/crashreports/CrashReport;
+      move-result-object           v2
+      invoke-virtual               v2, v9, Lcm/aptoide/pt/crashreports/CrashReport;->log(Ljava/lang/Throwable;)V
+      invoke-virtual               v8, Landroid/app/Activity;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v9
+      new-instance                 v2, Ljava/lang/StringBuilder;
+      invoke-direct                v2, Ljava/lang/StringBuilder;-><init>()V
+      const                        v3, 2131821507
+      invoke-virtual               v2, v3, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+      invoke-virtual               v2, v1, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v2, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v1
+      invoke-static                v9, v1, Lcm/aptoide/pt/utils/design/ShowMessage;->asToast(Landroid/content/Context; Ljava/lang/String;)V
+      return-object                v0
+      .catch <androguard.core.dex.TryItem object at 0x7fc8f28cc290>
+      .catch <androguard.core.dex.TryItem object at 0x7fc8f28cc310>
+  .end method
+
+  .method private isFromAppCoins(Ljava/lang/String;)Z
+      const-string                 v0, "myappcoins"
+      invoke-virtual               v2, v0, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v0
+      if-nez                       v0, +00dh
+      const-string                 v0, "appcoinssdk"
+      invoke-virtual               v2, v0, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v2
+      if-eqz                       v2, +003h
+      goto                         +3h
+      const/4                      v2, 0
+      goto                         +2h
+      const/4                      v2, 1
+      return                       v2
+  .end method
+
+  .method private openUserScreen(Ljava/lang/Long;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v2, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "open_user_profile"
+      invoke-virtual               v0, v1, v3, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/io/Serializable;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private parseAptoideAuthUri(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "aptoide_auth"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "auth_token"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      const/high16                 v4, 805306368
+      invoke-virtual               v0, v4, Landroid/content/Intent;->setFlags(I)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private parseAptoideInstallUri(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Lcm/aptoide/pt/link/AptoideInstallParser;
+      invoke-direct                v0, Lcm/aptoide/pt/link/AptoideInstallParser;-><init>()V
+      invoke-virtual               v0, v12, Lcm/aptoide/pt/link/AptoideInstallParser;->parse(Ljava/lang/String;)Lcm/aptoide/pt/link/AptoideInstall;
+      move-result-object           v12
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getAppId()J
+      move-result-wide             v0
+      const-wide/16                v2, 0
+      cmp-long                     v4, v0, v2
+      if-lez                       v4, +018h
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getAppId()J
+      move-result-wide             v6
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getPackageName()Ljava/lang/String;
+      move-result-object           v8
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getOpenType()Ljava/lang/String;
+      move-result-object           v9
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getOrigin()Ljava/lang/String;
+      move-result-object           v10
+      move-object                  v5, v11
+      invoke-virtual/range         v5 ... v10, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromAppView(J Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v12
+      return-object                v12
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getUname()Ljava/lang/String;
+      move-result-object           v0
+      invoke-static                v0, Landroid/text/TextUtils;->isEmpty(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-nez                       v0, +00bh
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getUname()Ljava/lang/String;
+      move-result-object           v12
+      invoke-virtual               v11, v12, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startAppView(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v12
+      return-object                v12
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getStoreName()Ljava/lang/String;
+      move-result-object           v0
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getPackageName()Ljava/lang/String;
+      move-result-object           v1
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getOpenType()Ljava/lang/String;
+      move-result-object           v2
+      invoke-virtual               v12, Lcm/aptoide/pt/link/AptoideInstall;->getOrigin()Ljava/lang/String;
+      move-result-object           v12
+      invoke-direct                v11, v0, v1, v2, v12, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromAppview(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v12
+      return-object                v12
+  .end method
+
+  .method private parseFeatureUri(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "feature"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      new-instance                 v1, Ljava/lang/StringBuilder;
+      invoke-direct                v1, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v2, "id="
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      iget-object                  v2, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->newFeature Lcm/aptoide/pt/themes/NewFeature;
+      invoke-virtual               v2, Lcm/aptoide/pt/themes/NewFeature;->getId()Ljava/lang/String;
+      move-result-object           v2
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v1
+      invoke-virtual               v4, v1, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v1
+      if-eqz                       v1, +035h
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->newFeature Lcm/aptoide/pt/themes/NewFeature;
+      invoke-virtual               v1, Lcm/aptoide/pt/themes/NewFeature;->getId()Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "id"
+      invoke-virtual               v0, v2, v1, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v1, Ljava/lang/StringBuilder;
+      invoke-direct                v1, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v2, "action="
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      iget-object                  v2, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->newFeature Lcm/aptoide/pt/themes/NewFeature;
+      invoke-virtual               v2, Lcm/aptoide/pt/themes/NewFeature;->getActionId()Ljava/lang/String;
+      move-result-object           v2
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v1
+      invoke-virtual               v4, v1, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v4
+      if-eqz                       v4, +00dh
+      iget-object                  v4, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->newFeature Lcm/aptoide/pt/themes/NewFeature;
+      invoke-virtual               v4, Lcm/aptoide/pt/themes/NewFeature;->getActionId()Ljava/lang/String;
+      move-result-object           v4
+      const-string                 v1, "action"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startAppcInfoView()Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "appc_info_view"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startEditorialFromSlug(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "editorial"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "slug"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startFromAppcAds()Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "appc_ads"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startFromAppview(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "appViewFragment"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "packageName"
+      invoke-virtual               v0, v1, v5, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      const-string                 v5, "storeName"
+      invoke-virtual               v0, v5, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      const-string                 v4, "open_type"
+      invoke-virtual               v0, v4, v6, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      if-eqz                       v7, +00fh
+      const-string                 v4, "ready_to_install"
+      invoke-virtual               v7, v4, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v4
+      if-eqz                       v4, +007h
+      const-string                 v4, "notification_ready_to_install"
+      invoke-virtual               v0, v4, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const/high16                 v4, 805306368
+      invoke-virtual               v0, v4, Landroid/content/Intent;->setFlags(I)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startFromEditorialCard(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "editorial"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "cardId"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startFromMyStore()Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "my_store"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startFromPickApp()Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "pick_app_deeplink"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startFromPromotionalCard(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "promotional"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "cardId"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startFromPromotions()Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "promotions"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method private startGenericDeepLink(Landroid/net/Uri;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "generic_deeplink"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "uri"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Landroid/os/Parcelable;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method protected onCreate(Landroid/os/Bundle;)V
+      invoke-super                 v7, v8, Lcm/aptoide/pt/analytics/view/AnalyticsActivity;->onCreate(Landroid/os/Bundle;)V
+      invoke-virtual               v7, Landroid/app/Activity;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v8
+      check-cast                   v8, Lcm/aptoide/pt/AptoideApplication;
+      invoke-virtual               v8, Lcm/aptoide/pt/AptoideApplication;->getAnalyticsManager()Lcm/aptoide/analytics/AnalyticsManager;
+      move-result-object           v0
+      iput-object                  v0, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->analyticsManager Lcm/aptoide/analytics/AnalyticsManager;
+      invoke-virtual               v8, Lcm/aptoide/pt/AptoideApplication;->getNavigationTracker()Lcm/aptoide/analytics/implementation/navigation/NavigationTracker;
+      move-result-object           v0
+      iput-object                  v0, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->navigationTracker Lcm/aptoide/analytics/implementation/navigation/NavigationTracker;
+      new-instance                 v1, Lcm/aptoide/pt/DeepLinkAnalytics;
+      iget-object                  v2, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->analyticsManager Lcm/aptoide/analytics/AnalyticsManager;
+      invoke-direct                v1, v2, v0, Lcm/aptoide/pt/DeepLinkAnalytics;-><init>(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/implementation/navigation/NavigationTracker;)V
+      iput-object                  v1, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v7, Landroid/app/Activity;->getIntent()Landroid/content/Intent;
+      move-result-object           v0
+      invoke-virtual               v0, Landroid/content/Intent;->getDataString()Ljava/lang/String;
+      move-result-object           v0
+      const/4                      v1, 0
+      iput-boolean                 v1, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->shortcutNavigation Z
+      invoke-virtual               v8, Lcm/aptoide/pt/AptoideApplication;->getNewFeature()Lcm/aptoide/pt/themes/NewFeature;
+      move-result-object           v8
+      iput-object                  v8, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->newFeature Lcm/aptoide/pt/themes/NewFeature;
+      invoke-direct                v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithShortcuts()V
+      const/4                      v8, 0
+      invoke-static                v0, Landroid/net/Uri;->parse(Ljava/lang/String;)Landroid/net/Uri;
+      move-result-object           v1
+      goto                         +ah
+      move-exception               v1
+      invoke-static                Lcm/aptoide/pt/crashreports/CrashReport;->getInstance()Lcm/aptoide/pt/crashreports/CrashReport;
+      move-result-object           v2
+      invoke-virtual               v2, v1, Lcm/aptoide/pt/crashreports/CrashReport;->log(Ljava/lang/Throwable;)V
+      move-object                  v1, v8
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v3, "aptoideauth"
+      invoke-virtual               v3, v2, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v2
+      if-nez                       v2, +021h
+      iget-object                  v2, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v2, v0, Lcm/aptoide/pt/DeepLinkAnalytics;->website(Ljava/lang/String;)V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v2
+      sget-object                  v4, Lcm/aptoide/pt/DeepLinkIntentReceiver;->TAG Ljava/lang/String;
+      new-instance                 v5, Ljava/lang/StringBuilder;
+      invoke-direct                v5, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v6, "uri: "
+      invoke-virtual               v5, v6, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v5, v0, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v5, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v5
+      invoke-virtual               v2, v4, v5, Lcm/aptoide/pt/logger/Logger;->v(Ljava/lang/String; Ljava/lang/String;)V
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v2
+      if-eqz                       v2, +117h
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v4, "webservices.aptoide.com"
+      invoke-virtual               v2, v4, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-eqz                       v2, +008h
+      invoke-direct                v7, v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithWebservicesAptoide(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto/16                      +105h
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v4, "app.aptoide.com"
+      invoke-virtual               v2, v4, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-eqz                       v2, +008h
+      invoke-direct                v7, v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithAptoideAuthentication(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto/16                      +0f3h
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v4, "aptoide.com"
+      invoke-virtual               v2, v4, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-eqz                       v2, +008h
+      invoke-direct                v7, v1, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithAptoideWebsite(Landroid/net/Uri;)Landroid/content/Intent;
+      move-result-object           v8
+      goto/16                      +0e1h
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v4, "aptoiderepo"
+      invoke-virtual               v4, v2, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v2
+      if-eqz                       v2, +008h
+      invoke-direct                v7, v0, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithAptoideRepo(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto/16                      +0cfh
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v4, "aptoidesearch"
+      invoke-virtual               v4, v2, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v2
+      const/4                      v4, 1
+      if-eqz                       v2, +010h
+      const-string                 v8, "aptoidesearch://"
+      invoke-virtual               v0, v8, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v8
+      aget-object                  v8, v8, v4
+      invoke-virtual               v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromPackageName(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto/16                      +0b4h
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "market"
+      invoke-virtual               v5, v2, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v2
+      if-eqz                       v2, +008h
+      invoke-direct                v7, v0, v1, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithMarketSchema(Ljava/lang/String; Landroid/net/Uri;)Landroid/content/Intent;
+      move-result-object           v8
+      goto/16                      +0a2h
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "market.android.com"
+      invoke-virtual               v2, v5, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-eqz                       v2, +00eh
+      const-string                 v8, "id"
+      invoke-virtual               v1, v8, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v8
+      invoke-virtual               v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromPackageName(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto/16                      +08ah
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "play.google.com"
+      invoke-virtual               v2, v5, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-eqz                       v2, +013h
+      invoke-virtual               v1, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "store/apps/details"
+      invoke-virtual               v2, v5, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v2
+      if-eqz                       v2, +007h
+      invoke-direct                v7, v1, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithGoogleHost(Landroid/net/Uri;)Landroid/content/Intent;
+      move-result-object           v8
+      goto                         +6ch
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "aptoideinstall"
+      invoke-virtual               v5, v2, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v2
+      if-eqz                       v2, +00dh
+      const/16                     v8, 17
+      invoke-virtual               v0, v8, Ljava/lang/String;->substring(I)Ljava/lang/String;
+      move-result-object           v8
+      invoke-direct                v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->parseAptoideInstallUri(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto                         +55h
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "cm.aptoide.pt"
+      invoke-virtual               v2, v5, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v2
+      if-eqz                       v2, +01fh
+      invoke-virtual               v1, Landroid/net/Uri;->getPath()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "/deeplink"
+      invoke-virtual               v2, v5, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v2
+      if-eqz                       v2, +013h
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "aptoide"
+      invoke-virtual               v5, v2, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v2
+      if-eqz                       v2, +007h
+      invoke-direct                v7, v1, Lcm/aptoide/pt/DeepLinkIntentReceiver;->dealWithAptoideSchema(Landroid/net/Uri;)Landroid/content/Intent;
+      move-result-object           v8
+      goto                         +2ch
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v2
+      const-string                 v5, "aptoidefeature"
+      invoke-virtual               v5, v2, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v2
+      if-eqz                       v2, +00bh
+      invoke-virtual               v1, Landroid/net/Uri;->getHost()Ljava/lang/String;
+      move-result-object           v8
+      invoke-direct                v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->parseFeatureUri(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto                         +17h
+      invoke-virtual               v1, Landroid/net/Uri;->getScheme()Ljava/lang/String;
+      move-result-object           v1
+      invoke-virtual               v3, v1, Ljava/lang/String;->equalsIgnoreCase(Ljava/lang/String;)Z
+      move-result                  v1
+      if-eqz                       v1, +00eh
+      const-string                 v8, "aptoideauth://"
+      invoke-virtual               v0, v8, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+      move-result-object           v8
+      aget-object                  v8, v8, v4
+      invoke-direct                v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->parseAptoideAuthUri(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      if-eqz                       v8, +005h
+      invoke-virtual               v7, v8, Landroid/app/Activity;->startActivity(Landroid/content/Intent;)V
+      iget-object                  v8, v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v8, Lcm/aptoide/pt/DeepLinkAnalytics;->sendWebsite()V
+      invoke-virtual               v7, Landroid/app/Activity;->finish()V
+      return-void                  
+      .catch <androguard.core.dex.TryItem object at 0x7fc8f28ce650>
+  .end method
+
+  .method public startAppView(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "appViewFragment"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "uname"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method public startFromAppView(J Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "appViewFragment"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "appId"
+      invoke-virtual               v0, v1, v4, v5, Landroid/content/Intent;->putExtra(Ljava/lang/String; J)Landroid/content/Intent;
+      const-string                 v4, "packageName"
+      invoke-virtual               v0, v4, v6, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      const-string                 v4, "open_type"
+      invoke-virtual               v0, v4, v7, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      if-eqz                       v8, +00fh
+      const-string                 v4, "ready_to_install"
+      invoke-virtual               v8, v4, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v4
+      if-eqz                       v4, +007h
+      const-string                 v4, "notification_ready_to_install"
+      invoke-virtual               v0, v4, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method public startFromAppView(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "appViewFragment"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "packageName"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method public startFromAppsTimeline(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "apps_timeline"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "cardId"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      iget-boolean                 v4, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->shortcutNavigation Z
+      if-eqz                       v4, +007h
+      const-string                 v1, "from_shortcut"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method public startFromHome()Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "home_tab"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method public startFromPackageName(Ljava/lang/String;)Landroid/content/Intent;
+      if-eqz                       v8, +04ch
+      invoke-virtual               v7, Landroid/app/Activity;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v0
+      check-cast                   v0, Lcm/aptoide/pt/AptoideApplication;
+      invoke-virtual               v0, Lcm/aptoide/pt/AptoideApplication;->getAccountSettingsBodyInterceptorPoolV7()Lcm/aptoide/pt/dataprovider/ws/BodyInterceptor;
+      move-result-object           v2
+      invoke-virtual               v7, Landroid/app/Activity;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v0
+      check-cast                   v0, Lcm/aptoide/pt/AptoideApplication;
+      invoke-virtual               v0, Lcm/aptoide/pt/AptoideApplication;->getDefaultClient()Lokhttp3/OkHttpClient;
+      move-result-object           v3
+      invoke-static                Lcm/aptoide/pt/dataprovider/WebService;->getDefaultConverter()Lretrofit2/Converter$Factory;
+      move-result-object           v4
+      invoke-virtual               v7, Landroid/app/Activity;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v0
+      check-cast                   v0, Lcm/aptoide/pt/AptoideApplication;
+      invoke-virtual               v0, Lcm/aptoide/pt/AptoideApplication;->getTokenInvalidator()Lcm/aptoide/pt/dataprovider/interfaces/TokenInvalidator;
+      move-result-object           v5
+      invoke-virtual               v7, Landroid/app/Activity;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v0
+      check-cast                   v0, Lcm/aptoide/pt/AptoideApplication;
+      invoke-virtual               v0, Lcm/aptoide/pt/AptoideApplication;->getDefaultSharedPreferences()Landroid/content/SharedPreferences;
+      move-result-object           v6
+      move-object                  v1, v8
+      invoke-static/range          v1 ... v6, Lcm/aptoide/pt/dataprovider/ws/v7/GetAppRequest;->of(Ljava/lang/String; Lcm/aptoide/pt/dataprovider/ws/BodyInterceptor; Lokhttp3/OkHttpClient; Lretrofit2/Converter$Factory; Lcm/aptoide/pt/dataprovider/interfaces/TokenInvalidator; Landroid/content/SharedPreferences;)Lcm/aptoide/pt/dataprovider/ws/v7/GetAppRequest;
+      move-result-object           v0
+      invoke-virtual               v0, Lcm/aptoide/pt/dataprovider/WebService;->observe()Lrx/e;
+      move-result-object           v0
+      invoke-virtual               v0, Lrx/e;->W0()Lrx/o/a;
+      move-result-object           v0
+      invoke-virtual               v0, Lrx/o/a;->b()Ljava/lang/Object;
+      move-result-object           v0
+      check-cast                   v0, Lcm/aptoide/pt/dataprovider/model/v7/GetApp;
+      goto                         +ch
+      invoke-virtual               v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromSearch(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      invoke-virtual               v7, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromHome()Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      const/4                      v0, 0
+      if-eqz                       v0, +00dh
+      invoke-virtual               v0, Lcm/aptoide/pt/dataprovider/model/v7/BaseV7Response;->isOk()Z
+      move-result                  v0
+      if-eqz                       v0, +007h
+      invoke-virtual               v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromAppView(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      goto                         +5h
+      invoke-virtual               v7, v8, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startFromSearch(Ljava/lang/String;)Landroid/content/Intent;
+      move-result-object           v8
+      return-object                v8
+      .catch <androguard.core.dex.TryItem object at 0x7fc8f28cd750>
+  .end method
+
+  .method public startFromSearch(Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v3, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "searchFragment"
+      const/4                      v2, 1
+      invoke-virtual               v0, v1, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      const-string                 v1, "query"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      iget-boolean                 v4, v3, Lcm/aptoide/pt/DeepLinkIntentReceiver;->shortcutNavigation Z
+      const-string                 v1, "from_shortcut"
+      invoke-virtual               v0, v1, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Z)Landroid/content/Intent;
+      return-object                v0
+  .end method
+
+  .method public startWalletInstallIntent(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      new-instance                 v3, Landroid/content/Intent;
+      const-class                  v0, Lcm/aptoide/pt/wallet/WalletInstallActivity;
+      invoke-direct                v3, v1, v0, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v0, "wallet_package_name"
+      invoke-virtual               v3, v0, v2, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      const-string                 v2, "packageName"
+      invoke-virtual               v3, v2, v4, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/lang/String;)Landroid/content/Intent;
+      const/high16                 v2, 268435456
+      invoke-virtual               v3, v2, Landroid/content/Intent;->setFlags(I)Landroid/content/Intent;
+      return-object                v3
+  .end method
+
+  .method public startWithRepo(Ljava/util/ArrayList;)Landroid/content/Intent;
+      new-instance                 v0, Landroid/content/Intent;
+      iget-object                  v1, v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->startClass Ljava/lang/Class;
+      invoke-direct                v0, v2, v1, Landroid/content/Intent;-><init>(Landroid/content/Context; Ljava/lang/Class;)V
+      const-string                 v1, "newrepo"
+      invoke-virtual               v0, v1, v3, Landroid/content/Intent;->putExtra(Ljava/lang/String; Ljava/io/Serializable;)Landroid/content/Intent;
+      iget-object                  v3, v2, Lcm/aptoide/pt/DeepLinkIntentReceiver;->deepLinkAnalytics Lcm/aptoide/pt/DeepLinkAnalytics;
+      invoke-virtual               v3, Lcm/aptoide/pt/DeepLinkAnalytics;->newRepo()V
+      return-object                v0
+  .end method

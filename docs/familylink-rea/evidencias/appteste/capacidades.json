@@ -1,0 +1,2229 @@
+[
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "ActivityManager.getRunningAppProcesses (via contexto)",
+    "ocorrencias": 60,
+    "classes": [
+      "Landroidx/appcompat/app/AlertController$f;",
+      "Landroidx/appcompat/app/n;",
+      "Landroidx/appcompat/view/menu/l;",
+      "Landroidx/appcompat/widget/r;",
+      "Landroidx/appcompat/widget/t0;",
+      "Landroidx/appcompat/widget/u0;",
+      "Landroidx/core/app/d;",
+      "Landroidx/core/app/l;",
+      "Landroidx/core/content/a$d;",
+      "Landroidx/core/os/e;",
+      "Landroidx/core/view/u;",
+      "Landroidx/preference/Preference$e;",
+      "Landroidx/room/j$c;",
+      "Landroidx/work/impl/background/systemalarm/a;",
+      "Landroidx/work/impl/utils/ForceStopRunnable;",
+      "Landroidx/work/impl/utils/f;",
+      "Landroidx/work/impl/utils/j;",
+      "Lc/a/o/d;",
+      "Lc/o/a/a;",
+      "Lcm/aptoide/pt/ApplicationModule;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/appcompat/app/AlertController$f;",
+        "metodo": "<init>(Landroid/content/Context;)V",
+        "instrucao": "v2, v0, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/n;",
+        "metodo": "a(Landroid/content/Context;)Landroidx/appcompat/app/n;",
+        "instrucao": "v2, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/appcompat/view/menu/l;",
+        "metodo": "a()Landroidx/appcompat/view/menu/k;",
+        "instrucao": "v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/r;",
+        "metodo": "a()Landroid/view/textclassifier/TextClassifier;",
+        "instrucao": "v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/t0;",
+        "metodo": "onHover(Landroid/view/View; Landroid/view/MotionEvent;)Z",
+        "instrucao": "v3, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/u0;",
+        "metodo": "c()V",
+        "instrucao": "v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/u0;",
+        "metodo": "e(Landroid/view/View; I I Z Ljava/lang/CharSequence;)V",
+        "instrucao": "v8, v9, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/core/app/d;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String; Ljava/lang/String;)I",
+        "instrucao": "v2, v0, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/core/app/l;",
+        "metodo": "<init>(Landroid/content/Context;)V",
+        "instrucao": "v2, v0, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/core/app/l;",
+        "metodo": "a()Z",
+        "instrucao": "v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/core/content/a$d;",
+        "metodo": "c(Landroid/content/Context; Ljava/lang/Class;)Ljava/lang/Object;",
+        "instrucao": "v0, v1, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Landroidx/core/os/e;",
+        "metodo": "a(Landroid/content/Context;)Z",
+        "instrucao": "v2, v0, Landroid/content/Context;->getSystemService(Ljava/lang/Class;)Ljava/lang/Object;"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "AccessibilityEvent / janela ativa",
+    "ocorrencias": 60,
+    "classes": [
+      "Landroidx/appcompat/widget/SwitchCompat;",
+      "Landroidx/appcompat/widget/c0;",
+      "Landroidx/appcompat/widget/j0$d;",
+      "Landroidx/core/view/a$a;",
+      "Landroidx/core/view/a;",
+      "Landroidx/core/view/d0/b;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onInitializeAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v1, v2, Landroid/widget/CompoundButton;->onInitializeAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onInitializeAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v0, \"android.widget.Switch\""
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onInitializeAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v2, v0, Landroid/view/accessibility/AccessibilityEvent;->setClassName(Ljava/lang/CharSequence;)V"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onInitializeAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": ""
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v1, v2, Landroid/widget/CompoundButton;->onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v1, Landroid/widget/CompoundButton;->isChecked()Z"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v0"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v0, +005h"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v0, v1, Landroidx/appcompat/widget/SwitchCompat;->v Ljava/lang/CharSequence;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "+3h"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v0, v1, Landroidx/appcompat/widget/SwitchCompat;->w Ljava/lang/CharSequence;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SwitchCompat;",
+        "metodo": "onPopulateAccessibilityEvent(Landroid/view/accessibility/AccessibilityEvent;)V",
+        "instrucao": "v0, +009h"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "JobScheduler / WorkManager (polling periodico)",
+    "ocorrencias": 60,
+    "classes": [
+      "Landroidx/work/CoroutineWorker$a;",
+      "Landroidx/work/ListenableWorker$a;",
+      "Landroidx/work/ListenableWorker;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "<init>(Landroidx/work/CoroutineWorker;)V",
+        "instrucao": "v1, v0, Landroidx/work/CoroutineWorker$a;->f Landroidx/work/CoroutineWorker;"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "<init>(Landroidx/work/CoroutineWorker;)V",
+        "instrucao": "v0, Ljava/lang/Object;-><init>()V"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "<init>(Landroidx/work/CoroutineWorker;)V",
+        "instrucao": ""
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0, v3, Landroidx/work/CoroutineWorker$a;->f Landroidx/work/CoroutineWorker;"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0, Landroidx/work/CoroutineWorker;->g()Landroidx/work/impl/utils/o/c;"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0, Landroidx/work/impl/utils/o/a;->isCancelled()Z"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0, +00dh"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0, v3, Landroidx/work/CoroutineWorker$a;->f Landroidx/work/CoroutineWorker;"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0, Landroidx/work/CoroutineWorker;->h()Lkotlinx/coroutines/z;"
+      },
+      {
+        "classe": "Landroidx/work/CoroutineWorker$a;",
+        "metodo": "run()V",
+        "instrucao": "v0"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "Process.myPid / leitura de /proc",
+    "ocorrencias": 46,
+    "classes": [
+      "Landroidx/activity/ComponentActivity$b;",
+      "Landroidx/core/content/a;",
+      "Landroidx/core/content/c;",
+      "Landroidx/work/impl/utils/f;",
+      "Lc/i/e/e;",
+      "Lc/i/e/k;",
+      "Lcm/aptoide/pt/install/PackageRepository;",
+      "Lcm/aptoide/pt/install/installer/Root;",
+      "Lcm/aptoide/pt/preferences/PRNGFixes;",
+      "Lcm/aptoide/pt/root/containers/RootClass$AnnotationsFinder;",
+      "Lcm/aptoide/pt/root/execution/Shell$Worker;",
+      "Lcm/aptoide/pt/root/execution/Shell;",
+      "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+      "Lcom/bumptech/glide/load/o/c/q;",
+      "Lcom/flurry/sdk/o7;",
+      "Lcom/flurry/sdk/w2;",
+      "Lcom/google/android/gms/common/stats/StatsUtils;",
+      "Lcom/google/android/gms/common/util/ProcessUtils;",
+      "Lcom/google/android/gms/internal/ads/zzaxi;",
+      "Lcom/google/android/gms/internal/ads/zzuu;",
+      "Lcom/google/firebase/crashlytics/h/j;",
+      "Lcom/google/firebase/crashlytics/h/n/s;",
+      "Lcom/google/firebase/messaging/c;",
+      "Lcom/google/firebase/sessions/h0;",
+      "Lcom/google/firebase/sessions/u;",
+      "Le/h/a/k0/f;",
+      "Lio/sentry/android/core/g0;",
+      "Lio/sentry/android/core/internal/util/q;",
+      "Lio/sentry/android/core/internal/util/r;",
+      "Lio/sentry/android/core/t0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/core/content/a;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String;)I",
+        "instrucao": "Landroid/os/Process;->myPid()I"
+      },
+      {
+        "classe": "Landroidx/core/content/c;",
+        "metodo": "b(Landroid/content/Context; Ljava/lang/String;)I",
+        "instrucao": "Landroid/os/Process;->myPid()I"
+      },
+      {
+        "classe": "Landroidx/work/impl/utils/f;",
+        "metodo": "a(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "Landroid/os/Process;->myPid()I"
+      },
+      {
+        "classe": "Lc/i/e/k;",
+        "metodo": "e(Landroid/content/Context;)Ljava/io/File;",
+        "instrucao": "Landroid/os/Process;->myPid()I"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/PackageRepository;",
+        "metodo": "lambda$getAdbInstalledPackages$7()Ljava/util/List;",
+        "instrucao": "v2, v3, Ljava/lang/Runtime;->exec(Ljava/lang/String;)Ljava/lang/Process;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/installer/Root;",
+        "metodo": "<init>()V",
+        "instrucao": "v1, v2, Ljava/lang/Runtime;->exec(Ljava/lang/String;)Ljava/lang/Process;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/installer/Root;",
+        "metodo": "requestRoot()Z",
+        "instrucao": "v1, v2, Ljava/lang/Runtime;->exec(Ljava/lang/String;)Ljava/lang/Process;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/preferences/PRNGFixes;",
+        "metodo": "generateSeed()[B",
+        "instrucao": "Landroid/os/Process;->myPid()I"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/root/containers/RootClass$AnnotationsFinder;",
+        "metodo": "<init>()V",
+        "instrucao": "v6, Ljava/lang/ProcessBuilder;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/root/containers/RootClass$AnnotationsFinder;",
+        "metodo": "<init>()V",
+        "instrucao": "v6, v2, Ljava/lang/ProcessBuilder;-><init>([Ljava/lang/String;)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/root/containers/RootClass$AnnotationsFinder;",
+        "metodo": "<init>()V",
+        "instrucao": "v6, v1, Ljava/lang/ProcessBuilder;->directory(Ljava/io/File;)Ljava/lang/ProcessBuilder;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/root/containers/RootClass$AnnotationsFinder;",
+        "metodo": "<init>()V",
+        "instrucao": "v6, Ljava/lang/ProcessBuilder;->start()Ljava/lang/Process;"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "ActivityManager.RunningAppProcessInfo (leitura de campos)",
+    "ocorrencias": 45,
+    "classes": [
+      "Landroidx/work/impl/utils/f;",
+      "Lcom/google/android/gms/common/api/internal/BackgroundDetector;",
+      "Lcom/google/android/gms/internal/ads/zzaht;",
+      "Lcom/google/android/gms/internal/ads/zzaxi;",
+      "Lcom/google/android/gms/internal/ads/zzuu;",
+      "Lcom/google/android/gms/measurement/internal/zzfx;",
+      "Lcom/google/firebase/crashlytics/h/j;",
+      "Lcom/google/firebase/messaging/c;",
+      "Lcom/google/firebase/sessions/u;",
+      "Le/h/a/k0/f;",
+      "Lio/sentry/android/core/t0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/work/impl/utils/f;",
+        "metodo": "a(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v2, Landroid/app/ActivityManager$RunningAppProcessInfo;"
+      },
+      {
+        "classe": "Landroidx/work/impl/utils/f;",
+        "metodo": "a(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v3, v2, Landroid/app/ActivityManager$RunningAppProcessInfo;->pid I"
+      },
+      {
+        "classe": "Landroidx/work/impl/utils/f;",
+        "metodo": "a(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v7, v2, Landroid/app/ActivityManager$RunningAppProcessInfo;->processName Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/api/internal/BackgroundDetector;",
+        "metodo": "e(Z)Z",
+        "instrucao": "v3, Landroid/app/ActivityManager$RunningAppProcessInfo;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/api/internal/BackgroundDetector;",
+        "metodo": "e(Z)Z",
+        "instrucao": "v3, Landroid/app/ActivityManager$RunningAppProcessInfo;-><init>()V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/api/internal/BackgroundDetector;",
+        "metodo": "e(Z)Z",
+        "instrucao": "v3, Landroid/app/ActivityManager;->getMyMemoryState(Landroid/app/ActivityManager$RunningAppProcessInfo;)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/api/internal/BackgroundDetector;",
+        "metodo": "e(Z)Z",
+        "instrucao": "v3, v3, Landroid/app/ActivityManager$RunningAppProcessInfo;->importance I"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaht;",
+        "metodo": "d(Ljava/util/Map;)Landroid/content/Intent;",
+        "instrucao": "v8, Landroid/app/ActivityManager$RunningAppProcessInfo;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaht;",
+        "metodo": "d(Ljava/util/Map;)Landroid/content/Intent;",
+        "instrucao": "v8, v8, Landroid/app/ActivityManager$RunningAppProcessInfo;->processName Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaxi;",
+        "metodo": "A(Landroid/content/Context;)Z",
+        "instrucao": "v3, Landroid/app/ActivityManager$RunningAppProcessInfo;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaxi;",
+        "metodo": "A(Landroid/content/Context;)Z",
+        "instrucao": "v5, v3, Landroid/app/ActivityManager$RunningAppProcessInfo;->pid I"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaxi;",
+        "metodo": "A(Landroid/content/Context;)Z",
+        "instrucao": "v1, v3, Landroid/app/ActivityManager$RunningAppProcessInfo;->importance I"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "ActivityLifecycleCallbacks (foreground/background)",
+    "ocorrencias": 32,
+    "classes": [
+      "Landroidx/core/app/c$b;",
+      "Landroidx/core/app/c;",
+      "Landroidx/lifecycle/ProcessLifecycleOwner$c;",
+      "Landroidx/lifecycle/ProcessLifecycleOwner;",
+      "Landroidx/lifecycle/h;",
+      "Landroidx/lifecycle/t$b;",
+      "Lcom/facebook/o0/o0/f;",
+      "Lcom/facebook/o0/q0/f;",
+      "Lcom/flurry/sdk/o1;",
+      "Lcom/flurry/sdk/q;",
+      "Lcom/google/android/gms/common/api/internal/BackgroundDetector;",
+      "Lcom/google/android/gms/internal/ads/e40;",
+      "Lcom/google/android/gms/internal/ads/m40;",
+      "Lcom/google/android/gms/internal/ads/st;",
+      "Lcom/google/android/gms/internal/ads/zzeh;",
+      "Lcom/google/android/gms/internal/ads/zzua;",
+      "Lcom/google/android/gms/internal/measurement/zzx;",
+      "Lcom/google/android/gms/measurement/internal/zzfx;",
+      "Lcom/google/android/gms/measurement/internal/zzhc;",
+      "Lcom/google/firebase/sessions/q;",
+      "Lio/sentry/android/core/ActivityLifecycleIntegration;",
+      "Lio/sentry/android/core/CurrentActivityIntegration;",
+      "Lio/sentry/android/core/SentryPerformanceProvider;",
+      "Lio/sentry/android/core/UserInteractionIntegration;",
+      "Lio/sentry/android/core/internal/util/t;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/core/app/c$b;",
+        "metodo": "run()V",
+        "instrucao": "v0, v1, Landroid/app/Application;->unregisterActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Landroidx/core/app/c;",
+        "metodo": "i(Landroid/app/Activity;)Z",
+        "instrucao": "v4, v5, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Landroidx/lifecycle/h;",
+        "metodo": "a(Landroid/content/Context;)V",
+        "instrucao": "v2, v0, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Landroidx/lifecycle/t$b;",
+        "metodo": "registerIn(Landroid/app/Activity;)V",
+        "instrucao": "v1, v0, Landroid/app/Activity;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Landroidx/lifecycle/ProcessLifecycleOwner$c;",
+        "metodo": "onActivityPreCreated(Landroid/app/Activity; Landroid/os/Bundle;)V",
+        "instrucao": "v1, v2, Landroid/app/Activity;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Landroidx/lifecycle/ProcessLifecycleOwner;",
+        "metodo": "e(Landroid/content/Context;)V",
+        "instrucao": "v3, v0, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Lcom/facebook/o0/o0/f;",
+        "metodo": "h()V",
+        "instrucao": "v1, v3, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Lcom/facebook/o0/q0/f;",
+        "metodo": "x(Landroid/app/Application; Ljava/lang/String;)V",
+        "instrucao": "v3, v4, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Lcom/flurry/sdk/o1;",
+        "metodo": "b(Landroid/content/Context; Landroid/database/Cursor;)V",
+        "instrucao": "v0, v3, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/api/internal/BackgroundDetector;",
+        "metodo": "c(Landroid/app/Application;)V",
+        "instrucao": "v2, v0, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/e40;",
+        "metodo": "a(Lcom/google/android/gms/internal/ads/zzun;)V",
+        "instrucao": "v2, v1, Landroid/app/Application;->unregisterActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/m40;",
+        "metodo": "e(Landroid/app/Application; Landroid/content/Context;)V",
+        "instrucao": "v2, v1, Landroid/app/Application;->registerActivityLifecycleCallbacks(Landroid/app/Application$ActivityLifecycleCallbacks;)V"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "PackageManager.getInstalledPackages/Applications",
+    "ocorrencias": 10,
+    "classes": [
+      "Landroidx/core/content/c;",
+      "Lcm/aptoide/pt/install/PackageRepository;",
+      "Lcm/aptoide/pt/promotions/PromotionsFragment;",
+      "Lcm/aptoide/pt/promotions/PromotionsManager;",
+      "Lcm/aptoide/pt/toolbox/ToolboxContentProvider;",
+      "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+      "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+      "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+      "Lcom/google/android/gms/common/wrappers/PackageManagerWrapper;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/core/content/c;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String; I I Ljava/lang/String;)I",
+        "instrucao": "v5, v4, Landroid/content/pm/PackageManager;->getPackagesForUid(I)[Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/PackageRepository;",
+        "metodo": "lambda$getPackageManagerInstalledPackages$6()Ljava/util/List;",
+        "instrucao": "v0, v1, Landroid/content/pm/PackageManager;->getInstalledPackages(I)Ljava/util/List;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/promotions/PromotionsManager;",
+        "metodo": "isWalletInstalled()Z",
+        "instrucao": "v0, v1, Landroid/content/pm/PackageManager;->getInstalledApplications(I)Ljava/util/List;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/toolbox/ToolboxContentProvider;",
+        "metodo": "update(Landroid/net/Uri; Landroid/content/ContentValues; Ljava/lang/String; [Ljava/lang/String;)I",
+        "instrucao": "v1, v8, Landroid/content/pm/PackageManager;->getPackagesForUid(I)[Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+        "metodo": "getPackageName(I)Ljava/lang/String;",
+        "instrucao": "v0, v2, Landroid/content/pm/PackageManager;->getPackagesForUid(I)[Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+        "metodo": "getAllInstalledApps(Landroid/content/pm/PackageManager;)Ljava/util/List;",
+        "instrucao": "v2, v0, Landroid/content/pm/PackageManager;->getInstalledPackages(I)Ljava/util/List;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+        "metodo": "getAllInstalledApps(Landroid/content/pm/PackageManager;)Ljava/util/List;",
+        "instrucao": "v2, v0, Landroid/content/pm/PackageManager;->getInstalledPackages(I)Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "c(I)Z",
+        "instrucao": "v0, v6, Landroid/content/pm/PackageManager;->getPackagesForUid(I)[Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/promotions/PromotionsFragment;",
+        "metodo": "isWalletInstalled()Z",
+        "instrucao": "v0, v1, Landroid/content/pm/PackageManager;->getInstalledApplications(I)Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/wrappers/PackageManagerWrapper;",
+        "metodo": "g(I Ljava/lang/String;)Z",
+        "instrucao": "v0, v5, Landroid/content/pm/PackageManager;->getPackagesForUid(I)[Ljava/lang/String;"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "ActivityManager.getRunningAppProcesses",
+    "ocorrencias": 10,
+    "classes": [
+      "Landroidx/work/impl/utils/f;",
+      "Lcom/google/android/gms/internal/ads/zzaht;",
+      "Lcom/google/android/gms/internal/ads/zzaxi;",
+      "Lcom/google/android/gms/internal/ads/zzuu;",
+      "Lcom/google/firebase/crashlytics/h/j;",
+      "Lcom/google/firebase/messaging/c;",
+      "Lcom/google/firebase/sessions/u;",
+      "Le/h/a/k0/f;",
+      "Lio/sentry/android/core/t0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/work/impl/utils/f;",
+        "metodo": "a(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v7, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaht;",
+        "metodo": "d(Ljava/util/Map;)Landroid/content/Intent;",
+        "instrucao": "v0, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaxi;",
+        "metodo": "A(Landroid/content/Context;)Z",
+        "instrucao": "v1, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzuu;",
+        "metodo": "f()Z",
+        "instrucao": "v2, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/firebase/crashlytics/h/j;",
+        "metodo": "d(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v6, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/firebase/messaging/c;",
+        "metodo": "b()Z",
+        "instrucao": "v2, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Lcom/google/firebase/sessions/u;",
+        "metodo": "c(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v8, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Le/h/a/k0/f;",
+        "metodo": "F(Landroid/content/Context;)Z",
+        "instrucao": "v0, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Le/h/a/k0/f;",
+        "metodo": "J(Landroid/content/Context;)Z",
+        "instrucao": "v4, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      },
+      {
+        "classe": "Lio/sentry/android/core/t0;",
+        "metodo": "m(Landroid/content/Context;)Z",
+        "instrucao": "v3, Landroid/app/ActivityManager;->getRunningAppProcesses()Ljava/util/List;"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "AlarmManager (wakeup periodico)",
+    "ocorrencias": 4,
+    "classes": [
+      "Lcm/aptoide/pt/notification/PullingContentService;",
+      "Lcom/facebook/v;",
+      "Lcom/google/android/datatransport/runtime/scheduling/jobscheduling/p;",
+      "Lcom/google/android/gms/measurement/internal/zzjy;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcom/facebook/v;",
+        "metodo": "t()V",
+        "instrucao": "v3, v1, v4, v5, v0, Landroid/app/AlarmManager;->set(I J Landroid/app/PendingIntent;)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/notification/PullingContentService;",
+        "metodo": "setAlarm(Landroid/app/AlarmManager; Landroid/content/Context; Ljava/lang/String; J)V",
+        "instrucao": "v2 ... v8, Landroid/app/AlarmManager;->setInexactRepeating(I J J Landroid/app/PendingIntent;)V"
+      },
+      {
+        "classe": "Lcom/google/android/datatransport/runtime/scheduling/jobscheduling/p;",
+        "metodo": "b(Le/e/b/a/i/q; I Z)V",
+        "instrucao": "v11, v10, v0, v1, v9, Landroid/app/AlarmManager;->set(I J Landroid/app/PendingIntent;)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/measurement/internal/zzjy;",
+        "metodo": "w(J)V",
+        "instrucao": "v2 ... v8, Landroid/app/AlarmManager;->setInexactRepeating(I J J Landroid/app/PendingIntent;)V"
+      }
+    ]
+  },
+  {
+    "categoria": "deteccao_processos",
+    "capacidade": "ActivityManager.getRunningTasks",
+    "ocorrencias": 1,
+    "classes": [
+      "Lcom/google/android/gms/internal/ads/zzaxi;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaxi;",
+        "metodo": "z(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v2, v1, Landroid/app/ActivityManager;->getRunningTasks(I)Ljava/util/List;"
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "uso/checagem de root (su, magisk, Superuser)",
+    "ocorrencias": 60,
+    "classes": [
+      "Lcm/aptoide/pt/ApplicationModule;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v0, v17"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v16, Lcm/aptoide/pt/install/installer/DefaultInstaller;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v1, v0, Lcm/aptoide/pt/ApplicationModule;->application Lcm/aptoide/pt/AptoideApplication;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v1, Landroid/app/Application;->getPackageManager()Landroid/content/pm/PackageManager;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v2"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v5, Lcm/aptoide/pt/utils/FileUtils;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v5, Lcm/aptoide/pt/utils/FileUtils;-><init>()V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v19, Lcm/aptoide/pt/preferences/toolbox/ToolboxManager;->isDebug(Landroid/content/SharedPreferences;)Z"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v1"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v1, +005h"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v1, 0"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideDefaultInstaller(Lcm/aptoide/pt/install/installer/InstallationProvider; Landroid/content/SharedPreferences; Lcm/aptoide/pt/install/AptoideInstalledAppsRepository; Lcm/aptoide/pt/root/RootAvailabilityManager; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/packageinstaller/AppInstaller; Lcm/aptoide/pt/install/AppInstallerStatusReceiver; Lcm/aptoide/pt/install/RootInstallerProvider;)Lcm/aptoide/pt/install/Installer;",
+        "instrucao": "v6, 0"
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "Play Integrity / SafetyNet attestation",
+    "ocorrencias": 60,
+    "classes": [
+      "Lcm/aptoide/pt/ApplicationModule;",
+      "Lcm/aptoide/pt/ApplicationModule_ProvidesFirstLaunchAnalyticsFactory;",
+      "Lcm/aptoide/pt/ApplicationModule_ProvidesSafetyNetClientFactory;",
+      "Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+      "Lcom/facebook/internal/a0;",
+      "Lcom/google/android/gms/safetynet/R;",
+      "Lcom/google/android/gms/safetynet/SafetyNet;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v6, Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v0, v7, Lcm/aptoide/pt/ApplicationModule;->application Lcm/aptoide/pt/AptoideApplication;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v0, Landroid/app/Application;->getPackageName()Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v4"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v0, v6"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v1, v8"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v2, v9"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v3, v10"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v5, v11"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v0 ... v5, Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;-><init>(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Ljav"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesFirstLaunchAnalytics(Lcm/aptoide/analytics/AnalyticsManager; Lcm/aptoide/analytics/AnalyticsLogger; Lcom/google/android/gms/safetynet/SafetyNetClient; Lcm/aptoide/pt/GmsStatusValueProvider;)Lcm/aptoide/pt/analytics/FirstLaunchAnalytics;",
+        "instrucao": "v6"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "providesSafetyNetClient()Lcom/google/android/gms/safetynet/SafetyNetClient;",
+        "instrucao": "v0, v1, Lcm/aptoide/pt/ApplicationModule;->application Lcm/aptoide/pt/AptoideApplication;"
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "Build.TAGS / Build.TYPE (emulador, debug)",
+    "ocorrencias": 60,
+    "classes": [
+      "Landroidx/appcompat/app/g;",
+      "Lcm/aptoide/pt/AptoideApplication;",
+      "Lcm/aptoide/pt/install/remote/RemoteInstallationSenderManager$1;",
+      "Lcm/aptoide/pt/networking/UserAgentInterceptor;",
+      "Lcm/aptoide/pt/preferences/PRNGFixes;",
+      "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+      "Lcom/bumptech/glide/load/o/c/w;",
+      "Lcom/facebook/internal/p0;",
+      "Lcom/facebook/internal/t0/i;",
+      "Lcom/facebook/o0/m0/i;",
+      "Lcom/facebook/o0/p0/b;",
+      "Lcom/facebook/o0/q0/g;",
+      "Lcom/facebook/p0/a/a;",
+      "Lcom/google/android/gms/common/util/DeviceProperties;",
+      "Lcom/google/android/gms/internal/ads/zzasf;",
+      "Lcom/google/android/gms/internal/ads/zzaxi;",
+      "Lcom/google/android/gms/internal/ads/zzcjr;",
+      "Lcom/google/android/gms/internal/ads/zzsy;",
+      "Lcom/google/android/gms/internal/measurement/r0;",
+      "Lcom/google/android/material/internal/e;",
+      "Lcom/google/firebase/crashlytics/h/n/a0;",
+      "Lcom/google/firebase/crashlytics/h/n/t;",
+      "Lcom/google/firebase/crashlytics/h/n/x;",
+      "Lcom/google/firebase/sessions/a0;",
+      "Lio/rakam/api/d$b;",
+      "Lio/sentry/android/core/s0;",
+      "Lio/sentry/android/core/t0;",
+      "Lio/sentry/android/core/w0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcm/aptoide/pt/AptoideApplication;",
+        "metodo": "getIndicativeProperties()Ljava/util/Map;",
+        "instrucao": "v1, Landroid/os/Build;->MANUFACTURER Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/AptoideApplication;",
+        "metodo": "getIndicativeProperties()Ljava/util/Map;",
+        "instrucao": "v1, Landroid/os/Build;->MODEL Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/remote/RemoteInstallationSenderManager$1;",
+        "metodo": "run()V",
+        "instrucao": "v2, Landroid/os/Build;->MODEL Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/preferences/PRNGFixes;",
+        "metodo": "getBuildFingerprintAndDeviceSerial()[B",
+        "instrucao": "v1, Landroid/os/Build;->FINGERPRINT Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+        "metodo": "getModel()Ljava/lang/String;",
+        "instrucao": "v0, Landroid/os/Build;->MODEL Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+        "metodo": "getProduct()Ljava/lang/String;",
+        "instrucao": "v0, Landroid/os/Build;->PRODUCT Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+        "metodo": "readLogs(Ljava/lang/String; Ljava/lang/String; Ljava/lang/String;)Ljava/io/File;",
+        "instrucao": "v3, Landroid/os/Build;->MODEL Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcom/bumptech/glide/load/o/c/w;",
+        "metodo": "<clinit>()V",
+        "instrucao": "v1, Landroid/os/Build;->MODEL Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcom/facebook/o0/m0/i;",
+        "metodo": "b(Ljava/lang/String;)V",
+        "instrucao": "v3, Landroid/os/Build;->MODEL Ljava/lang/String;"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/g;",
+        "metodo": "<clinit>()V",
+        "instrucao": "v4, Landroid/os/Build;->FINGERPRINT Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/networking/UserAgentInterceptor;",
+        "metodo": "getDefaultUserAgent()Ljava/lang/String;",
+        "instrucao": "v4, Landroid/os/Build;->MODEL Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/networking/UserAgentInterceptor;",
+        "metodo": "getDefaultUserAgent()Ljava/lang/String;",
+        "instrucao": "v4, Landroid/os/Build;->PRODUCT Ljava/lang/String;"
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "pinning / verificacao TLS do lado cliente",
+    "ocorrencias": 60,
+    "classes": [
+      "Lcom/flurry/sdk/l1;",
+      "Lokhttp3/OkHttpClient$Builder;",
+      "Lokhttp3/OkHttpClient;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "<init>()V",
+        "instrucao": "v0, Lokhttp3/CertificatePinner;->DEFAULT Lokhttp3/CertificatePinner;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "<init>(Lokhttp3/OkHttpClient;)V",
+        "instrucao": "v3, Lokhttp3/OkHttpClient;->x509TrustManager()Ljavax/net/ssl/X509TrustManager;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "<init>(Lokhttp3/OkHttpClient;)V",
+        "instrucao": "v0, v2, Lokhttp3/OkHttpClient$Builder;->x509TrustManagerOrNull Ljavax/net/ssl/X509TrustManager;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "getX509TrustManagerOrNull$okhttp()Ljavax/net/ssl/X509TrustManager;",
+        "instrucao": "v0, v1, Lokhttp3/OkHttpClient$Builder;->x509TrustManagerOrNull Ljavax/net/ssl/X509TrustManager;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "getX509TrustManagerOrNull$okhttp()Ljavax/net/ssl/X509TrustManager;",
+        "instrucao": "v0"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "setX509TrustManagerOrNull$okhttp(Ljavax/net/ssl/X509TrustManager;)V",
+        "instrucao": "v1, v0, Lokhttp3/OkHttpClient$Builder;->x509TrustManagerOrNull Ljavax/net/ssl/X509TrustManager;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "setX509TrustManagerOrNull$okhttp(Ljavax/net/ssl/X509TrustManager;)V",
+        "instrucao": ""
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "sslSocketFactory(Ljavax/net/ssl/SSLSocketFactory;)Lokhttp3/OkHttpClient$Builder;",
+        "instrucao": "v1, v5, Lokhttp3/internal/platform/Platform;->trustManager(Ljavax/net/ssl/SSLSocketFactory;)Ljavax/net/ssl/X509TrustManager;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "sslSocketFactory(Ljavax/net/ssl/SSLSocketFactory;)Lokhttp3/OkHttpClient$Builder;",
+        "instrucao": "v1, v4, Lokhttp3/OkHttpClient$Builder;->x509TrustManagerOrNull Ljavax/net/ssl/X509TrustManager;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "sslSocketFactory(Ljavax/net/ssl/SSLSocketFactory;)Lokhttp3/OkHttpClient$Builder;",
+        "instrucao": "v0, v4, Lokhttp3/OkHttpClient$Builder;->x509TrustManagerOrNull Ljavax/net/ssl/X509TrustManager;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "sslSocketFactory(Ljavax/net/ssl/SSLSocketFactory;)Lokhttp3/OkHttpClient$Builder;",
+        "instrucao": "v5, v0, Lokhttp3/internal/platform/Platform;->buildCertificateChainCleaner(Ljavax/net/ssl/X509TrustManager;)Lokhttp3/internal/tls/CertificateChainCleaner;"
+      },
+      {
+        "classe": "Lokhttp3/OkHttpClient$Builder;",
+        "metodo": "sslSocketFactory(Ljavax/net/ssl/SSLSocketFactory; Ljavax/net/ssl/X509TrustManager;)Lokhttp3/OkHttpClient$Builder;",
+        "instrucao": "v0, \"sslSocketFactory\""
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "assinatura do pacote (GET_SIGNATURES / GET_SIGNING_CERTIFICATES)",
+    "ocorrencias": 51,
+    "classes": [
+      "Lc/i/h/c;",
+      "Lcm/aptoide/pt/AptoideApplication;",
+      "Lcm/aptoide/pt/ads/WalletAdsOfferManager;",
+      "Lcm/aptoide/pt/install/PackageRepository;",
+      "Lcm/aptoide/pt/install/installer/DefaultInstaller;",
+      "Lcm/aptoide/pt/preferences/AptoideMd5Manager;",
+      "Lcm/aptoide/pt/toolbox/ToolboxContentProvider;",
+      "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+      "Lcm/aptoide/pt/utils/AptoideUtils$Core;",
+      "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+      "Lcm/aptoide/pt/view/ActivityModule;",
+      "Lcm/aptoide/pt/view/settings/SettingsFragment$1;",
+      "Lcm/aptoide/pt/wallet/WalletInstallManager;",
+      "Lcom/android/installreferrer/api/a;",
+      "Lcom/bumptech/glide/q/a;",
+      "Lcom/facebook/internal/p0;",
+      "Lcom/facebook/internal/v0/b;",
+      "Lcom/facebook/internal/y;",
+      "Lcom/facebook/login/w;",
+      "Lcom/facebook/o0/q0/g;",
+      "Lcom/facebook/o0/q0/n;",
+      "Lcom/flurry/sdk/a2;",
+      "Lcom/flurry/sdk/d5;",
+      "Lcom/flurry/sdk/n0;",
+      "Lcom/google/android/datatransport/cct/d;",
+      "Lcom/google/android/gms/ads/identifier/AdvertisingIdClient;",
+      "Lcom/google/android/gms/common/GooglePlayServicesUtilLight;",
+      "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+      "Lcom/google/android/gms/common/util/UidVerifier;",
+      "Lcom/google/android/gms/common/wrappers/PackageManagerWrapper;",
+      "Lcom/google/android/gms/internal/ads/zzdy;",
+      "Lcom/google/android/gms/measurement/internal/zzah;",
+      "Lcom/google/android/gms/measurement/internal/zzeq;",
+      "Lcom/google/firebase/crashlytics/h/n/l;",
+      "Lcom/google/firebase/iid/n;",
+      "Lcom/google/firebase/messaging/g0;",
+      "Lcom/google/firebase/sessions/a0;",
+      "Lio/rakam/api/d$b;",
+      "Lio/sentry/android/core/internal/util/r;",
+      "Lio/sentry/android/core/t0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lc/i/h/c;",
+        "metodo": "e(Landroid/content/pm/PackageManager; Lc/i/h/d; Landroid/content/res/Resources;)Landroid/content/pm/ProviderInfo;",
+        "instrucao": "v5, v0, v3, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/AptoideApplication;",
+        "metodo": "getVersionCode()Ljava/lang/String;",
+        "instrucao": "v0, v1, v2, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ads/WalletAdsOfferManager;",
+        "metodo": "isWalletInstalled()Z",
+        "instrucao": "v1, v2, v0, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/PackageRepository;",
+        "metodo": "lambda$getAdbInstalledPackages$7()Ljava/util/List;",
+        "instrucao": "v4, v1, v5, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/PackageRepository;",
+        "metodo": "lambda$getPackageVersionCode$8(Ljava/lang/String;)Lrx/Single;",
+        "instrucao": "v0, v3, v1, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/PackageRepository;",
+        "metodo": "lambda$isPackageInstalled$12(Ljava/lang/String;)Lrx/Single;",
+        "instrucao": "v0, v3, v1, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/preferences/AptoideMd5Manager;",
+        "metodo": "calculateMd5Sum()Ljava/lang/Void;",
+        "instrucao": "v0, v2, v3, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/toolbox/ToolboxContentProvider;",
+        "metodo": "update(Landroid/net/Uri; Landroid/content/ContentValues; Ljava/lang/String; [Ljava/lang/String;)I",
+        "instrucao": "v1, v8, v2, Landroid/content/pm/PackageManager;->checkSignatures(Ljava/lang/String; Ljava/lang/String;)I"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+        "metodo": "getSignature(Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v0, v3, v1, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$Core;",
+        "metodo": "getDefaultVername(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v0, v2, v1, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$Core;",
+        "metodo": "getVerCode(Landroid/content/Context;)I",
+        "instrucao": "v0, v2, v1, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+        "metodo": "getPackageInfo(Ljava/lang/String; Landroid/content/pm/PackageManager;)Landroid/content/pm/PackageInfo;",
+        "instrucao": "v3, v2, v0, Landroid/content/pm/PackageManager;->getPackageInfo(Ljava/lang/String; I)Landroid/content/pm/PackageInfo;"
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "PackageInfo.signatures / signingInfo",
+    "ocorrencias": 17,
+    "classes": [
+      "Lc/i/h/c;",
+      "Lcm/aptoide/pt/database/room/RoomInstalled;",
+      "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+      "Lcom/facebook/internal/v0/b;",
+      "Lcom/facebook/internal/y;",
+      "Lcom/google/android/gms/common/GooglePlayServicesUtilLight;",
+      "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+      "Lcom/google/android/gms/common/util/AndroidUtilsLight;",
+      "Lcom/google/android/gms/measurement/internal/zzkk;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lc/i/h/c;",
+        "metodo": "e(Landroid/content/pm/PackageManager; Lc/i/h/d; Landroid/content/res/Resources;)Landroid/content/pm/ProviderInfo;",
+        "instrucao": "v5, v5, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/database/room/RoomInstalled;",
+        "metodo": "getAppSignature(Landroid/content/pm/PackageInfo;)Ljava/lang/String;",
+        "instrucao": "v5, v5, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+        "metodo": "getSignature(Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v3, v3, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "d(Landroid/content/pm/PackageInfo; [Lcom/google/android/gms/common/g;)Lcom/google/android/gms/common/g;",
+        "instrucao": "v0, v3, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "d(Landroid/content/pm/PackageInfo; [Lcom/google/android/gms/common/g;)Lcom/google/android/gms/common/g;",
+        "instrucao": "v3, v3, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "e(Landroid/content/pm/PackageInfo; Z)Z",
+        "instrucao": "v2, v4, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "f(Ljava/lang/String; Z Z)Lcom/google/android/gms/common/m;",
+        "instrucao": "v7, v8, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "f(Ljava/lang/String; Z Z)Lcom/google/android/gms/common/m;",
+        "instrucao": "v3, v8, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/facebook/internal/v0/b;",
+        "metodo": "a(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v6, v6, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/facebook/internal/y;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String;)Z",
+        "instrucao": "v8, v7, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/facebook/internal/y;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String;)Z",
+        "instrucao": "v7, v7, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GooglePlayServicesUtilLight;",
+        "metodo": "isGooglePlayServicesAvailable(Landroid/content/Context; I)I",
+        "instrucao": "v10, v8, Landroid/content/pm/PackageInfo;->signatures [Landroid/content/pm/Signature;"
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "deteccao de depurador / hook (frida, xposed, ptrace)",
+    "ocorrencias": 15,
+    "classes": [
+      "Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;",
+      "Lcom/google/android/gms/measurement/internal/y6;",
+      "Lcom/google/android/material/textfield/d;",
+      "Lcom/google/firebase/crashlytics/h/n/t;",
+      "Lio/sentry/android/core/e0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcom/google/android/gms/measurement/internal/y6;",
+        "metodo": "d(Z Z)Z",
+        "instrucao": "v0, \"Screen exposed for less than 1000 ms. Event not sent. time\""
+      },
+      {
+        "classe": "Lcom/google/firebase/crashlytics/h/n/t;",
+        "metodo": "v()Z",
+        "instrucao": "Landroid/os/Debug;->isDebuggerConnected()Z"
+      },
+      {
+        "classe": "Lcom/google/firebase/crashlytics/h/n/t;",
+        "metodo": "v()Z",
+        "instrucao": "Landroid/os/Debug;->waitingForDebugger()Z"
+      },
+      {
+        "classe": "Lio/sentry/android/core/e0;",
+        "metodo": "run()V",
+        "instrucao": "Landroid/os/Debug;->isDebuggerConnected()Z"
+      },
+      {
+        "classe": "Lio/sentry/android/core/e0;",
+        "metodo": "run()V",
+        "instrucao": "Landroid/os/Debug;->waitingForDebugger()Z"
+      },
+      {
+        "classe": "Lcom/google/android/material/textfield/d;",
+        "metodo": "x(Landroid/widget/EditText;)Landroid/widget/AutoCompleteTextView;",
+        "instrucao": "v0, \"EditText needs to be an AutoCompleteTextView if an Exposed Dropdown Menu is being used.\""
+      },
+      {
+        "classe": "Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;",
+        "metodo": "_nextBuffered(Lcom/fasterxml/jackson/core/filter/TokenFilterContext;)Lcom/fasterxml/jackson/core/JsonToken;",
+        "instrucao": "v2, v1, Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;->_exposedContext Lcom/fasterxml/jackson/core/filter/TokenFilterContext;"
+      },
+      {
+        "classe": "Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;",
+        "metodo": "_nextBuffered(Lcom/fasterxml/jackson/core/filter/TokenFilterContext;)Lcom/fasterxml/jackson/core/JsonToken;",
+        "instrucao": "v0, v1, Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;->_exposedContext Lcom/fasterxml/jackson/core/filter/TokenFilterContext;"
+      },
+      {
+        "classe": "Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;",
+        "metodo": "_nextBuffered(Lcom/fasterxml/jackson/core/filter/TokenFilterContext;)Lcom/fasterxml/jackson/core/JsonToken;",
+        "instrucao": "v2, v1, Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;->_exposedContext Lcom/fasterxml/jackson/core/filter/TokenFilterContext;"
+      },
+      {
+        "classe": "Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;",
+        "metodo": "_filterContext()Lcom/fasterxml/jackson/core/JsonStreamContext;",
+        "instrucao": "v0, v1, Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;->_exposedContext Lcom/fasterxml/jackson/core/filter/TokenFilterContext;"
+      },
+      {
+        "classe": "Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;",
+        "metodo": "nextToken()Lcom/fasterxml/jackson/core/JsonToken;",
+        "instrucao": "v2, v6, Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;->_exposedContext Lcom/fasterxml/jackson/core/filter/TokenFilterContext;"
+      },
+      {
+        "classe": "Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;",
+        "metodo": "nextToken()Lcom/fasterxml/jackson/core/JsonToken;",
+        "instrucao": "v0, v6, Lcom/fasterxml/jackson/core/filter/FilteringParserDelegate;->_exposedContext Lcom/fasterxml/jackson/core/filter/TokenFilterContext;"
+      }
+    ]
+  },
+  {
+    "categoria": "integridade",
+    "capacidade": "Signature.toByteArray/hashCode (pin de certificado)",
+    "ocorrencias": 12,
+    "classes": [
+      "Lc/i/h/c;",
+      "Lcm/aptoide/pt/database/room/RoomInstalled;",
+      "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+      "Lcom/facebook/internal/v0/b;",
+      "Lcom/facebook/internal/y;",
+      "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+      "Lcom/google/android/gms/common/util/AndroidUtilsLight;",
+      "Lcom/google/android/gms/measurement/internal/zzkk;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lc/i/h/c;",
+        "metodo": "a([Landroid/content/pm/Signature;)Ljava/util/List;",
+        "instrucao": "v2, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/database/room/RoomInstalled;",
+        "metodo": "getAppSignature(Landroid/content/pm/PackageInfo;)Ljava/lang/String;",
+        "instrucao": "v5, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/database/room/RoomInstalled;",
+        "metodo": "getAppSignature(Landroid/content/pm/PackageInfo;)Ljava/lang/String;",
+        "instrucao": "v5, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/database/room/RoomInstalled;",
+        "metodo": "getAppSignature(Landroid/content/pm/PackageInfo;)Ljava/lang/String;",
+        "instrucao": "v5, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/toolbox/ToolboxSecurityManager;",
+        "metodo": "getSignature(Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v3, Landroid/content/pm/Signature;->toCharsString()Ljava/lang/String;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "d(Landroid/content/pm/PackageInfo; [Lcom/google/android/gms/common/g;)Lcom/google/android/gms/common/g;",
+        "instrucao": "v3, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/GoogleSignatureVerifier;",
+        "metodo": "f(Ljava/lang/String; Z Z)Lcom/google/android/gms/common/m;",
+        "instrucao": "v3, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcom/facebook/internal/v0/b;",
+        "metodo": "a(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v5, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcom/facebook/internal/y;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String;)Z",
+        "instrucao": "v1, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/util/AndroidUtilsLight;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String;)[B",
+        "instrucao": "v1, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcom/google/android/gms/measurement/internal/zzkk;",
+        "metodo": "q0(Landroid/content/Context; Ljava/lang/String;)Z",
+        "instrucao": "v3, Landroid/content/pm/Signature;->toByteArray()[B"
+      },
+      {
+        "classe": "Lcom/google/android/gms/measurement/internal/zzkk;",
+        "metodo": "w(Landroid/content/Context; Ljava/lang/String;)J",
+        "instrucao": "v7, Landroid/content/pm/Signature;->toByteArray()[B"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "Log de dados sensiveis",
+    "ocorrencias": 60,
+    "classes": [
+      "Landroid/support/v4/media/session/MediaControllerCompat$MediaControllerImplApi21;",
+      "Landroidx/activity/result/ActivityResultRegistry;",
+      "Landroidx/appcompat/app/f;",
+      "Landroidx/appcompat/app/j;",
+      "Landroidx/appcompat/app/k;",
+      "Landroidx/appcompat/app/n;",
+      "Landroidx/appcompat/widget/g0;",
+      "Landroidx/appcompat/widget/l0;",
+      "Landroidx/appcompat/widget/t0;",
+      "Landroidx/appcompat/widget/u0;",
+      "Landroidx/appcompat/widget/u;",
+      "Landroidx/appcompat/widget/w0;",
+      "Landroidx/appcompat/widget/y;",
+      "Landroidx/constraintlayout/widget/ConstraintLayout$b;",
+      "Landroidx/constraintlayout/widget/a;",
+      "Landroidx/constraintlayout/widget/b;",
+      "Landroidx/constraintlayout/widget/c$b;",
+      "Landroidx/constraintlayout/widget/c;",
+      "Landroidx/constraintlayout/widget/d$b;",
+      "Landroidx/constraintlayout/widget/d;",
+      "Landroidx/core/app/c$c;",
+      "Landroidx/core/app/c;",
+      "Landroidx/core/app/e$a;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroid/support/v4/media/session/MediaControllerCompat$MediaControllerImplApi21;",
+        "metodo": "a()V",
+        "instrucao": "v1, v2, v0, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      },
+      {
+        "classe": "Landroidx/activity/result/ActivityResultRegistry;",
+        "metodo": "l(Ljava/lang/String;)V",
+        "instrucao": "v3, v0, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/String;)I"
+      },
+      {
+        "classe": "Landroidx/activity/result/ActivityResultRegistry;",
+        "metodo": "l(Ljava/lang/String;)V",
+        "instrucao": "v3, v0, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/String;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/f;",
+        "metodo": "G(I)V",
+        "instrucao": "v1, v0, Landroid/util/Log;->d(Ljava/lang/String; Ljava/lang/String;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/j;",
+        "metodo": "t(Landroid/content/Context; Landroid/util/AttributeSet; Z Z)Landroid/content/Context;",
+        "instrucao": "v5, v0, Landroid/util/Log;->i(Ljava/lang/String; Ljava/lang/String;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "b(Landroid/content/res/Resources;)V",
+        "instrucao": "v1, v3, v2, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "b(Landroid/content/res/Resources;)V",
+        "instrucao": "v1, v0, v4, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "c(Landroid/content/res/Resources;)V",
+        "instrucao": "v1, v3, v2, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "c(Landroid/content/res/Resources;)V",
+        "instrucao": "v1, v2, v4, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "d(Landroid/content/res/Resources;)V",
+        "instrucao": "v2, v3, v0, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "d(Landroid/content/res/Resources;)V",
+        "instrucao": "v2, v0, v5, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "d(Landroid/content/res/Resources;)V",
+        "instrucao": "v2, v4, v0, Landroid/util/Log;->e(Ljava/lang/String; Ljava/lang/String; Ljava/lang/Throwable;)I"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "Intent implicito (setAction / new Intent com action)",
+    "ocorrencias": 60,
+    "classes": [
+      "Landroidx/activity/ComponentActivity$b$b;",
+      "Landroidx/appcompat/view/menu/g;",
+      "Landroidx/appcompat/widget/SearchView;",
+      "Landroidx/core/app/g;",
+      "Landroidx/core/app/l$c;",
+      "Landroidx/core/widget/k$a;",
+      "Lc/c/b/b;",
+      "Lc/c/b/c$a;",
+      "Lcm/aptoide/pt/ApplicationModule;",
+      "Lcm/aptoide/pt/FirstLaunchManager;",
+      "Lcm/aptoide/pt/download/view/outofspace/OutOfSpaceNavigator;",
+      "Lcm/aptoide/pt/install/DownloadService;",
+      "Lcm/aptoide/pt/navigator/ActivityResultNavigator;",
+      "Lcm/aptoide/pt/notification/PullingContentService;",
+      "Lcm/aptoide/pt/notification/ReadyToInstallNotificationManager;",
+      "Lcm/aptoide/pt/notification/SystemNotificationShower;",
+      "Lcm/aptoide/pt/promotions/ClaimPromotionsNavigator;",
+      "Lcm/aptoide/pt/toolbox/ToolboxContentProvider;",
+      "Lcm/aptoide/pt/util/ReferrerUtils;",
+      "Lcom/android/installreferrer/api/a;",
+      "Lcom/facebook/AuthenticationTokenManager;",
+      "Lcom/facebook/CustomTabActivity;",
+      "Lcom/facebook/CustomTabMainActivity$c;",
+      "Lcom/facebook/internal/k0;",
+      "Lcom/facebook/internal/q$a;",
+      "Lcom/facebook/internal/q0;",
+      "Lcom/facebook/internal/u;",
+      "Lcom/facebook/login/x;",
+      "Lcom/facebook/o0/o0/f;",
+      "Lcom/facebook/o0/s0/e;",
+      "Lcom/facebook/v;",
+      "Lcom/google/android/gms/ads/identifier/AdvertisingIdClient;",
+      "Lcom/google/android/gms/ads/internal/overlay/zza;",
+      "Lcom/google/android/gms/auth/api/signin/internal/zzh;",
+      "Lcom/google/android/gms/cloudmessaging/Rpc;",
+      "Lcom/google/android/gms/cloudmessaging/c;",
+      "Lcom/google/android/gms/cloudmessaging/zzr;",
+      "Lcom/google/android/gms/common/internal/zzn;",
+      "Lcom/google/android/gms/common/internal/zzt;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/activity/ComponentActivity$b$b;",
+        "metodo": "run()V",
+        "instrucao": "v2, v3, Landroid/content/Intent;->setAction(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Landroidx/core/app/g;",
+        "metodo": "a(Landroid/app/Activity;)Landroid/content/Intent;",
+        "instrucao": "v3, v2, Landroid/content/Intent;->setComponent(Landroid/content/ComponentName;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Landroidx/core/app/g;",
+        "metodo": "b(Landroid/content/Context; Landroid/content/ComponentName;)Landroid/content/Intent;",
+        "instrucao": "v2, v1, Landroid/content/Intent;->setComponent(Landroid/content/ComponentName;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Landroidx/core/app/l$c;",
+        "metodo": "a(Landroidx/core/app/l$c$a;)Z",
+        "instrucao": "v0, v1, Landroid/content/Intent;->setComponent(Landroid/content/ComponentName;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Landroidx/core/app/l$c;",
+        "metodo": "j()V",
+        "instrucao": "v2, v3, Landroid/content/Intent;->setAction(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Landroidx/core/widget/k$a;",
+        "metodo": "a()Landroid/content/Intent;",
+        "instrucao": "v0, v1, Landroid/content/Intent;->setAction(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Lc/c/b/b;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String; Lc/c/b/d;)Z",
+        "instrucao": "v0, v3, Landroid/content/Intent;->setPackage(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Lc/c/b/c$a;",
+        "metodo": "<init>(Lc/c/b/e;)V",
+        "instrucao": "v0, v2, Landroid/content/Intent;->setPackage(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideRootInstallationRetryHandler(Lcm/aptoide/pt/install/InstallManager;)Lcm/aptoide/pt/install/installer/RootInstallationRetryHandler;",
+        "instrucao": "v0, v1, Landroid/content/Intent;->setAction(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/ApplicationModule;",
+        "metodo": "provideRootInstallationRetryHandler(Lcm/aptoide/pt/install/InstallManager;)Lcm/aptoide/pt/install/installer/RootInstallationRetryHandler;",
+        "instrucao": "v0, v4, Landroid/content/Intent;->setAction(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/FirstLaunchManager;",
+        "metodo": "createAppShortcut()V",
+        "instrucao": "v0, v1, Landroid/content/Intent;->setAction(Ljava/lang/String;)Landroid/content/Intent;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/FirstLaunchManager;",
+        "metodo": "createAppShortcut()V",
+        "instrucao": "v1, v0, Landroid/content/Intent;->setAction(Ljava/lang/String;)Landroid/content/Intent;"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "Reflexao generica (Class.forName)",
+    "ocorrencias": 60,
+    "classes": [
+      "Landroidx/appcompat/app/g;",
+      "Landroidx/appcompat/app/j;",
+      "Landroidx/appcompat/app/k;",
+      "Landroidx/appcompat/widget/y;",
+      "Landroidx/coordinatorlayout/widget/CoordinatorLayout;",
+      "Landroidx/core/app/c;",
+      "Landroidx/core/app/l;",
+      "Landroidx/core/view/c0$a;",
+      "Landroidx/core/view/c0$g;",
+      "Landroidx/core/widget/k$a;",
+      "Landroidx/datastore/preferences/protobuf/d;",
+      "Landroidx/datastore/preferences/protobuf/h1;",
+      "Landroidx/datastore/preferences/protobuf/i0;",
+      "Landroidx/datastore/preferences/protobuf/n0;",
+      "Landroidx/datastore/preferences/protobuf/o;",
+      "Landroidx/datastore/preferences/protobuf/p;",
+      "Landroidx/datastore/preferences/protobuf/s;",
+      "Landroidx/datastore/preferences/protobuf/x0;",
+      "Landroidx/datastore/preferences/protobuf/y;",
+      "Landroidx/fragment/app/i;",
+      "Landroidx/fragment/app/v;",
+      "Landroidx/lifecycle/o;",
+      "Landroidx/preference/i;",
+      "Landroidx/recyclerview/widget/RecyclerView;",
+      "Landroidx/room/i;",
+      "Landroidx/savedstate/Recreator;",
+      "Landroidx/versionedparcelable/VersionedParcel;",
+      "Lc/a/o/g$b;",
+      "Lc/i/e/e;",
+      "Lc/i/e/f;",
+      "Lc/i/e/g;",
+      "Lc/i/i/b;",
+      "Lc/r/a$a;",
+      "Lcm/aptoide/pt/preferences/PRNGFixes;",
+      "Lcom/airbnb/epoxy/g;",
+      "Lcom/bumptech/glide/c;",
+      "Lcom/bumptech/glide/n/d;",
+      "Lcom/facebook/f0;",
+      "Lcom/facebook/internal/p0;",
+      "Lcom/facebook/o0/b0$a;",
+      "Lcom/facebook/o0/m0/n/e;",
+      "Lcom/facebook/o0/m0/n/f;",
+      "Lcom/facebook/o0/o0/m;",
+      "Lcom/facebook/o0/q0/l;",
+      "Lcom/fasterxml/jackson/databind/type/TypeFactory;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/appcompat/app/j;",
+        "metodo": "r(Landroid/content/Context; Ljava/lang/String; Ljava/lang/String;)Landroid/view/View;",
+        "instrucao": "v5, v1, v3, Ljava/lang/Class;->forName(Ljava/lang/String; Z Ljava/lang/ClassLoader;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/appcompat/app/k;",
+        "metodo": "e(Ljava/lang/Object;)V",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/y;",
+        "metodo": "<clinit>()V",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/core/app/c;",
+        "metodo": "a()Ljava/lang/Class;",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/core/app/l;",
+        "metodo": "a()Z",
+        "instrucao": "v4, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/core/view/c0$a;",
+        "metodo": "<clinit>()V",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/core/widget/k$a;",
+        "metodo": "f(Landroid/view/Menu;)V",
+        "instrucao": "v2, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/datastore/preferences/protobuf/d;",
+        "metodo": "a(Ljava/lang/String;)Ljava/lang/Class;",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/datastore/preferences/protobuf/h1;",
+        "metodo": "B()Ljava/lang/Class;",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/datastore/preferences/protobuf/h1;",
+        "metodo": "D()Ljava/lang/Class;",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/datastore/preferences/protobuf/n0;",
+        "metodo": "c()Landroidx/datastore/preferences/protobuf/l0;",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      },
+      {
+        "classe": "Landroidx/datastore/preferences/protobuf/o;",
+        "metodo": "c()Ljava/lang/Class;",
+        "instrucao": "v0, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "DexClassLoader / dalvik.system (carregamento dinamico)",
+    "ocorrencias": 60,
+    "classes": [
+      "Lc/r/a$a$b;",
+      "Lc/r/a$a$c;",
+      "Lc/r/a$a$d;",
+      "Lc/r/a$a;",
+      "Lc/r/a$c;",
+      "Lcm/aptoide/pt/utils/MultiDexHelper;",
+      "Lcom/google/android/gms/dynamite/DynamiteModule;",
+      "Lcom/google/android/gms/dynamite/b;",
+      "Lcom/google/android/gms/internal/ads/zzdy;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lc/r/a$a;",
+        "metodo": "b(Ljava/util/List;)[Ljava/lang/Object;",
+        "instrucao": "v6, v7, v2, Ldalvik/system/DexFile;->loadDex(Ljava/lang/String; Ljava/lang/String; I)Ldalvik/system/DexFile;"
+      },
+      {
+        "classe": "Lc/r/a$a;",
+        "metodo": "b(Ljava/util/List;)[Ljava/lang/Object;",
+        "instrucao": "v5, v4, v6, Lc/r/a$a$a;->a(Ljava/io/File; Ldalvik/system/DexFile;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Lc/r/a$c;",
+        "metodo": "a(Ljava/lang/ClassLoader; Ljava/util/List;)V",
+        "instrucao": "v0, v0, [Ldalvik/system/DexFile;"
+      },
+      {
+        "classe": "Lc/r/a$c;",
+        "metodo": "a(Ljava/lang/ClassLoader; Ljava/util/List;)V",
+        "instrucao": "v7, v6, v9, Ldalvik/system/DexFile;->loadDex(Ljava/lang/String; Ljava/lang/String; I)Ldalvik/system/DexFile;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/MultiDexHelper;",
+        "metodo": "getAllClasses(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v1, v3, v4, Ldalvik/system/DexFile;->loadDex(Ljava/lang/String; Ljava/lang/String; I)Ldalvik/system/DexFile;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/MultiDexHelper;",
+        "metodo": "getAllClasses(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v3, Ldalvik/system/DexFile;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/MultiDexHelper;",
+        "metodo": "getAllClasses(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v3, v1, Ldalvik/system/DexFile;-><init>(Ljava/lang/String;)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/MultiDexHelper;",
+        "metodo": "getAllClasses(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v2, Ldalvik/system/DexFile;->entries()Ljava/util/Enumeration;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/MultiDexHelper;",
+        "metodo": "getAllClasses(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v2, Ldalvik/system/DexFile;->close()V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/MultiDexHelper;",
+        "metodo": "getAllClasses(Landroid/content/Context;)Ljava/util/List;",
+        "instrucao": "v2, Ldalvik/system/DexFile;->close()V"
+      },
+      {
+        "classe": "Lc/r/a$a$b;",
+        "metodo": "<init>(Ljava/lang/Class;)V",
+        "instrucao": "v3, Ldalvik/system/DexFile;"
+      },
+      {
+        "classe": "Lc/r/a$a$b;",
+        "metodo": "a(Ljava/io/File; Ldalvik/system/DexFile;)Ljava/lang/Object;",
+        "instrucao": "v0, v3, Lc/r/a$a$b;->a Ljava/lang/reflect/Constructor;"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "Crypto ECB / chave fixa",
+    "ocorrencias": 60,
+    "classes": [
+      "Lcm/aptoide/pt/preferences/secure/SecureCoderDecoder;",
+      "Lcm/aptoide/pt/utils/AptoideUtils$AlgorithmU;",
+      "Lcom/flurry/sdk/b7;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcm/aptoide/pt/preferences/secure/SecureCoderDecoder;",
+        "metodo": "generateAesKeyName(Landroid/content/Context;)Ljava/lang/String;",
+        "instrucao": "v3, \"PBKDF2WithHmacSHA1\""
+      },
+      {
+        "classe": "Lcm/aptoide/pt/preferences/secure/SecureCoderDecoder;",
+        "metodo": "decrypt(Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v3, Ljavax/crypto/spec/SecretKeySpec;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/preferences/secure/SecureCoderDecoder;",
+        "metodo": "decrypt(Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v3, v4, v0, Ljavax/crypto/spec/SecretKeySpec;-><init>([B Ljava/lang/String;)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/preferences/secure/SecureCoderDecoder;",
+        "metodo": "encrypt(Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v3, Ljavax/crypto/spec/SecretKeySpec;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/preferences/secure/SecureCoderDecoder;",
+        "metodo": "encrypt(Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v3, v4, v0, Ljavax/crypto/spec/SecretKeySpec;-><init>([B Ljava/lang/String;)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$AlgorithmU;",
+        "metodo": "computeHmacSha1(Ljava/lang/String; Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v2, Ljavax/crypto/spec/SecretKeySpec;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/utils/AptoideUtils$AlgorithmU;",
+        "metodo": "computeHmacSha1(Ljava/lang/String; Ljava/lang/String;)Ljava/lang/String;",
+        "instrucao": "v2, v4, v0, Ljavax/crypto/spec/SecretKeySpec;-><init>([B Ljava/lang/String;)V"
+      },
+      {
+        "classe": "Lcom/flurry/sdk/b7;",
+        "metodo": "a([B Ljava/security/Key; Ljavax/crypto/spec/IvParameterSpec; Lcom/flurry/sdk/b7$a;)Ljava/lang/Object;",
+        "instrucao": "v0, 0"
+      },
+      {
+        "classe": "Lcom/flurry/sdk/b7;",
+        "metodo": "a([B Ljava/security/Key; Ljavax/crypto/spec/IvParameterSpec; Lcom/flurry/sdk/b7$a;)Ljava/lang/Object;",
+        "instrucao": "v1, \"FlurryCrypto\""
+      },
+      {
+        "classe": "Lcom/flurry/sdk/b7;",
+        "metodo": "a([B Ljava/security/Key; Ljavax/crypto/spec/IvParameterSpec; Lcom/flurry/sdk/b7$a;)Ljava/lang/Object;",
+        "instrucao": "v2, 5"
+      },
+      {
+        "classe": "Lcom/flurry/sdk/b7;",
+        "metodo": "a([B Ljava/security/Key; Ljavax/crypto/spec/IvParameterSpec; Lcom/flurry/sdk/b7$a;)Ljava/lang/Object;",
+        "instrucao": "v5, +042h"
+      },
+      {
+        "classe": "Lcom/flurry/sdk/b7;",
+        "metodo": "a([B Ljava/security/Key; Ljavax/crypto/spec/IvParameterSpec; Lcom/flurry/sdk/b7$a;)Ljava/lang/Object;",
+        "instrucao": "v6, +040h"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "startActivity/startService/sendBroadcast sem componente",
+    "ocorrencias": 58,
+    "classes": [
+      "Landroidx/appcompat/view/menu/i;",
+      "Landroidx/appcompat/widget/SearchView;",
+      "Landroidx/core/app/l$c;",
+      "Landroidx/core/app/p;",
+      "Landroidx/core/content/a$a;",
+      "Landroidx/core/content/a;",
+      "Landroidx/preference/Preference;",
+      "Landroidx/room/h;",
+      "Lc/c/b/b;",
+      "Lc/o/a/a;",
+      "Lcm/aptoide/pt/FirstLaunchManager;",
+      "Lcm/aptoide/pt/apkfy/ApkFyParser;",
+      "Lcm/aptoide/pt/app/view/AppViewFragment;",
+      "Lcm/aptoide/pt/install/ForegroundManager;",
+      "Lcm/aptoide/pt/install/InstallManager;",
+      "Lcm/aptoide/pt/install/InstalledBroadcastReceiver;",
+      "Lcm/aptoide/pt/install/installer/DefaultInstaller;",
+      "Lcm/aptoide/pt/link/CustomTabNativeReceiver;",
+      "Lcm/aptoide/pt/notification/ContentPuller;",
+      "Lcm/aptoide/pt/notification/SystemNotificationShower;",
+      "Lcm/aptoide/pt/packageinstaller/AppInstaller$1;",
+      "Lcm/aptoide/pt/packageinstaller/AppInstaller;",
+      "Lcm/aptoide/pt/share/ShareStoreHelper;",
+      "Lcm/aptoide/pt/toolbox/ToolboxContentProvider;",
+      "Lcm/aptoide/pt/util/ReferrerUtils;",
+      "Lcm/aptoide/pt/utils/AptoideUtils$SystemU;",
+      "Lcm/aptoide/pt/view/recycler/widget/GridDisplayWidget;",
+      "Lcom/android/installreferrer/api/a;",
+      "Lcom/facebook/internal/l0;",
+      "Lcom/facebook/internal/q$a;",
+      "Lcom/facebook/internal/r0$c;",
+      "Lcom/facebook/o0/o0/f;",
+      "Lcom/facebook/o0/s0/e;",
+      "Lcom/google/android/gms/cloudmessaging/Rpc;",
+      "Lcom/google/android/gms/common/stats/ConnectionTracker;",
+      "Lcom/google/android/gms/internal/ads/zzaxi;",
+      "Lcom/google/android/gms/internal/ads/zzbim;",
+      "Lcom/google/android/gms/measurement/internal/zzfx;",
+      "Lcom/google/firebase/messaging/l0;",
+      "Lcom/google/firebase/messaging/v0;",
+      "Lcom/google/firebase/sessions/h0;",
+      "Lcom/liulishuo/filedownloader/services/a;",
+      "Lcom/liulishuo/filedownloader/services/f;",
+      "Le/h/a/n;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/core/app/l$c;",
+        "metodo": "a(Landroidx/core/app/l$c$a;)Z",
+        "instrucao": "v1, v0, v3, v2, Landroid/content/Context;->bindService(Landroid/content/Intent; Landroid/content/ServiceConnection; I)Z"
+      },
+      {
+        "classe": "Landroidx/core/app/p;",
+        "metodo": "n(Landroid/os/Bundle;)V",
+        "instrucao": "v0, v5, Landroid/content/Context;->startActivity(Landroid/content/Intent;)V"
+      },
+      {
+        "classe": "Landroidx/core/content/a$a;",
+        "metodo": "b(Landroid/content/Context; Landroid/content/Intent; Landroid/os/Bundle;)V",
+        "instrucao": "v0, v1, v2, Landroid/content/Context;->startActivity(Landroid/content/Intent; Landroid/os/Bundle;)V"
+      },
+      {
+        "classe": "Landroidx/core/content/a;",
+        "metodo": "k(Landroid/content/Context; Landroid/content/Intent; Landroid/os/Bundle;)V",
+        "instrucao": "v2, v3, Landroid/content/Context;->startActivity(Landroid/content/Intent;)V"
+      },
+      {
+        "classe": "Landroidx/core/content/a;",
+        "metodo": "l(Landroid/content/Context; Landroid/content/Intent;)V",
+        "instrucao": "v2, v3, Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;"
+      },
+      {
+        "classe": "Landroidx/preference/Preference;",
+        "metodo": "w0()V",
+        "instrucao": "v0, v1, Landroid/content/Context;->startActivity(Landroid/content/Intent;)V"
+      },
+      {
+        "classe": "Landroidx/room/h;",
+        "metodo": "<init>(Landroid/content/Context; Ljava/lang/String; Landroidx/room/g; Ljava/util/concurrent/Executor;)V",
+        "instrucao": "v4, v5, v0, v6, Landroid/content/Context;->bindService(Landroid/content/Intent; Landroid/content/ServiceConnection; I)Z"
+      },
+      {
+        "classe": "Lc/c/b/b;",
+        "metodo": "a(Landroid/content/Context; Ljava/lang/String; Lc/c/b/d;)Z",
+        "instrucao": "v2, v0, v4, v3, Landroid/content/Context;->bindService(Landroid/content/Intent; Landroid/content/ServiceConnection; I)Z"
+      },
+      {
+        "classe": "Lc/o/a/a;",
+        "metodo": "d(Landroid/content/Context; Landroid/content/Intent;)Landroid/content/ComponentName;",
+        "instrucao": "v5, v6, Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/FirstLaunchManager;",
+        "metodo": "createAppShortcut()V",
+        "instrucao": "v0, v1, Landroid/content/Context;->sendBroadcast(Landroid/content/Intent;)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/apkfy/ApkFyParser;",
+        "metodo": "updateApkfy(Lcm/aptoide/pt/apkfy/ApkfyModel;)V",
+        "instrucao": "v9, v0, Landroid/content/Context;->startActivity(Landroid/content/Intent;)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/apkfy/ApkFyParser;",
+        "metodo": "updateApkfy(Lcm/aptoide/pt/apkfy/ApkfyModel;)V",
+        "instrucao": "v9, v0, Landroid/content/Context;->startActivity(Landroid/content/Intent;)V"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "Parcel / Bundle generico",
+    "ocorrencias": 16,
+    "classes": [
+      "Landroid/support/v4/media/MediaDescriptionCompat;",
+      "Landroid/support/v4/media/MediaMetadataCompat;",
+      "Landroid/support/v4/media/session/PlaybackStateCompat$CustomAction;",
+      "Landroid/support/v4/media/session/PlaybackStateCompat;",
+      "Landroidx/appcompat/widget/SearchView$SavedState;",
+      "Landroidx/fragment/app/Fragment$SavedState;",
+      "Landroidx/fragment/app/FragmentState;",
+      "Lcom/google/android/gms/common/data/DataBufferSafeParcelable;",
+      "Lcom/google/android/gms/common/internal/safeparcel/SafeParcelReader;",
+      "Lcom/google/android/gms/internal/ads/zzaru;",
+      "Lcom/google/android/gms/measurement/internal/zzep;",
+      "Lcom/google/android/gms/measurement/internal/zzkg;",
+      "Lcom/google/android/material/bottomnavigation/BottomNavigationView$SavedState;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroid/support/v4/media/MediaDescriptionCompat;",
+        "metodo": "<init>(Landroid/os/Parcel;)V",
+        "instrucao": "v3, v0, Landroid/os/Parcel;->readBundle(Ljava/lang/ClassLoader;)Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Landroid/support/v4/media/MediaMetadataCompat;",
+        "metodo": "<init>(Landroid/os/Parcel;)V",
+        "instrucao": "v2, v0, Landroid/os/Parcel;->readBundle(Ljava/lang/ClassLoader;)Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Landroid/support/v4/media/session/PlaybackStateCompat$CustomAction;",
+        "metodo": "<init>(Landroid/os/Parcel;)V",
+        "instrucao": "v2, v0, Landroid/os/Parcel;->readBundle(Ljava/lang/ClassLoader;)Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Landroid/support/v4/media/session/PlaybackStateCompat;",
+        "metodo": "<init>(Landroid/os/Parcel;)V",
+        "instrucao": "v3, v0, Landroid/os/Parcel;->readBundle(Ljava/lang/ClassLoader;)Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Landroidx/fragment/app/Fragment$SavedState;",
+        "metodo": "<init>(Landroid/os/Parcel; Ljava/lang/ClassLoader;)V",
+        "instrucao": "v1, Landroid/os/Parcel;->readBundle()Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Landroidx/fragment/app/FragmentState;",
+        "metodo": "<init>(Landroid/os/Parcel;)V",
+        "instrucao": "v4, Landroid/os/Parcel;->readBundle()Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Landroidx/fragment/app/FragmentState;",
+        "metodo": "<init>(Landroid/os/Parcel;)V",
+        "instrucao": "v4, Landroid/os/Parcel;->readBundle()Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Landroidx/appcompat/widget/SearchView$SavedState;",
+        "metodo": "<init>(Landroid/os/Parcel; Ljava/lang/ClassLoader;)V",
+        "instrucao": "v1, v2, Landroid/os/Parcel;->readValue(Ljava/lang/ClassLoader;)Ljava/lang/Object;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/internal/safeparcel/SafeParcelReader;",
+        "metodo": "f(Landroid/os/Parcel; I)Landroid/os/Bundle;",
+        "instrucao": "v2, Landroid/os/Parcel;->readBundle()Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Lcom/google/android/material/bottomnavigation/BottomNavigationView$SavedState;",
+        "metodo": "b(Landroid/os/Parcel; Ljava/lang/ClassLoader;)V",
+        "instrucao": "v1, v2, Landroid/os/Parcel;->readBundle(Ljava/lang/ClassLoader;)Landroid/os/Bundle;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaru;",
+        "metodo": "y(Landroid/os/Parcelable$Creator;)Lcom/google/android/gms/common/internal/safeparcel/SafeParcelable;",
+        "instrucao": "v0, v3, v4, v2, Landroid/os/Parcel;->unmarshall([B I I)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/common/data/DataBufferSafeParcelable;",
+        "metodo": "f(I)Lcom/google/android/gms/common/internal/safeparcel/SafeParcelable;",
+        "instrucao": "v0, v4, v2, v1, Landroid/os/Parcel;->unmarshall([B I I)V"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "SharedPreferences sem protecao / external storage",
+    "ocorrencias": 16,
+    "classes": [
+      "Landroidx/core/content/FileProvider;",
+      "Landroidx/core/content/a$b;",
+      "Landroidx/core/content/a;",
+      "Lcm/aptoide/pt/database/room/RoomInstalled;",
+      "Lcm/aptoide/pt/install/installer/DefaultInstaller;",
+      "Lcm/aptoide/pt/view/ActivityModule;",
+      "Lcom/facebook/internal/p0;",
+      "Lcom/flurry/sdk/i4;",
+      "Lcom/google/android/gms/internal/ads/zzacy;",
+      "Lcom/google/android/gms/internal/ads/zzwj;",
+      "Le/h/a/k0/f;",
+      "Lio/sentry/android/core/w0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Landroidx/core/content/FileProvider;",
+        "metodo": "g(Landroid/content/Context; Ljava/lang/String;)Landroidx/core/content/FileProvider$a;",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Landroidx/core/content/a$b;",
+        "metodo": "b(Landroid/content/Context; Ljava/lang/String;)[Ljava/io/File;",
+        "instrucao": "v0, v1, Landroid/content/Context;->getExternalFilesDirs(Ljava/lang/String;)[Ljava/io/File;"
+      },
+      {
+        "classe": "Landroidx/core/content/a;",
+        "metodo": "h(Landroid/content/Context; Ljava/lang/String;)[Ljava/io/File;",
+        "instrucao": "v2, v3, Landroid/content/Context;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/database/room/RoomInstalled;",
+        "metodo": "getObbSize(Ljava/lang/String; Lcm/aptoide/pt/utils/FileUtils;)J",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/view/ActivityModule;",
+        "metodo": "providePhotoFileGenerator()Lcm/aptoide/pt/account/view/PhotoFileGenerator;",
+        "instrucao": "v1, v2, Landroid/app/Activity;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/install/installer/DefaultInstaller;",
+        "metodo": "<clinit>()V",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Lcom/facebook/internal/p0;",
+        "metodo": "A0()V",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Lcom/facebook/internal/p0;",
+        "metodo": "u0()V",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzacy;",
+        "metodo": "b(Landroid/content/Context; Ljava/lang/String; Ljava/lang/String; Ljava/util/Map;)V",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzwj;",
+        "metodo": "d(Lcom/google/android/gms/internal/ads/zzwl$zza$zzb;)V",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Le/h/a/k0/f;",
+        "metodo": "w()Ljava/lang/String;",
+        "instrucao": "Landroid/os/Environment;->getExternalStorageDirectory()Ljava/io/File;"
+      },
+      {
+        "classe": "Lio/sentry/android/core/w0;",
+        "metodo": "C(Lio/sentry/protocol/e; Z)V",
+        "instrucao": "v7, v2, Landroid/content/Context;->getExternalFilesDir(Ljava/lang/String;)Ljava/io/File;"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "WebView.setAllowFileAccess / universal access",
+    "ocorrencias": 11,
+    "classes": [
+      "Lcm/aptoide/aptoideviews/video/YoutubeWebViewPlayer;",
+      "Lcm/aptoide/pt/editorial/EditorialItemsViewHolder;",
+      "Lcm/aptoide/pt/util/ReferrerUtils;",
+      "Lcom/facebook/internal/r0;",
+      "Lcom/google/android/gms/internal/ads/bb;",
+      "Lcom/google/android/gms/internal/ads/j5;",
+      "Lcom/google/android/gms/internal/ads/rb;",
+      "Lcom/google/android/gms/internal/ads/zzaxt;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcm/aptoide/aptoideviews/video/YoutubeWebViewPlayer;",
+        "metodo": "<init>(Landroid/content/Context; Landroid/util/AttributeSet; I)V",
+        "instrucao": "v2, v3, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/editorial/EditorialItemsViewHolder;",
+        "metodo": "manageMediaVisibility(Lcm/aptoide/pt/editorial/EditorialContent; I)V",
+        "instrucao": "v5, v0, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V"
+      },
+      {
+        "classe": "Lcm/aptoide/pt/util/ReferrerUtils;",
+        "metodo": "extractReferrer(Lcm/aptoide/pt/search/model/SearchAdResult; I Z Lcm/aptoide/pt/ads/AdsRepository; Lokhttp3/OkHttpClient; Lretrofit2/Converter$Factory; Lcm/aptoide/pt/utils/q/QManager; Landroid/content/Context; Landroid/content/SharedPreferences; Lcm/aptoide/pt/ads/MinimalAdMapper; Lcm/aptoide/pt/database/RoomStoredMinimalAdPersistence;)V",
+        "instrucao": "v1, v2, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V"
+      },
+      {
+        "classe": "Lcom/facebook/internal/r0;",
+        "metodo": "C(I)V",
+        "instrucao": "v1, v4, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/j5;",
+        "metodo": "call()Ljava/lang/Object;",
+        "instrucao": "v1, v0, Landroid/webkit/WebSettings;->setAllowContentAccess(Z)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/rb;",
+        "metodo": "<init>(Landroid/content/Context;)V",
+        "instrucao": "v0, v4, Landroid/webkit/WebSettings;->setAllowFileAccess(Z)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/rb;",
+        "metodo": "<init>(Landroid/content/Context;)V",
+        "instrucao": "v0, v4, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaxt;",
+        "metodo": "k(Landroid/content/Context; Landroid/webkit/WebSettings;)Z",
+        "instrucao": "v2, v1, Landroid/webkit/WebSettings;->setAllowFileAccessFromFileURLs(Z)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzaxt;",
+        "metodo": "k(Landroid/content/Context; Landroid/webkit/WebSettings;)Z",
+        "instrucao": "v2, v1, Landroid/webkit/WebSettings;->setAllowUniversalAccessFromFileURLs(Z)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/bb;",
+        "metodo": "<init>(Lcom/google/android/gms/internal/ads/zzbim; Lcom/google/android/gms/internal/ads/zzbin; Ljava/lang/String; Z Z Lcom/google/android/gms/internal/ads/zzdh; Lcom/google/android/gms/internal/ads/zzbai; Lcom/google/android/gms/internal/ads/zzadi; Lcom/google/android/gms/ads/internal/zzj; Lcom/google/android/gms/ads/internal/zza; Lcom/google/android/gms/internal/ads/zzwj;)V",
+        "instrucao": "v4, v7, Landroid/webkit/WebSettings;->setAllowFileAccess(Z)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/bb;",
+        "metodo": "<init>(Lcom/google/android/gms/internal/ads/zzbim; Lcom/google/android/gms/internal/ads/zzbin; Ljava/lang/String; Z Z Lcom/google/android/gms/internal/ads/zzdh; Lcom/google/android/gms/internal/ads/zzbai; Lcom/google/android/gms/internal/ads/zzadi; Lcom/google/android/gms/ads/internal/zzj; Lcom/google/android/gms/ads/internal/zza; Lcom/google/android/gms/internal/ads/zzwj;)V",
+        "instrucao": "v4, v0, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "Desserializacao Java (ObjectInputStream)",
+    "ocorrencias": 3,
+    "classes": [
+      "Lcom/facebook/o0/x;",
+      "Lcom/google/android/gms/internal/ads/zzcf;",
+      "Lio/sentry/w0;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcom/facebook/o0/x;",
+        "metodo": "a()Lcom/facebook/o0/h0;",
+        "instrucao": "v4, Ljava/io/ObjectInputStream;->readObject()Ljava/lang/Object;"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/zzcf;",
+        "metodo": "b(Ljava/lang/String;)Ljava/util/HashMap;",
+        "instrucao": "v2, Ljava/io/ObjectInputStream;->readObject()Ljava/lang/Object;"
+      },
+      {
+        "classe": "Lio/sentry/w0;",
+        "metodo": "readObject(Ljava/io/ObjectInputStream;)V",
+        "instrucao": "v6, Ljava/io/ObjectInputStream;->readObject()Ljava/lang/Object;"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "ContentProvider openFile (path traversal)",
+    "ocorrencias": 2,
+    "classes": [
+      "Lcom/bumptech/glide/load/m/a;",
+      "Lcom/bumptech/glide/load/m/i;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcom/bumptech/glide/load/m/a;",
+        "metodo": "h(Landroid/net/Uri; Landroid/content/ContentResolver;)Landroid/content/res/AssetFileDescriptor;",
+        "instrucao": "v4, v3, v0, Landroid/content/ContentResolver;->openAssetFileDescriptor(Landroid/net/Uri; Ljava/lang/String;)Landroid/content/res/AssetFileDescriptor;"
+      },
+      {
+        "classe": "Lcom/bumptech/glide/load/m/i;",
+        "metodo": "h(Landroid/net/Uri; Landroid/content/ContentResolver;)Landroid/os/ParcelFileDescriptor;",
+        "instrucao": "v4, v3, v0, Landroid/content/ContentResolver;->openAssetFileDescriptor(Landroid/net/Uri; Ljava/lang/String;)Landroid/content/res/AssetFileDescriptor;"
+      }
+    ]
+  },
+  {
+    "categoria": "superficie",
+    "capacidade": "WebView.addJavascriptInterface",
+    "ocorrencias": 2,
+    "classes": [
+      "Lcom/google/android/gms/internal/ads/bb;",
+      "Lcom/google/android/gms/internal/ads/rb;"
+    ],
+    "amostra": [
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/rb;",
+        "metodo": "addJavascriptInterface(Ljava/lang/Object; Ljava/lang/String;)V",
+        "instrucao": "v2, v3, v4, Landroid/webkit/WebView;->addJavascriptInterface(Ljava/lang/Object; Ljava/lang/String;)V"
+      },
+      {
+        "classe": "Lcom/google/android/gms/internal/ads/bb;",
+        "metodo": "<init>(Lcom/google/android/gms/internal/ads/zzbim; Lcom/google/android/gms/internal/ads/zzbin; Ljava/lang/String; Z Z Lcom/google/android/gms/internal/ads/zzdh; Lcom/google/android/gms/internal/ads/zzbai; Lcom/google/android/gms/internal/ads/zzadi; Lcom/google/android/gms/ads/internal/zzj; Lcom/google/android/gms/ads/internal/zza; Lcom/google/android/gms/internal/ads/zzwj;)V",
+        "instrucao": "v2, v4, v5, Landroid/webkit/WebView;->addJavascriptInterface(Ljava/lang/Object; Ljava/lang/String;)V"
+      }
+    ]
+  }
+]

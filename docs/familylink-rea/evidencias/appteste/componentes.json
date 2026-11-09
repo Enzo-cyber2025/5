@@ -1,0 +1,1202 @@
+[
+  {
+    "kind": "activity",
+    "name": "cm.aptoide.pt.view.MainActivity",
+    "exported": "true",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.MAIN"
+        ],
+        "categories": [
+          "android.intent.category.LAUNCHER"
+        ],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "activity",
+    "name": "cm.aptoide.pt.wallet.WalletInstallActivity",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "activity",
+    "name": "cm.aptoide.pt.account.view.LoginActivity",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "activity",
+    "name": "com.facebook.FacebookActivity",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "activity",
+    "name": "com.facebook.CustomTabActivity",
+    "exported": "true",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.VIEW"
+        ],
+        "categories": [
+          "android.intent.category.DEFAULT",
+          "android.intent.category.BROWSABLE"
+        ],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "@7F1101C8"
+          }
+        ],
+        "priority": null
+      },
+      {
+        "actions": [
+          "android.intent.action.VIEW"
+        ],
+        "categories": [
+          "android.intent.category.DEFAULT",
+          "android.intent.category.BROWSABLE"
+        ],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "fbconnect",
+            "{http://schemas.android.com/apk/res/android}host": "cct.cm.aptoide.pt"
+          }
+        ],
+        "priority": null
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "activity",
+    "name": "cm.aptoide.pt.DeepLinkIntentReceiver",
+    "exported": "true",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.VIEW"
+        ],
+        "categories": [
+          "android.intent.category.DEFAULT",
+          "android.intent.category.BROWSABLE"
+        ],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}mimeType": "application/vnd.cm.aptoide.pt",
+            "{http://schemas.android.com/apk/res/android}scheme": "file"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}mimeType": "application/vnd.cm.aptoide.pt",
+            "{http://schemas.android.com/apk/res/android}scheme": "http"
+          }
+        ],
+        "priority": null
+      },
+      {
+        "actions": [
+          "android.intent.action.VIEW"
+        ],
+        "categories": [
+          "android.intent.category.DEFAULT",
+          "android.intent.category.BROWSABLE"
+        ],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "aptoide"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "aptoiderepo"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "aptoideinstall"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "aptoideauth"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "aptoidesearch"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "aptoidefeature"
+          }
+        ],
+        "priority": null
+      },
+      {
+        "actions": [
+          "android.intent.action.VIEW"
+        ],
+        "categories": [
+          "android.intent.category.DEFAULT",
+          "android.intent.category.BROWSABLE"
+        ],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "market"
+          }
+        ],
+        "priority": null
+      },
+      {
+        "actions": [
+          "android.intent.action.VIEW"
+        ],
+        "categories": [
+          "android.intent.category.BROWSABLE",
+          "android.intent.category.DEFAULT"
+        ],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "http"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "https"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}host": "*.aptoide.com"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}pathPrefix": "/download"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}path": "/appcoins"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}path": "/app"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}pathPattern": "/editorial/.*"
+          }
+        ],
+        "priority": "100"
+      },
+      {
+        "actions": [
+          "android.intent.action.VIEW"
+        ],
+        "categories": [
+          "android.intent.category.BROWSABLE",
+          "android.intent.category.DEFAULT"
+        ],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "http"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "https"
+          },
+          {
+            "{http://schemas.android.com/apk/res/android}host": "app.aptoide.com"
+          }
+        ],
+        "priority": "100"
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "activity",
+    "name": "cm.aptoide.aptoideviews.base.MockActivity",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "activity",
+    "name": "com.facebook.CustomTabMainActivity",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "activity",
+    "name": "com.google.android.gms.auth.api.signin.internal.SignInHubActivity",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "activity",
+    "name": "com.google.android.gms.common.api.GoogleApiActivity",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "activity",
+    "name": "com.google.android.gms.ads.AdActivity",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "cm.aptoide.pt.account.AccountAuthenticatorService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "android.accounts.AccountAuthenticator"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "cm.aptoide.pt.AptoideFirebaseNotificationService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "com.google.firebase.MESSAGING_EVENT"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "cm.aptoide.pt.notification.PullingContentService",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "service",
+    "name": "cm.aptoide.pt.install.DownloadService",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "service",
+    "name": "cm.aptoide.pt.install.InstalledIntentService",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.firebase.messaging.FirebaseMessagingService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": "true",
+    "intent_filters": [
+      {
+        "actions": [
+          "com.google.firebase.MESSAGING_EVENT"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": "-500"
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.firebase.components.ComponentDiscoveryService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": "true",
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.firebase.sessions.SessionLifecycleService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "true",
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.android.datatransport.runtime.backends.TransportBackendDiscovery",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.android.gms.measurement.AppMeasurementService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "true",
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.android.gms.measurement.AppMeasurementJobService",
+    "exported": "false",
+    "permission": "android.permission.BIND_JOB_SERVICE",
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "true",
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "androidx.work.impl.background.systemalarm.SystemAlarmService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "@7F050004",
+    "direct_boot_aware": "false",
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "androidx.work.impl.background.systemjob.SystemJobService",
+    "exported": "true",
+    "permission": "android.permission.BIND_JOB_SERVICE",
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "@7F050006",
+    "direct_boot_aware": "false",
+    "intent_filters": [],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "service",
+    "name": "androidx.work.impl.foreground.SystemForegroundService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "@7F050005",
+    "direct_boot_aware": "false",
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.android.gms.auth.api.signin.RevocationBoundService",
+    "exported": "true",
+    "permission": "com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION",
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "service",
+    "name": "androidx.room.MultiInstanceInvalidationService",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": "true",
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService",
+    "exported": "false",
+    "permission": "android.permission.BIND_JOB_SERVICE",
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "service",
+    "name": "com.liulishuo.filedownloader.services.FileDownloadService$SharedMainProcessService",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "service",
+    "name": "com.liulishuo.filedownloader.services.FileDownloadService$SeparateProcessService",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": ":filedownloader",
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "receiver",
+    "name": "cm.aptoide.pt.install.InstalledBroadcastReceiver",
+    "exported": "true",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.PACKAGE_ADDED",
+          "android.intent.action.PACKAGE_REMOVED",
+          "android.intent.action.PACKAGE_REPLACED"
+        ],
+        "categories": [],
+        "data": [
+          {
+            "{http://schemas.android.com/apk/res/android}scheme": "package"
+          }
+        ],
+        "priority": "999"
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "receiver",
+    "name": "cm.aptoide.pt.link.CustomTabNativeReceiver",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "receiver",
+    "name": "cm.aptoide.pt.install.CheckRootOnBoot",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.BOOT_COMPLETED",
+          "android.intent.action.REBOOT",
+          "android.intent.action.QUICKBOOT_POWERON"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "cm.aptoide.pt.install.RootInstallNotificationEventReceiver",
+    "exported": null,
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "implicit-false"
+  },
+  {
+    "kind": "receiver",
+    "name": "cm.aptoide.pt.widget.SearchWidgetProvider",
+    "exported": "true",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "android.appwidget.action.APPWIDGET_UPDATE",
+          "android.appwidget.action.ACTION_WIDGET_RECEIVER"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "receiver",
+    "name": "com.google.firebase.iid.FirebaseInstanceIdReceiver",
+    "exported": "true",
+    "permission": "com.google.android.c2dm.permission.SEND",
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "com.google.android.c2dm.intent.RECEIVE"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "receiver",
+    "name": "com.facebook.CurrentAccessTokenExpirationBroadcastReceiver",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "com.facebook.sdk.ACTION_CURRENT_ACCESS_TOKEN_CHANGED"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "com.facebook.AuthenticationTokenManager$CurrentAuthenticationTokenChangedBroadcastReceiver",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "com.facebook.sdk.ACTION_CURRENT_AUTHENTICATION_TOKEN_CHANGED"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "com.google.android.gms.measurement.AppMeasurementReceiver",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "true",
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "com.google.android.gms.measurement.AppMeasurementInstallReferrerReceiver",
+    "exported": "true",
+    "permission": "android.permission.INSTALL_PACKAGES",
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "true",
+    "direct_boot_aware": null,
+    "intent_filters": [
+      {
+        "actions": [
+          "com.android.vending.INSTALL_REFERRER"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "true",
+    "direct_boot_aware": "false",
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "false",
+    "direct_boot_aware": "false",
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.ACTION_POWER_CONNECTED",
+          "android.intent.action.ACTION_POWER_DISCONNECTED"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "false",
+    "direct_boot_aware": "false",
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.BATTERY_OKAY",
+          "android.intent.action.BATTERY_LOW"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "false",
+    "direct_boot_aware": "false",
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.DEVICE_STORAGE_LOW",
+          "android.intent.action.DEVICE_STORAGE_OK"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "false",
+    "direct_boot_aware": "false",
+    "intent_filters": [
+      {
+        "actions": [
+          "android.net.conn.CONNECTIVITY_CHANGE"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.background.systemalarm.RescheduleReceiver",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "false",
+    "direct_boot_aware": "false",
+    "intent_filters": [
+      {
+        "actions": [
+          "android.intent.action.BOOT_COMPLETED",
+          "android.intent.action.TIME_SET",
+          "android.intent.action.TIMEZONE_CHANGED"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "@7F050004",
+    "direct_boot_aware": "false",
+    "intent_filters": [
+      {
+        "actions": [
+          "androidx.work.impl.background.systemalarm.UpdateProxies"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "receiver",
+    "name": "androidx.work.impl.diagnostics.DiagnosticsReceiver",
+    "exported": "true",
+    "permission": "android.permission.DUMP",
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": "true",
+    "direct_boot_aware": "false",
+    "intent_filters": [
+      {
+        "actions": [
+          "androidx.work.diagnostics.REQUEST_DIAGNOSTICS"
+        ],
+        "categories": [],
+        "data": [],
+        "priority": null
+      }
+    ],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "receiver",
+    "name": "com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": null,
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "cm.aptoide.pt.toolbox.ToolboxContentProvider",
+    "exported": "true",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.StubProvider",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "true"
+  },
+  {
+    "kind": "provider",
+    "name": "androidx.core.content.FileProvider",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.provider",
+    "grant_uri_permissions": "true",
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "com.google.firebase.provider.FirebaseInitProvider",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.firebaseinitprovider",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": "true",
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "com.facebook.internal.FacebookInitProvider",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.FacebookInitProvider",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "io.sentry.android.core.SentryInitProvider",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.SentryInitProvider",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "io.sentry.android.core.SentryPerformanceProvider",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.SentryPerformanceProvider",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "com.google.android.gms.ads.MobileAdsInitProvider",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.mobileadsinitprovider",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "androidx.lifecycle.ProcessLifecycleOwnerInitializer",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.lifecycle-process",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  },
+  {
+    "kind": "provider",
+    "name": "com.flurry.android.agent.FlurryContentProvider",
+    "exported": "false",
+    "permission": null,
+    "read_permission": null,
+    "write_permission": null,
+    "authorities": "cm.aptoide.pt.FlurryContentProvider",
+    "grant_uri_permissions": null,
+    "process": null,
+    "enabled": null,
+    "direct_boot_aware": null,
+    "intent_filters": [],
+    "exported_effective": "false"
+  }
+]

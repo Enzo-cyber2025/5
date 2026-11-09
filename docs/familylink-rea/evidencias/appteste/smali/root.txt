@@ -1,0 +1,690 @@
+
+===== Lcm/aptoide/pt/install/CheckRootOnBoot;  (classes.dex) =====
+  .field private static final HTC_BOOT_COMPLETED Ljava/lang/String;
+  .field private            crashReport Lcm/aptoide/pt/crashreports/CrashReport;
+
+  .method public constructor <init>()V
+      invoke-direct                v0, Landroid/content/BroadcastReceiver;-><init>()V
+      return-void                  
+  .end method
+
+  .method static synthetic lambda$onReceive$0()V
+      return-void                  
+  .end method
+
+  .method private synthetic lambda$onReceive$1(Ljava/lang/Throwable;)V
+      iget-object                  v0, v1, Lcm/aptoide/pt/install/CheckRootOnBoot;->crashReport Lcm/aptoide/pt/crashreports/CrashReport;
+      invoke-virtual               v0, v2, Lcm/aptoide/pt/crashreports/CrashReport;->log(Ljava/lang/Throwable;)V
+      return-void                  
+  .end method
+
+  .method public synthetic a(Ljava/lang/Throwable;)V
+      invoke-direct                v0, v1, Lcm/aptoide/pt/install/CheckRootOnBoot;->lambda$onReceive$1(Ljava/lang/Throwable;)V
+      return-void                  
+  .end method
+
+  .method public onReceive(Landroid/content/Context; Landroid/content/Intent;)V
+      invoke-static                Lcm/aptoide/pt/crashreports/CrashReport;->getInstance()Lcm/aptoide/pt/crashreports/CrashReport;
+      move-result-object           v0
+      iput-object                  v0, v2, Lcm/aptoide/pt/install/CheckRootOnBoot;->crashReport Lcm/aptoide/pt/crashreports/CrashReport;
+      if-eqz                       v4, +046h
+      invoke-virtual               v4, Landroid/content/Intent;->getAction()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v1, "android.intent.action.BOOT_COMPLETED"
+      invoke-virtual               v0, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v0
+      if-nez                       v0, +01ah
+      invoke-virtual               v4, Landroid/content/Intent;->getAction()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v1, "android.intent.action.REBOOT"
+      invoke-virtual               v0, v1, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v0
+      if-nez                       v0, +00eh
+      invoke-virtual               v4, Landroid/content/Intent;->getAction()Ljava/lang/String;
+      move-result-object           v4
+      const-string                 v0, "android.intent.action.QUICKBOOT_POWERON"
+      invoke-virtual               v4, v0, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+      move-result                  v4
+      if-eqz                       v4, +022h
+      invoke-virtual               v3, Landroid/content/Context;->getApplicationContext()Landroid/content/Context;
+      move-result-object           v3
+      check-cast                   v3, Lcm/aptoide/pt/AptoideApplication;
+      invoke-virtual               v3, Lcm/aptoide/pt/AptoideApplication;->getRootAvailabilityManager()Lcm/aptoide/pt/root/RootAvailabilityManager;
+      move-result-object           v3
+      invoke-virtual               v3, Lcm/aptoide/pt/root/RootAvailabilityManager;->updateRootAvailability()Lrx/b;
+      move-result-object           v3
+      invoke-static                Lrx/schedulers/Schedulers;->computation()Lrx/h;
+      move-result-object           v4
+      invoke-virtual               v3, v4, Lrx/b;->K(Lrx/h;)Lrx/b;
+      move-result-object           v3
+      sget-object                  v4, Lcm/aptoide/pt/install/p;->f Lcm/aptoide/pt/install/p;
+      new-instance                 v0, Lcm/aptoide/pt/install/q;
+      invoke-direct                v0, v2, Lcm/aptoide/pt/install/q;-><init>(Lcm/aptoide/pt/install/CheckRootOnBoot;)V
+      invoke-virtual               v3, v4, v0, Lrx/b;->I(Lrx/m/a; Lrx/m/b;)Lrx/k;
+      return-void                  
+  .end method
+
+===== Lcm/aptoide/pt/install/installer/Root;  (classes.dex) =====
+  .field private static final TAG Ljava/lang/String;
+  .field private            mErrorReader Ljava/io/BufferedReader;
+  .field private            mIsAcquired Z
+  .field private            mIsTerminated Z
+  .field private            mReader Ljava/io/BufferedReader;
+  .field private            mSuProcess Ljava/lang/Process;
+  .field private            mWriter Ljava/io/BufferedWriter;
+
+  .method public constructor <init>()V
+      invoke-direct                v4, Ljava/lang/Object;-><init>()V
+      const/4                      v0, 1
+      iput-boolean                 v0, v4, Lcm/aptoide/pt/install/installer/Root;->mIsAcquired Z
+      invoke-static                Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;
+      move-result-object           v1
+      const-string                 v2, "su"
+      invoke-virtual               v1, v2, Ljava/lang/Runtime;->exec(Ljava/lang/String;)Ljava/lang/Process;
+      move-result-object           v1
+      iput-object                  v1, v4, Lcm/aptoide/pt/install/installer/Root;->mSuProcess Ljava/lang/Process;
+      new-instance                 v1, Ljava/io/BufferedWriter;
+      new-instance                 v2, Ljava/io/OutputStreamWriter;
+      iget-object                  v3, v4, Lcm/aptoide/pt/install/installer/Root;->mSuProcess Ljava/lang/Process;
+      invoke-virtual               v3, Ljava/lang/Process;->getOutputStream()Ljava/io/OutputStream;
+      move-result-object           v3
+      invoke-direct                v2, v3, Ljava/io/OutputStreamWriter;-><init>(Ljava/io/OutputStream;)V
+      invoke-direct                v1, v2, Ljava/io/BufferedWriter;-><init>(Ljava/io/Writer;)V
+      iput-object                  v1, v4, Lcm/aptoide/pt/install/installer/Root;->mWriter Ljava/io/BufferedWriter;
+      new-instance                 v1, Ljava/io/BufferedReader;
+      new-instance                 v2, Ljava/io/InputStreamReader;
+      iget-object                  v3, v4, Lcm/aptoide/pt/install/installer/Root;->mSuProcess Ljava/lang/Process;
+      invoke-virtual               v3, Ljava/lang/Process;->getInputStream()Ljava/io/InputStream;
+      move-result-object           v3
+      invoke-direct                v2, v3, Ljava/io/InputStreamReader;-><init>(Ljava/io/InputStream;)V
+      invoke-direct                v1, v2, Ljava/io/BufferedReader;-><init>(Ljava/io/Reader;)V
+      iput-object                  v1, v4, Lcm/aptoide/pt/install/installer/Root;->mReader Ljava/io/BufferedReader;
+      new-instance                 v1, Ljava/io/BufferedReader;
+      new-instance                 v2, Ljava/io/InputStreamReader;
+      iget-object                  v3, v4, Lcm/aptoide/pt/install/installer/Root;->mSuProcess Ljava/lang/Process;
+      invoke-virtual               v3, Ljava/lang/Process;->getErrorStream()Ljava/io/InputStream;
+      move-result-object           v3
+      invoke-direct                v2, v3, Ljava/io/InputStreamReader;-><init>(Ljava/io/InputStream;)V
+      invoke-direct                v1, v2, Ljava/io/BufferedReader;-><init>(Ljava/io/Reader;)V
+      iput-object                  v1, v4, Lcm/aptoide/pt/install/installer/Root;->mErrorReader Ljava/io/BufferedReader;
+      const-string                 v1, "echo test"
+      invoke-virtual               v4, v1, Lcm/aptoide/pt/install/installer/Root;->exec(Ljava/lang/String;)Ljava/lang/String;
+      goto                         +11h
+      move-exception               v1
+      const/4                      v2, 0
+      iput-boolean                 v2, v4, Lcm/aptoide/pt/install/installer/Root;->mIsAcquired Z
+      iput-boolean                 v0, v4, Lcm/aptoide/pt/install/installer/Root;->mIsTerminated Z
+      const-string                 v0, "Root"
+      const-string                 v2, "Unable to acquire root access: "
+      invoke-static                v0, v2, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/String;)I
+      invoke-static                v0, v1, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/Throwable;)I
+      return-void                  
+      .catch <androguard.core.dex.TryItem object at 0x7f2b69c91dd0>
+  .end method
+
+  .method public static requestRoot()Z
+      const/4                      v0, 0
+      invoke-static                Ljava/lang/Runtime;->getRuntime()Ljava/lang/Runtime;
+      move-result-object           v1
+      const-string                 v2, "su -c exit"
+      invoke-virtual               v1, v2, Ljava/lang/Runtime;->exec(Ljava/lang/String;)Ljava/lang/Process;
+      move-result-object           v1
+      invoke-virtual               v1, Ljava/lang/Process;->waitFor()I
+      invoke-virtual               v1, Ljava/lang/Process;->exitValue()I
+      move-result                  v1
+      if-nez                       v1, +003h
+      const/4                      v0, 1
+      return                       v0
+      move-exception               v1
+      const-string                 v2, "Root"
+      const-string                 v3, "Unable to acquire root access: "
+      invoke-static                v2, v3, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/String;)I
+      invoke-static                v2, v1, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/Throwable;)I
+      return                       v0
+      .catch <androguard.core.dex.TryItem object at 0x7f2b69c914d0>
+  .end method
+
+  .method public exec(Ljava/lang/String;)Ljava/lang/String;
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      new-instance                 v1, Ljava/lang/StringBuilder;
+      invoke-direct                v1, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v2, "executing command : "
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, v6, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "install"
+      invoke-virtual               v0, v2, v1, Lcm/aptoide/pt/logger/Logger;->d(Ljava/lang/String; Ljava/lang/String;)V
+      const/4                      v0, 0
+      new-instance                 v1, Ljava/lang/StringBuilder;
+      invoke-direct                v1, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v2, "『BREAKER』"
+      iget-object                  v3, v5, Lcm/aptoide/pt/install/installer/Root;->mWriter Ljava/io/BufferedWriter;
+      new-instance                 v4, Ljava/lang/StringBuilder;
+      invoke-direct                v4, Ljava/lang/StringBuilder;-><init>()V
+      invoke-virtual               v4, v6, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      const-string                 v6, "
+echo "
+      invoke-virtual               v4, v6, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v4, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      const-string                 v6, "
+"
+      invoke-virtual               v4, v6, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v4, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v6
+      invoke-virtual               v3, v6, Ljava/io/BufferedWriter;->write(Ljava/lang/String;)V
+      iget-object                  v6, v5, Lcm/aptoide/pt/install/installer/Root;->mWriter Ljava/io/BufferedWriter;
+      invoke-virtual               v6, Ljava/io/BufferedWriter;->flush()V
+      const/16                     v6, 256
+      new-array                    v6, v6, [C
+      iget-object                  v3, v5, Lcm/aptoide/pt/install/installer/Root;->mReader Ljava/io/BufferedReader;
+      invoke-virtual               v3, v6, Ljava/io/BufferedReader;->read([C)I
+      move-result                  v3
+      invoke-virtual               v1, v6, v0, v3, Ljava/lang/StringBuilder;->append([C I I)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->indexOf(Ljava/lang/String;)I
+      move-result                  v3
+      const/4                      v4, -1
+      if-eq                        v3, v4, -00eh
+      add-int/lit8                 v6, v3, 9
+      invoke-virtual               v1, v3, v6, Ljava/lang/StringBuilder;->delete(I I)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v6
+      invoke-virtual               v6, Ljava/lang/String;->trim()Ljava/lang/String;
+      move-result-object           v6
+      return-object                v6
+      move-exception               v6
+      iput-boolean                 v0, v5, Lcm/aptoide/pt/install/installer/Root;->mIsAcquired Z
+      const/4                      v0, 1
+      iput-boolean                 v0, v5, Lcm/aptoide/pt/install/installer/Root;->mIsTerminated Z
+      const-string                 v0, "Root"
+      const-string                 v1, "Unable execute command: "
+      invoke-static                v0, v1, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/String;)I
+      invoke-static                v0, v6, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/Throwable;)I
+      const/4                      v6, 0
+      return-object                v6
+      .catch <androguard.core.dex.TryItem object at 0x7f2b69c917d0>
+  .end method
+
+  .method public isAcquired()Z
+      iget-boolean                 v0, v1, Lcm/aptoide/pt/install/installer/Root;->mIsAcquired Z
+      return                       v0
+  .end method
+
+  .method public isTerminated()Z
+      iget-boolean                 v0, v1, Lcm/aptoide/pt/install/installer/Root;->mIsTerminated Z
+      return                       v0
+  .end method
+
+  .method public readError()Ljava/lang/String;
+      const/4                      v0, 0
+      new-instance                 v1, Ljava/lang/StringBuilder;
+      invoke-direct                v1, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v2, "『BREAKER』"
+      iget-object                  v3, v6, Lcm/aptoide/pt/install/installer/Root;->mWriter Ljava/io/BufferedWriter;
+      new-instance                 v4, Ljava/lang/StringBuilder;
+      invoke-direct                v4, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v5, "echo "
+      invoke-virtual               v4, v5, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v4, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      const-string                 v5, " >&2
+"
+      invoke-virtual               v4, v5, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v4, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v4
+      invoke-virtual               v3, v4, Ljava/io/BufferedWriter;->write(Ljava/lang/String;)V
+      iget-object                  v3, v6, Lcm/aptoide/pt/install/installer/Root;->mWriter Ljava/io/BufferedWriter;
+      invoke-virtual               v3, Ljava/io/BufferedWriter;->flush()V
+      const/16                     v3, 256
+      new-array                    v3, v3, [C
+      iget-object                  v4, v6, Lcm/aptoide/pt/install/installer/Root;->mErrorReader Ljava/io/BufferedReader;
+      invoke-virtual               v4, v3, Ljava/io/BufferedReader;->read([C)I
+      move-result                  v4
+      invoke-virtual               v1, v3, v0, v4, Ljava/lang/StringBuilder;->append([C I I)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->indexOf(Ljava/lang/String;)I
+      move-result                  v4
+      const/4                      v5, -1
+      if-eq                        v4, v5, -00eh
+      add-int/lit8                 v2, v4, 9
+      invoke-virtual               v1, v4, v2, Ljava/lang/StringBuilder;->delete(I I)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v1
+      invoke-virtual               v1, Ljava/lang/String;->trim()Ljava/lang/String;
+      move-result-object           v0
+      return-object                v0
+      move-exception               v1
+      iput-boolean                 v0, v6, Lcm/aptoide/pt/install/installer/Root;->mIsAcquired Z
+      const/4                      v0, 1
+      iput-boolean                 v0, v6, Lcm/aptoide/pt/install/installer/Root;->mIsTerminated Z
+      const-string                 v0, "Root"
+      const-string                 v2, "Unable execute command: "
+      invoke-static                v0, v2, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/String;)I
+      invoke-static                v0, v1, Landroid/util/Log;->w(Ljava/lang/String; Ljava/lang/Throwable;)I
+      const/4                      v0, 0
+      return-object                v0
+      .catch <androguard.core.dex.TryItem object at 0x7f2b69c91ad0>
+  .end method
+
+  .method public terminate()V
+      iget-boolean                 v0, v1, Lcm/aptoide/pt/install/installer/Root;->mIsTerminated Z
+      if-eqz                       v0, +003h
+      return-void                  
+      const/4                      v0, 1
+      iput-boolean                 v0, v1, Lcm/aptoide/pt/install/installer/Root;->mIsTerminated Z
+      iget-object                  v0, v1, Lcm/aptoide/pt/install/installer/Root;->mSuProcess Ljava/lang/Process;
+      invoke-virtual               v0, Ljava/lang/Process;->destroy()V
+      return-void                  
+  .end method
+
+===== Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;  (classes.dex) =====
+  .field public static final SUCCESS_OUTPUT_CONFIRMATION Ljava/lang/String;
+  .field private static final TAG Ljava/lang/String;
+  .field public static final TIMEOUT_EXCEPTION Ljava/lang/String;
+  .field private            analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+  .field private            command Ljava/lang/String;
+  .field private final      installId I
+  .field private            success Z
+
+  .method static constructor <clinit>()V
+      return-void                  
+  .end method
+
+  .method public constructor <init>(I Ljava/lang/String; Lcm/aptoide/pt/install/InstallerAnalytics;)V
+      invoke-direct                v0, Ljava/lang/Object;-><init>()V
+      iput                         v1, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->installId I
+      iput-object                  v2, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->command Ljava/lang/String;
+      iput-object                  v3, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      const/4                      v1, 0
+      iput-boolean                 v1, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->success Z
+      return-void                  
+  .end method
+
+  .method static synthetic access$000()Ljava/lang/String;
+      sget-object                  v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->TAG Ljava/lang/String;
+      return-object                v0
+  .end method
+
+  .method static synthetic access$100(Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;)I
+      iget                         v0, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->installId I
+      return                       v0
+  .end method
+
+  .method static synthetic access$200(Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;)Z
+      iget-boolean                 v0, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->success Z
+      return                       v0
+  .end method
+
+  .method static synthetic access$202(Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe; Z)Z
+      iput-boolean                 v1, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->success Z
+      return                       v1
+  .end method
+
+  .method static synthetic access$300(Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;)Lcm/aptoide/pt/install/InstallerAnalytics;
+      iget-object                  v0, v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      return-object                v0
+  .end method
+
+  .method static synthetic lambda$call$0(Lcm/aptoide/pt/root/execution/Shell;)V
+      invoke-virtual               v0, Lcm/aptoide/pt/root/execution/Shell;->close()V
+      goto                         +5h
+      move-exception               v0
+      invoke-virtual               v0, Ljava/io/IOException;->printStackTrace()V
+      return-void                  
+      .catch <androguard.core.dex.TryItem object at 0x7f2b69c8b110>
+  .end method
+
+  .method public bridge synthetic call(Ljava/lang/Object;)V
+      check-cast                   v1, Lrx/j;
+      invoke-virtual               v0, v1, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->call(Lrx/j;)V
+      return-void                  
+  .end method
+
+  .method public call(Lrx/j;)V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      sget-object                  v1, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->TAG Ljava/lang/String;
+      new-instance                 v2, Ljava/lang/StringBuilder;
+      invoke-direct                v2, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v3, "call: start with installation id: "
+      invoke-virtual               v2, v3, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      iget                         v3, v6, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->installId I
+      invoke-virtual               v2, v3, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+      invoke-virtual               v2, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v2
+      invoke-virtual               v0, v1, v2, Lcm/aptoide/pt/logger/Logger;->d(Ljava/lang/String; Ljava/lang/String;)V
+      const/4                      v0, 1
+      invoke-static                v0, Lcm/aptoide/pt/root/RootShell;->getShell(Z)Lcm/aptoide/pt/root/execution/Shell;
+      move-result-object           v2
+      invoke-static                Lcm/aptoide/pt/root/RootShell;->isRootAvailable()Z
+      move-result                  v3
+      if-nez                       v3, +016h
+      new-instance                 v0, Lcm/aptoide/pt/install/exception/InstallationException;
+      const-string                 v2, "No root permissions"
+      invoke-direct                v0, v2, Lcm/aptoide/pt/install/exception/InstallationException;-><init>(Ljava/lang/String;)V
+      invoke-interface             v7, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      const-string                 v2, "call: root not available"
+      invoke-virtual               v0, v1, v2, Lcm/aptoide/pt/logger/Logger;->d(Ljava/lang/String; Ljava/lang/String;)V
+      return-void                  
+      iget-object                  v1, v6, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v1, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallStart()V
+      new-instance                 v1, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe$1;
+      iget                         v3, v6, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->installId I
+      new-array                    v0, v0, [Ljava/lang/String;
+      const/4                      v4, 0
+      iget-object                  v5, v6, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->command Ljava/lang/String;
+      aput-object                  v5, v0, v4
+      invoke-direct                v1, v6, v3, v0, v7, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe$1;-><init>(Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe; I [Ljava/lang/String; Lrx/j;)V
+      new-instance                 v0, Lcm/aptoide/pt/install/installer/n0;
+      invoke-direct                v0, v2, Lcm/aptoide/pt/install/installer/n0;-><init>(Lcm/aptoide/pt/root/execution/Shell;)V
+      invoke-static                v0, Lrx/t/e;->a(Lrx/m/a;)Lrx/k;
+      move-result-object           v0
+      invoke-virtual               v7, v0, Lrx/j;->add(Lrx/k;)V
+      invoke-virtual               v2, v1, Lcm/aptoide/pt/root/execution/Shell;->add(Lcm/aptoide/pt/root/execution/Command;)Lcm/aptoide/pt/root/execution/Command;
+      goto                         +3fh
+      move-exception               v0
+      goto                         +4h
+      move-exception               v0
+      goto                         +2h
+      move-exception               v0
+      instance-of                  v1, v0, Lcm/aptoide/pt/root/exceptions/RootDeniedException;
+      if-eqz                       v1, +012h
+      iget-object                  v0, v6, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v0, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallCancelled()V
+      new-instance                 v0, Lcm/aptoide/pt/install/exception/InstallationException;
+      const-string                 v1, "User didn't accept root permissions"
+      invoke-direct                v0, v1, Lcm/aptoide/pt/install/exception/InstallationException;-><init>(Ljava/lang/String;)V
+      invoke-interface             v7, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      goto                         +26h
+      instance-of                  v1, v0, Ljava/util/concurrent/TimeoutException;
+      if-eqz                       v1, +01bh
+      new-instance                 v0, Lcm/aptoide/pt/install/RootCommandTimeoutException;
+      invoke-direct                v0, Lcm/aptoide/pt/install/RootCommandTimeoutException;-><init>()V
+      invoke-interface             v7, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      iget-object                  v7, v6, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v7, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallTimeout()V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v7
+      sget-object                  v0, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->TAG Ljava/lang/String;
+      const-string                 v1, "call: timeout reached"
+      invoke-virtual               v7, v0, v1, Lcm/aptoide/pt/logger/Logger;->d(Ljava/lang/String; Ljava/lang/String;)V
+      goto                         +9h
+      iget-object                  v1, v6, Lcm/aptoide/pt/install/installer/RootCommandOnSubscribe;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v1, v0, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallFail(Ljava/lang/Exception;)V
+      invoke-interface             v7, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      return-void                  
+      .catch <androguard.core.dex.TryItem object at 0x7f2b69c8ad50>
+  .end method
+
+===== Lcm/aptoide/pt/install/installer/RootInstaller;  (classes.dex) =====
+  .field private static final TAG Ljava/lang/String;
+  .field private final      analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+  .field private            installation Lcm/aptoide/pt/install/installer/Installation;
+  .field private final      packageName Ljava/lang/String;
+  .field private            root Lcm/aptoide/pt/install/installer/Root;
+
+  .method public constructor <init>(Ljava/lang/String; Lcm/aptoide/pt/install/InstallerAnalytics; Lcm/aptoide/pt/install/installer/Installation;)V
+      invoke-direct                v0, Ljava/lang/Object;-><init>()V
+      iput-object                  v1, v0, Lcm/aptoide/pt/install/installer/RootInstaller;->packageName Ljava/lang/String;
+      iput-object                  v2, v0, Lcm/aptoide/pt/install/installer/RootInstaller;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      iput-object                  v3, v0, Lcm/aptoide/pt/install/installer/RootInstaller;->installation Lcm/aptoide/pt/install/installer/Installation;
+      new-instance                 v1, Lcm/aptoide/pt/install/installer/Root;
+      invoke-direct                v1, Lcm/aptoide/pt/install/installer/Root;-><init>()V
+      iput-object                  v1, v0, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      return-void                  
+  .end method
+
+  .method private getFilesSize(Lcm/aptoide/pt/install/installer/Installation;)I
+      invoke-interface             v6, Lcm/aptoide/pt/install/installer/Installation;->getFiles()Ljava/util/List;
+      move-result-object           v6
+      invoke-interface             v6, Ljava/util/List;->iterator()Ljava/util/Iterator;
+      move-result-object           v6
+      const/4                      v0, 0
+      invoke-interface             v6, Ljava/util/Iterator;->hasNext()Z
+      move-result                  v1
+      if-eqz                       v1, +02ch
+      invoke-interface             v6, Ljava/util/Iterator;->next()Ljava/lang/Object;
+      move-result-object           v1
+      check-cast                   v1, Lcm/aptoide/pt/database/room/RoomFileToDownload;
+      new-instance                 v2, Ljava/io/File;
+      new-instance                 v3, Ljava/lang/StringBuilder;
+      invoke-direct                v3, Ljava/lang/StringBuilder;-><init>()V
+      invoke-virtual               v1, Lcm/aptoide/pt/database/room/RoomFileToDownload;->getPath()Ljava/lang/String;
+      move-result-object           v4
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, Lcm/aptoide/pt/database/room/RoomFileToDownload;->getFileName()Ljava/lang/String;
+      move-result-object           v1
+      invoke-virtual               v3, v1, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v1
+      invoke-direct                v2, v1, Ljava/io/File;-><init>(Ljava/lang/String;)V
+      int-to-long                  v0, v0
+      invoke-virtual               v2, Ljava/io/File;->length()J
+      move-result-wide             v2
+      add-long/2addr               v0, v2
+      long-to-int                  v0, v0
+      goto                         -2fh
+      return                       v0
+  .end method
+
+  .method public bridge synthetic call(Ljava/lang/Object;)V
+      check-cast                   v1, Lrx/j;
+      invoke-virtual               v0, v1, Lcm/aptoide/pt/install/installer/RootInstaller;->call(Lrx/j;)V
+      return-void                  
+  .end method
+
+  .method public call(Lrx/j;)V
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      new-instance                 v1, Ljava/lang/StringBuilder;
+      invoke-direct                v1, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v2, "call: start with installation package name: "
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      iget-object                  v2, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->installation Lcm/aptoide/pt/install/installer/Installation;
+      invoke-interface             v2, Lcm/aptoide/pt/install/installer/Installation;->getPackageName()Ljava/lang/String;
+      move-result-object           v2
+      invoke-virtual               v1, v2, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v1, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v1
+      const-string                 v2, "RootInstaller"
+      invoke-virtual               v0, v2, v1, Lcm/aptoide/pt/logger/Logger;->d(Ljava/lang/String; Ljava/lang/String;)V
+      iget-object                  v0, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v0, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallStart()V
+      iget-object                  v0, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-virtual               v0, Lcm/aptoide/pt/install/installer/Root;->isTerminated()Z
+      move-result                  v0
+      if-nez                       v0, +00ah
+      iget-object                  v0, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-virtual               v0, Lcm/aptoide/pt/install/installer/Root;->isAcquired()Z
+      move-result                  v0
+      if-nez                       v0, +021h
+      invoke-static                Lcm/aptoide/pt/install/installer/Root;->requestRoot()Z
+      iget-object                  v0, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-virtual               v0, Lcm/aptoide/pt/install/installer/Root;->isAcquired()Z
+      move-result                  v0
+      if-nez                       v0, +016h
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v0
+      const-string                 v1, "root is not available"
+      invoke-virtual               v0, v2, v1, Lcm/aptoide/pt/logger/Logger;->d(Ljava/lang/String; Ljava/lang/String;)V
+      new-instance                 v0, Lcm/aptoide/pt/install/exception/InstallationException;
+      const-string                 v1, "No root permissions"
+      invoke-direct                v0, v1, Lcm/aptoide/pt/install/exception/InstallationException;-><init>(Ljava/lang/String;)V
+      invoke-interface             v13, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      return-void                  
+      iget-object                  v0, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-static                Ljava/util/Locale;->getDefault()Ljava/util/Locale;
+      move-result-object           v1
+      new-instance                 v3, Ljava/lang/StringBuilder;
+      invoke-direct                v3, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v4, "pm install-create -i "
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      iget-object                  v4, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->packageName Ljava/lang/String;
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      const-string                 v4, " --user %s -r -S %d"
+      invoke-virtual               v3, v4, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v3
+      const/4                      v4, 2
+      new-array                    v5, v4, [Ljava/lang/Object;
+      const-string                 v6, "0"
+      const/4                      v7, 0
+      aput-object                  v6, v5, v7
+      iget-object                  v6, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->installation Lcm/aptoide/pt/install/installer/Installation;
+      invoke-direct                v12, v6, Lcm/aptoide/pt/install/installer/RootInstaller;->getFilesSize(Lcm/aptoide/pt/install/installer/Installation;)I
+      move-result                  v6
+      invoke-static                v6, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+      move-result-object           v6
+      const/4                      v8, 1
+      aput-object                  v6, v5, v8
+      invoke-static                v1, v3, v5, Ljava/lang/String;->format(Ljava/util/Locale; Ljava/lang/String; [Ljava/lang/Object;)Ljava/lang/String;
+      move-result-object           v1
+      invoke-virtual               v0, v1, Lcm/aptoide/pt/install/installer/Root;->exec(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v0
+      if-eqz                       v0, +11dh
+      invoke-virtual               v0, Ljava/lang/String;->length()I
+      move-result                  v1
+      if-nez                       v1, +004h
+      goto/16                      +115h
+      const-string                 v1, "(\d+)"
+      invoke-static                v1, Ljava/util/regex/Pattern;->compile(Ljava/lang/String;)Ljava/util/regex/Pattern;
+      move-result-object           v1
+      invoke-virtual               v1, v0, Ljava/util/regex/Pattern;->matcher(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;
+      move-result-object           v0
+      invoke-virtual               v0, Ljava/util/regex/Matcher;->find()Z
+      invoke-virtual               v0, v8, Ljava/util/regex/Matcher;->group(I)Ljava/lang/String;
+      move-result-object           v0
+      invoke-static                v0, Ljava/lang/Integer;->parseInt(Ljava/lang/String;)I
+      move-result                  v0
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->installation Lcm/aptoide/pt/install/installer/Installation;
+      invoke-interface             v1, Lcm/aptoide/pt/install/installer/Installation;->getFiles()Ljava/util/List;
+      move-result-object           v1
+      invoke-interface             v1, Ljava/util/List;->iterator()Ljava/util/Iterator;
+      move-result-object           v1
+      invoke-interface             v1, Ljava/util/Iterator;->hasNext()Z
+      move-result                  v3
+      if-eqz                       v3, +08ch
+      invoke-interface             v1, Ljava/util/Iterator;->next()Ljava/lang/Object;
+      move-result-object           v3
+      check-cast                   v3, Lcm/aptoide/pt/database/room/RoomFileToDownload;
+      invoke-static                Lcm/aptoide/pt/logger/Logger;->getInstance()Lcm/aptoide/pt/logger/Logger;
+      move-result-object           v5
+      new-instance                 v6, Ljava/lang/StringBuilder;
+      invoke-direct                v6, Ljava/lang/StringBuilder;-><init>()V
+      const-string                 v9, "started instalation of file: "
+      invoke-virtual               v6, v9, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Lcm/aptoide/pt/database/room/RoomFileToDownload;->getFileName()Ljava/lang/String;
+      move-result-object           v9
+      invoke-virtual               v6, v9, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v6, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v6
+      invoke-virtual               v5, v2, v6, Lcm/aptoide/pt/logger/Logger;->d(Ljava/lang/String; Ljava/lang/String;)V
+      new-instance                 v5, Ljava/io/File;
+      new-instance                 v6, Ljava/lang/StringBuilder;
+      invoke-direct                v6, Ljava/lang/StringBuilder;-><init>()V
+      invoke-virtual               v3, Lcm/aptoide/pt/database/room/RoomFileToDownload;->getPath()Ljava/lang/String;
+      move-result-object           v9
+      invoke-virtual               v6, v9, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v3, Lcm/aptoide/pt/database/room/RoomFileToDownload;->getFileName()Ljava/lang/String;
+      move-result-object           v3
+      invoke-virtual               v6, v3, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+      invoke-virtual               v6, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+      move-result-object           v3
+      invoke-direct                v5, v3, Ljava/io/File;-><init>(Ljava/lang/String;)V
+      iget-object                  v3, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-static                Ljava/util/Locale;->getDefault()Ljava/util/Locale;
+      move-result-object           v6
+      const/4                      v9, 4
+      new-array                    v9, v9, [Ljava/lang/Object;
+      invoke-virtual               v5, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
+      move-result-object           v10
+      aput-object                  v10, v9, v7
+      invoke-virtual               v5, Ljava/io/File;->length()J
+      move-result-wide             v10
+      invoke-static                v10, v11, Ljava/lang/Long;->valueOf(J)Ljava/lang/Long;
+      move-result-object           v10
+      aput-object                  v10, v9, v8
+      invoke-static                v0, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+      move-result-object           v10
+      aput-object                  v10, v9, v4
+      const/4                      v10, 3
+      invoke-virtual               v5, Ljava/io/File;->getName()Ljava/lang/String;
+      move-result-object           v5
+      aput-object                  v5, v9, v10
+      const-string                 v5, "cat "%s" | pm install-write -S %d %d "%s""
+      invoke-static                v6, v5, v9, Ljava/lang/String;->format(Ljava/util/Locale; Ljava/lang/String; [Ljava/lang/Object;)Ljava/lang/String;
+      move-result-object           v5
+      invoke-virtual               v3, v5, Lcm/aptoide/pt/install/installer/Root;->exec(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v3
+      if-eqz                       v3, +008h
+      invoke-virtual               v3, Ljava/lang/String;->length()I
+      move-result                  v3
+      if-nez                       v3, -07ah
+      new-instance                 v0, Lcm/aptoide/pt/install/exception/InstallationException;
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-virtual               v1, Lcm/aptoide/pt/install/installer/Root;->readError()Ljava/lang/String;
+      move-result-object           v1
+      invoke-direct                v0, v1, Lcm/aptoide/pt/install/exception/InstallationException;-><init>(Ljava/lang/String;)V
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v1, v0, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallFail(Ljava/lang/Exception;)V
+      invoke-interface             v13, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      return-void                  
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-static                Ljava/util/Locale;->getDefault()Ljava/util/Locale;
+      move-result-object           v2
+      new-array                    v3, v8, [Ljava/lang/Object;
+      invoke-static                v0, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+      move-result-object           v0
+      aput-object                  v0, v3, v7
+      const-string                 v0, "pm install-commit %d "
+      invoke-static                v2, v0, v3, Ljava/lang/String;->format(Ljava/util/Locale; Ljava/lang/String; [Ljava/lang/Object;)Ljava/lang/String;
+      move-result-object           v0
+      invoke-virtual               v1, v0, Lcm/aptoide/pt/install/installer/Root;->exec(Ljava/lang/String;)Ljava/lang/String;
+      move-result-object           v0
+      if-eqz                       v0, +038h
+      invoke-virtual               v0, Ljava/lang/String;->length()I
+      move-result                  v1
+      if-nez                       v1, +003h
+      goto                         +30h
+      invoke-virtual               v0, Ljava/lang/String;->toLowerCase()Ljava/lang/String;
+      move-result-object           v0
+      const-string                 v1, "success"
+      invoke-virtual               v0, v1, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+      move-result                  v0
+      if-eqz                       v0, +011h
+      invoke-virtual               v13, Lrx/j;->isUnsubscribed()Z
+      move-result                  v0
+      if-nez                       v0, +00ah
+      iget-object                  v0, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v0, v7, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallCompleted(I)V
+      invoke-interface             v13, Lrx/f;->onCompleted()V
+      return-void                  
+      new-instance                 v0, Lcm/aptoide/pt/install/exception/InstallationException;
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-virtual               v1, Lcm/aptoide/pt/install/installer/Root;->readError()Ljava/lang/String;
+      move-result-object           v1
+      invoke-direct                v0, v1, Lcm/aptoide/pt/install/exception/InstallationException;-><init>(Ljava/lang/String;)V
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v1, v0, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallFail(Ljava/lang/Exception;)V
+      invoke-interface             v13, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      return-void                  
+      new-instance                 v0, Lcm/aptoide/pt/install/exception/InstallationException;
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-virtual               v1, Lcm/aptoide/pt/install/installer/Root;->readError()Ljava/lang/String;
+      move-result-object           v1
+      invoke-direct                v0, v1, Lcm/aptoide/pt/install/exception/InstallationException;-><init>(Ljava/lang/String;)V
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v1, v0, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallFail(Ljava/lang/Exception;)V
+      invoke-interface             v13, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      return-void                  
+      new-instance                 v0, Lcm/aptoide/pt/install/exception/InstallationException;
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->root Lcm/aptoide/pt/install/installer/Root;
+      invoke-virtual               v1, Lcm/aptoide/pt/install/installer/Root;->readError()Ljava/lang/String;
+      move-result-object           v1
+      invoke-direct                v0, v1, Lcm/aptoide/pt/install/exception/InstallationException;-><init>(Ljava/lang/String;)V
+      iget-object                  v1, v12, Lcm/aptoide/pt/install/installer/RootInstaller;->analytics Lcm/aptoide/pt/install/InstallerAnalytics;
+      invoke-interface             v1, v0, Lcm/aptoide/pt/install/InstallerAnalytics;->rootInstallFail(Ljava/lang/Exception;)V
+      invoke-interface             v13, v0, Lrx/f;->onError(Ljava/lang/Throwable;)V
+      return-void                  
+  .end method
